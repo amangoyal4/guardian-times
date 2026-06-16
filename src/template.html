@@ -139,12 +139,24 @@
   .onechart .read{font-size:14px;line-height:1.65;color:var(--ink-soft)}
   .onechart .read b{color:var(--ink)}
 
-  /* My Watch */
-  .watch-controls{display:flex;gap:8px;flex-wrap:wrap;margin:4px 0 22px}
-  .watch-tag{font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:.04em;padding:6px 12px;border:1px solid var(--line-strong);border-radius:2px;background:none;cursor:pointer;transition:all .15s}
-  .watch-tag:hover{background:var(--paper-2)}
-  .watch-tag.on{background:var(--ink);color:var(--paper)}
   .watch-empty{font-family:'Fraunces',serif;font-style:italic;color:var(--muted);padding:30px 0}
+
+  /* Market dashboard */
+  .market-dash{margin:6px 0 26px}
+  .md-head{display:flex;justify-content:space-between;align-items:baseline;border-bottom:1px solid var(--line);padding-bottom:8px;margin-bottom:14px}
+  .md-label{font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--accent);font-weight:600}
+  .md-sub{font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:.05em;text-transform:uppercase;color:var(--faint)}
+  .md-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:18px}
+  .md-grid figure{margin:0}
+  @media(max-width:820px){.md-grid{grid-template-columns:1fr}}
+
+  /* Knowledge desk extras */
+  .kd-hook{font-family:'Fraunces',serif;font-style:italic;font-size:16px;color:var(--gold-bright);margin:0 0 16px;max-width:66ch}
+  .kd-takeaway,.kd-why{margin-top:16px;padding:12px 16px;background:var(--paper-2);border-left:2.5px solid var(--gold);font-size:13.5px;line-height:1.55;color:var(--ink-soft)}
+  .knowledge-card .kd-takeaway{background:#26262c;border-left-color:var(--gold-bright);color:#cfcfd4}
+  .kd-takeaway b,.kd-why b{font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:var(--gold);display:block;margin-bottom:5px;font-weight:600}
+  article.explainer{border-top:1px solid var(--line);padding:20px 0}
+  article.explainer .summary p{margin-bottom:10px}
 
   .compliance-item{display:grid;grid-template-columns:92px 1fr;gap:20px;padding:18px 0;border-top:1px solid var(--line)}
   .compliance-item .reg{font-family:'IBM Plex Mono',monospace;font-size:11px;font-weight:600;letter-spacing:.05em;color:var(--accent-2);padding-top:2px}
@@ -191,7 +203,6 @@
     <button class="nav-btn" data-page="global"><span class="pg">04</span> Global Equities</button>
     <button class="nav-btn" data-page="knowledge"><span class="pg">05</span> Knowledge Desk</button>
     <button class="nav-btn" data-page="compliance"><span class="pg">06</span> Compliance</button>
-    <button class="nav-btn" data-page="watch"><span class="pg">07</span> My Watch</button>
     <span class="nav-spacer"></span>
     <button class="refresh-btn" id="refreshBtn" title="Re-runs the engine">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12a9 9 0 1 1-2.64-6.36"/><path d="M21 3v6h-6"/></svg>
@@ -206,7 +217,7 @@ __PAGES__
 
 <footer>
   <div>THE GUARDIAN TIMES &middot; A Guardian Capital Publication &middot; Updated __RUNTIME__</div>
-  <div class="disclaimer">Headlines and summaries are original editorial prepared from publicly reported facts; full articles open at the original source and may require a subscription. Market data shown is illustrative pending the live data feed. Not investment advice.</div>
+  <div class="disclaimer">Headlines and summaries are original editorial prepared from publicly reported facts; full articles open at the original source and may require a subscription. Market data is sourced live from Yahoo Finance and may be delayed. Not investment advice.</div>
 </footer>
 
 <script>
@@ -229,21 +240,6 @@ __PAGES__
     pages.forEach(p=>p.classList.toggle('active',p.id==='page-knowledge'));
     window.scrollTo({top:0,behavior:'smooth'});
   }));
-
-  // My Watch filtering
-  const watchTags=document.querySelectorAll('.watch-tag');
-  const watchItems=document.querySelectorAll('#watch-feed [data-tags]');
-  function applyWatch(){
-    const on=[...watchTags].filter(t=>t.classList.contains('on')).map(t=>t.dataset.tag);
-    let shown=0;
-    watchItems.forEach(it=>{
-      const tags=it.dataset.tags.split(',');
-      const vis=on.length===0||on.some(o=>tags.includes(o));
-      it.style.display=vis?'':'none'; if(vis)shown++;
-    });
-    document.getElementById('watch-empty').style.display=shown?'none':'block';
-  }
-  watchTags.forEach(t=>t.addEventListener('click',()=>{t.classList.toggle('on');applyWatch();}));
 
   const rb=document.getElementById('refreshBtn');
   rb.addEventListener('click',()=>{

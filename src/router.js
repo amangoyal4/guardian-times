@@ -1,50 +1,82 @@
-// router.js — sorts each story into a section, and tags watchlist hits for My Watch.
-// Pure keyword + source rules; tune the lists freely.
+// router.js — classifies each story by TOPIC and REGION, then maps to a section.
+//
+// Design:
+//   1. REGION  — is this an Indian story or a global one? Decided by counting strong
+//      India/global tokens in the text, falling back to the feed's own region.
+//   2. TOPIC   — compliance / macro / sector / equity, by weighted keyword scoring
+//      (regulatory, macro and sector signals outweigh generic market/equity words).
+//   3. SECTION — compliance→compliance, macro→macro, sector→sector,
+//      equity→india if Indian else global.
+// Ranking (in index.js) then floats Indian stories to the top of every mixed section.
 
-// ---- your personal watchlist (edit freely) ----
-export const WATCHLIST = {
-  IT:      ['infosys', 'tcs', 'wipro', 'hcl tech', 'tech mahindra', 'eternal', 'zomato', 'nvidia', ' ai ', 'data centre', 'data center', 'cloud'],
-  Banks:   ['hdfc bank', 'icici', 'axis bank', 'sbi', 'kotak', 'indusind', 'yes bank', 'nbfc', 'shriram', 'bajaj finance', 'muthoot', 'bank credit'],
-  Metals:  ['vedanta', 'tata steel', 'jsw', 'hindalco', 'sail', 'coal india', 'ongc', 'oil india', 'crude', 'aluminium', 'steel'],
-  GIFT:    ['gift city', 'ifsca', 'aif', 'alternative investment', 'pms', 'mutual fund', 'fpi', 'g-sec', 'gilt'],
-  Eternal: ['eternal', 'zomato', 'blinkit'],
-  Shriram: ['shriram'],
-};
-
-// ---- section keyword rules (checked in order; first strong match wins) ----
-const SECTION_RULES = [
-  { section: 'compliance', kws: ['sebi', 'rbi ', 'circular', 'regulation', 'regulator', 'compliance', 'master circular', 'penalty', 'banned', 'ban order', 'insider trading', 'fraud', 'amfi', 'ifsca', 'guidelines', 'notification'] },
-  { section: 'macro',      kws: ['inflation', 'cpi', 'gdp', 'repo rate', 'fed ', 'fomc', 'monetary policy', 'rate cut', 'rate hike', 'fiscal', 'rupee', 'bond yield', 'g-sec', 'opec', 'crude oil', 'current account', 'trade deficit', 'unemployment', 'jobs report', 'central bank'] },
-  { section: 'india',      kws: ['sensex', 'nifty', 'fii', 'dii', 'demerger', 'ipo', 'qip', 'dividend', 'bonus', 'stake', 'results', 'earnings', 'q1', 'q2', 'q3', 'q4', 'bse', 'nse', 'block deal'] },
-  { section: 'global',     kws: ['s&p 500', 'nasdaq', 'dow', 'wall street', 'nvidia', 'apple', 'microsoft', 'tesla', 'amazon', 'meta', 'treasury', 'ecb', 'european', 'china', 'us stocks'] },
-  { section: 'sector',     kws: ['sector', 'auto', 'pharma', 'fmcg', 'realty', 'metals', 'banking sector', 'it sector', 'telecom', 'energy', 'power', 'cement'] },
+// ---- region tokens (text is lowercased and space-padded before matching) ----
+const INDIA_TOKENS = [
+  ' india', 'indian', ' nifty', 'sensex', ' bse', ' nse ', ' sebi', ' rbi', 'rupee', '₹',
+  ' crore', ' lakh', 'dalal street', 'd-street', ' fii', ' dii', ' nbfc', ' amfi', ' ifsca',
+  'gift city', 'mumbai', 'new delhi', 'bengaluru', 'reserve bank of india', 'psu bank',
+  // major Indian names that signal an India story even in a global feed
+  'infosys', ' tcs', 'reliance', 'hdfc', 'icici', 'adani', ' tata', 'wipro', ' sbi', 'bajaj',
+  'zomato', 'paytm', 'vedanta', 'jsw', 'hindalco', 'maruti', 'mahindra',
+];
+const GLOBAL_TOKENS = [
+  ' u.s.', ' us ', ' fed ', 'fomc', 'federal reserve', ' ecb', ' boj', 'bank of england',
+  'wall street', 's&p 500', 'nasdaq', 'dow jones', ' dow ', 'treasury', 'eurozone', 'euro zone',
+  'nikkei', ' ftse', 'hang seng', 'britain', 'germany', 'france', ' china', 'beijing',
+  'washington', ' london', 'brussels',
+  // global mega-caps that signal a global story even in an Indian feed
+  'nvidia', ' apple', 'microsoft', 'tesla', 'amazon', ' meta ', ' google', 'spacex', 'openai',
+  'anthropic', 'alphabet', 'stmicro',
 ];
 
-const VALID_SECTIONS = ['macro', 'sector', 'india', 'global', 'compliance'];
+// ---- topic keyword sets (weighted; regulatory/macro/sector beat generic equity) ----
+const TOPICS = [
+  { name: 'compliance', weight: 3, kws: ['circular', 'master circular', 'penalt', ' fine', ' ban ', 'banned', 'insider trading', 'fraud', 'enforcement', 'show-cause', 'show cause', 'settlement order', 'adjudicat', ' norms', 'guidelines', 'notification', 'regulation', 'regulator', 'disclosure requirement', 'framework', 'winding-up', 'winding up', ' kyc', 'compliance', ' probe', 'investigat', 'crackdown', 'sanction', 'delisting norms'] },
+  { name: 'macro', weight: 3, kws: ['repo rate', 'rate cut', 'rate hike', 'interest rate', 'monetary policy', ' mpc', 'inflation', ' cpi', ' wpi', 'retail inflation', ' gdp', ' gva', 'fiscal deficit', 'current account', 'trade deficit', 'trade balance', 'bond yield', 'g-sec', ' gilt', 'forex reserves', 'industrial production', ' iip', ' pmi', 'unemployment', 'jobs report', 'payroll', ' fed ', 'fomc', 'federal reserve', ' ecb', 'central bank', ' opec', 'crude oil', ' brent', 'tariff'] },
+  { name: 'sector', weight: 2, kws: ['sector', 'sectoral', 'auto stocks', 'auto sales', 'two-wheeler', 'passenger vehicle', 'pharma', 'fmcg', 'realty', 'real estate', 'metal stocks', 'banking stocks', 'bank stocks', 'it stocks', 'telecom', 'energy stocks', 'power stocks', 'cement', 'capital goods', 'defence', 'infrastructure', 'rotation', 'semiconductor', 'chipmaker'] },
+  { name: 'equity', weight: 1, kws: ['sensex', 'nifty', ' stock', 'shares', 'share price', ' ipo', ' qip', 'dividend', 'buyback', 'earnings', 'results', ' q1', ' q2', ' q3', ' q4', 'block deal', 'bulk deal', ' fii', ' dii', 'listing', 'debut', ' m&a', 'acquisition', 'merger', ' stake', 'demerger', 'nasdaq', ' dow', 's&p', 'rally', 'surge', 'jumps', 'plunge', 'tumble', 'valuation', 'market cap', 'bond sale', 'offering'] },
+];
 
-function scoreSection(text, region) {
-  const t = ' ' + text.toLowerCase() + ' ';
-  for (const rule of SECTION_RULES) {
-    if (rule.kws.some((k) => t.includes(k))) return rule.section;
+function pad(text) {
+  return ' ' + text.toLowerCase().replace(/\s+/g, ' ') + ' ';
+}
+
+function countHits(t, tokens) {
+  let n = 0;
+  for (const tok of tokens) if (t.includes(tok)) n++;
+  return n;
+}
+
+// Is this an Indian story? Token counts override the feed's nominal region.
+function detectIndian(t, feedRegion) {
+  const ind = countHits(t, INDIA_TOKENS);
+  const glo = countHits(t, GLOBAL_TOKENS);
+  if (ind > glo) return true;
+  if (glo > ind) return false;
+  return feedRegion === 'in';
+}
+
+// Highest weighted topic score wins; default to equity when nothing matches.
+function detectTopic(t) {
+  let best = 'equity', bestScore = 0;
+  for (const { name, weight, kws } of TOPICS) {
+    const score = countHits(t, kws) * weight;
+    if (score > bestScore) { bestScore = score; best = name; }
   }
-  // fall back on region: global-region undated business news -> global, else india
-  return region === 'global' ? 'global' : 'india';
+  return best;
 }
 
 export function routeItem(item) {
-  const text = `${item.title} ${item.rawSummary}`;
-  // start from the keyword classification, but let a strong feed hint win when keywords are weak
-  let section = scoreSection(text, item.region);
-  if (!VALID_SECTIONS.includes(section)) section = item.sectionHint || 'india';
+  const t = pad(`${item.title} ${item.rawSummary}`);
+  const isIndian = detectIndian(t, item.region);
+  const topic = detectTopic(t);
 
-  // watchlist tags
-  const tlc = text.toLowerCase();
-  const tags = [];
-  for (const [tag, kws] of Object.entries(WATCHLIST)) {
-    if (kws.some((k) => tlc.includes(k))) tags.push(tag);
-  }
+  let section;
+  if (topic === 'compliance') section = 'compliance';
+  else if (topic === 'macro') section = 'macro';
+  else if (topic === 'sector') section = 'sector';
+  else section = isIndian ? 'india' : 'global';
 
-  return { ...item, section, watchTags: tags };
+  return { ...item, section, isIndian };
 }
 
 export function routeAll(items) {

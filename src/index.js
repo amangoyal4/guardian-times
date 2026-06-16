@@ -4,16 +4,20 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import { fetchAll } from './fetcher.js';
 import { routeAll } from './router.js';
-import { summariseAll, generateMechanism, generateMyths } from './summarize.js';
+import {
+  summariseAll, selectStories, generateMechanism, generateExplainers, generateMyths,
+} from './summarize.js';
+import { fetchMarket } from './market.js';
 import { buildHTML, writeEdition } from './build.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const PUBLIC_DIR = path.join(__dirname, '..', 'public');
 const STATE_FILE = path.join(__dirname, '..', 'archive', 'seen.json');
 
-// how many stories to carry per section (lead + supporting)
-const PER_SECTION = { macro: 6, india: 6, sector: 6, global: 6, compliance: 7 };
-const WATCH_MAX = 12;
+// how many stories to carry per section after the editorial cut
+const PER_SECTION = { macro: 7, india: 8, sector: 6, global: 7, compliance: 6 };
+// larger pool handed to the AI editor so it has room to choose
+const POOL = 36;
 
 function loadSeen() {
   try { return new Set(JSON.parse(fs.readFileSync(STATE_FILE, 'utf8'))); }
@@ -25,11 +29,30 @@ function saveSeen(links) {
   fs.writeFileSync(STATE_FILE, JSON.stringify([...links].slice(-500)));
 }
 
+// Procedural noise with no decision value — auction notices/results and daily
+// filler. Removed before the AI editor even sees them (cheap, deterministic).
+const NOISE = new RegExp([
+  'variable rate (repo|reverse repo)', '\\bvrr\\b', '\\bvrrr\\b',
+  '(t-bill|treasury bill|g-sec|g\\u2013sec|gsec|sdl|state development loan|dated securities?) auction',
+  'auction (of|result|cut-?off|notification)', 'full auction result', 'omo (purchase|sale)',
+  "ahead of market", 'things (to know|that will decide)', 'stocks? to watch',
+  'quick wrap', 'market wrap', 'trading guide', 'stocks? to buy', '\\d+ stocks?',
+  'market talk', 'roundup', "here'?s what", 'what to watch',
+].join('|'), 'i');
+
+// generic wrappers — sink them within ranking even if not hard-dropped
+const JUNK = /(market talk|roundup|what to watch|things to know|here's what|stocks to watch)/i;
+
+function score(it) {
+  const t = it.published?.getTime() || 0;
+  return t + it.weight * 3.6e6 - (JUNK.test(it.title) ? 1e15 : 0);
+}
+
+// Indian stories first (newest + higher feed weight within each region block).
 function rank(items) {
-  // newest + higher feed weight float up
   return [...items].sort((a, b) => {
-    const ta = a.published?.getTime() || 0, tb = b.published?.getTime() || 0;
-    return (tb + b.weight * 3.6e6) - (ta + a.weight * 3.6e6);
+    if (!!a.isIndian !== !!b.isIndian) return a.isIndian ? -1 : 1;
+    return score(b) - score(a);
   });
 }
 
@@ -40,40 +63,51 @@ async function main() {
   // 1) FETCH
   const { items, health } = await fetchAll({ hours: 24, seenLinks: seen });
 
-  // 2) ROUTE + TAG
-  const routed = routeAll(items);
+  // 2) ROUTE + TAG, then drop hard procedural noise
+  const routed = routeAll(items).filter((it) => !NOISE.test(it.title));
 
-  // 3) BUCKET + RANK + TRIM
-  const buckets = { macro: [], sector: [], india: [], global: [], compliance: [] };
-  for (const it of routed) (buckets[it.section] || buckets.india).push(it);
-  for (const k of Object.keys(buckets)) buckets[k] = rank(buckets[k]).slice(0, PER_SECTION[k]);
+  // 3) BUILD CANDIDATE POOLS (ranked, generous) per section
+  const pools = { macro: [], sector: [], india: [], global: [], compliance: [] };
+  for (const it of routed) (pools[it.section] || pools.india).push(it);
+  for (const k of Object.keys(pools)) pools[k] = rank(pools[k]).slice(0, POOL);
 
-  const watch = rank(routed.filter((it) => it.watchTags.length)).slice(0, WATCH_MAX);
+  // 4) EDITORIAL CUT — AI picks the important stories; ranking is the fallback
+  const byLinkAll = new Map(routed.map((it) => [it.link, it]));
+  const picks = await selectStories(pools, Math.max(...Object.values(PER_SECTION)));
+  const buckets = {};
+  for (const k of Object.keys(pools)) {
+    if (picks && picks[k]?.length) {
+      const chosen = picks[k].map((id) => byLinkAll.get(id)).filter(Boolean);
+      buckets[k] = rank(chosen).slice(0, PER_SECTION[k]);
+    } else {
+      buckets[k] = pools[k].slice(0, PER_SECTION[k]);
+    }
+  }
 
-  // lead stories (first of each section) get the longer AI treatment
+  // lead stories (first of each section) get the longer AI treatment + chart
   const leadIds = new Set(Object.values(buckets).map((arr) => arr[0]?.link).filter(Boolean));
 
-  // 4) SUMMARISE  (one flat list so we can pace the API once)
-  const flat = [...new Set([...Object.values(buckets).flat(), ...watch])];
-  const summarised = await summariseAll(flat, { leadIds });
+  // 5) SUMMARISE selected stories, and fetch market data in parallel
+  const flat = [...new Set(Object.values(buckets).flat())];
+  const [summarised, market] = await Promise.all([
+    summariseAll(flat, { leadIds }),
+    fetchMarket(),
+  ]);
   const byLink = new Map(summarised.map((s) => [s.link, s]));
   const remap = (arr) => arr.map((it) => byLink.get(it.link) || it);
-
   for (const k of Object.keys(buckets)) buckets[k] = remap(buckets[k]);
-  const watchOut = remap(watch);
 
-  // 5) KNOWLEDGE DESK
-  const topAll = rank(summarised).slice(0, 10);
-  const [mechanism, myths] = await Promise.all([generateMechanism(topAll), generateMyths(topAll)]);
-
-  // 6) TICKER (static placeholder text until a quotes feed is added)
-  const ticker = [
-    'Sensex —', 'Nifty —', 'USD/INR —', '10Y G-Sec —', 'Brent —', 'Gold —',
-  ].map((s) => `<span>${s}</span>`).join('');
+  // 6) KNOWLEDGE DESK — mechanism of the day + explainers + myth-busters
+  const topAll = rank(summarised).slice(0, 12);
+  const [mechanism, explainers, myths] = await Promise.all([
+    generateMechanism(topAll),
+    generateExplainers(topAll),
+    generateMyths(topAll),
+  ]);
 
   // 7) BUILD + WRITE
   const html = buildHTML({
-    ...buckets, watch: watchOut, mechanism, myths, ticker,
+    ...buckets, market, mechanism, explainers, myths,
     runTime: new Date().toUTCString(),
   });
   const stamp = writeEdition(html, PUBLIC_DIR);
@@ -84,7 +118,7 @@ async function main() {
   fs.writeFileSync(path.join(PUBLIC_DIR, 'health.json'), JSON.stringify({ ts: new Date().toISOString(), health }, null, 2));
 
   const counts = Object.entries(buckets).map(([k, v]) => `${k}:${v.length}`).join(' ');
-  console.log(`✅ Edition ${stamp} built — ${counts} watch:${watchOut.length} — ${((Date.now() - t0) / 1000).toFixed(1)}s`);
+  console.log(`✅ Edition ${stamp} built — ${counts} — ${((Date.now() - t0) / 1000).toFixed(1)}s`);
 }
 
 main().catch((e) => { console.error('FATAL:', e); process.exit(1); });

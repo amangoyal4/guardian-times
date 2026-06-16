@@ -4,6 +4,8 @@
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import { lineChart, storyChart } from './charts.js';
+import { tickerHTML } from './market.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const LOGO = fs.readFileSync(path.join(__dirname, 'logo_b64.txt'), 'utf8').trim();
@@ -20,33 +22,50 @@ function timeAgo(d) {
   return `~${Math.round(h / 24)}d ago`;
 }
 
-function chip(tag) {
-  return tag ? `<span class="chip">${esc(tag)}</span>` : '';
-}
-
 function articleHTML(item, { lead = false } = {}) {
-  const tag = item.watchTags?.[0] || '';
   const link = esc(item.link);
-  const head = lead
-    ? `<h3 class="hl"><a href="${link}" target="_blank" rel="noopener">${esc(item.headline)}</a></h3>`
-    : `<h3 class="hl"><a href="${link}" target="_blank" rel="noopener">${esc(item.headline)}</a></h3>`;
+  const head = `<h3 class="hl"><a href="${link}" target="_blank" rel="noopener">${esc(item.headline)}</a></h3>`;
   const soWhat = item.soWhat
     ? `<div class="sowhat"><b>So what for you</b>${esc(item.soWhat)}</div>` : '';
+  // Only lead stories carry an explanatory chart, and only when the AI produced one.
+  const chart = lead && item.chart ? storyChart(item.chart) : '';
   return `
       <article${lead ? ' class="lead"' : ''}>
-        <div class="eyebrow"><span class="src">${esc(item.source)}</span><span class="dot"></span><span class="time">${timeAgo(item.published)}</span>${chip(tag)}</div>
+        <div class="eyebrow"><span class="src">${esc(item.source)}</span><span class="dot"></span><span class="time">${timeAgo(item.published)}</span></div>
         ${head}
         <div class="summary">${lead ? '<p>' + esc(item.summary) + '</p>' : esc(item.summary)}</div>
+        ${chart}
         ${soWhat}
         <a class="readmore" href="${link}" target="_blank" rel="noopener">Read at ${esc(item.source)} <span class="arr">&rarr;</span></a>
       </article>`;
 }
 
-function sectionPage(id, num, title, kicker, lede, items, { active = false } = {}) {
+// A compact 1-month line chart per live instrument — the market at a glance.
+function marketDashboard(market) {
+  if (!market?.instruments?.length) return '';
+  const cards = market.instruments
+    .filter((i) => i.ok && Array.isArray(i.series) && i.series.length > 1)
+    .map((i) => lineChart({
+      title: i.label,
+      series: i.series,
+      unit: i.unit,
+      dp: i.dp,
+      caption: '1-month',
+    }))
+    .join('');
+  if (!cards) return '';
+  return `<div class="market-dash">
+      <div class="md-head"><span class="md-label">Markets &middot; one-month trend</span><span class="md-sub">live · Yahoo Finance</span></div>
+      <div class="md-grid">${cards}</div>
+    </div>`;
+}
+
+function sectionPage(id, num, title, kicker, lede, items, { active = false, prepend = '' } = {}) {
   if (!items.length) {
     return `<section class="page${active ? ' active' : ''}" id="page-${id}">
       <div class="section-head"><span class="pgnum">${num}</span><h2>${title}</h2><span class="kicker">${kicker}</span></div>
       <p class="lede">${lede}</p>
+      ${prepend}
       <p class="watch-empty">No stories in this section in the current window.</p></section>`;
   }
   const [lead, ...rest] = items;
@@ -54,69 +73,72 @@ function sectionPage(id, num, title, kicker, lede, items, { active = false } = {
   return `<section class="page${active ? ' active' : ''}" id="page-${id}">
       <div class="section-head"><span class="pgnum">${num}</span><h2>${title}</h2><span class="kicker">${kicker}</span></div>
       <p class="lede">${lede}</p>
+      ${prepend}
       ${articleHTML(lead, { lead: true })}
       <div class="grid cols-2">${restHTML}</div>
     </section>`;
 }
 
-function knowledgePage(num, mechanism, myths) {
+function paras(text = '') {
+  return text.split(/\n{1,}/).map((p) => p.trim()).filter(Boolean)
+    .map((p) => '<p>' + esc(p) + '</p>').join('');
+}
+
+function knowledgePage(num, mechanism, explainers, myths) {
   const mech = mechanism
     ? `<div class="knowledge-card">
-        <div class="eyebrow"><span class="src">Mechanism of the day</span><span class="dot"></span><span class="tier ${mechanism.tier === 'Frontier' ? 'frontier' : 'foundations'}">${esc(mechanism.tier)}</span></div>
+        <div class="eyebrow"><span class="src">Mechanism of the day</span><span class="dot"></span><span class="tier ${mechanism.tier === 'Frontier' ? 'frontier' : 'foundations'}">${esc(mechanism.tier || 'Foundations')}</span></div>
         <h3>${esc(mechanism.title)}</h3>
-        <div class="summary">${mechanism.body.split(/\n+/).map((p) => '<p>' + esc(p) + '</p>').join('')}</div>
+        ${mechanism.hook ? `<p class="kd-hook">${esc(mechanism.hook)}</p>` : ''}
+        <div class="summary">${paras(mechanism.body)}</div>
+        ${mechanism.takeaway ? `<div class="kd-takeaway"><b>The takeaway</b>${esc(mechanism.takeaway)}</div>` : ''}
         <div class="kpoints">${(mechanism.points || []).slice(0, 3).map((p) => `<div class="kpoint"><div class="kn">${esc(p.n)}</div><div class="kl">${esc(p.l)}</div></div>`).join('')}</div>
       </div>` : '';
+
+  const explHTML = (explainers || []).length
+    ? `<div class="section-head" style="border-bottom:1px solid var(--line);padding-top:8px"><h2 style="font-size:22px">Things worth understanding</h2></div>
+       <div class="grid cols-2">${(explainers || []).map((e) => `
+        <article class="explainer">
+          <div class="eyebrow"><span class="src">Explainer</span><span class="dot"></span><span class="chip">${esc(e.tag || 'Concept')}</span></div>
+          <h3 class="hl">${esc(e.title)}</h3>
+          <div class="summary">${paras(e.body)}</div>
+          ${e.why ? `<div class="kd-why"><b>Why it matters now</b>${esc(e.why)}</div>` : ''}
+        </article>`).join('')}</div>`
+    : '';
+
   const mythHTML = (myths || []).map((m) =>
     `<div class="myth"><div class="x">&times;</div><div><div class="mtag">Myth &middot; ${esc(m.tag)}</div><div class="mt">${esc(m.claim)}</div><div class="summary">${esc(m.correction)}</div></div></div>`
   ).join('');
+
   return `<section class="page" id="page-knowledge">
       <div class="section-head"><span class="pgnum">${num}</span><h2>The Knowledge Desk</h2><span class="kicker">Learn what others won't</span></div>
-      <p class="lede">A mechanism explained in full and the misconceptions worth unlearning — born from today's news, built from first principles.</p>
+      <p class="lede">A mechanism explained in full, concepts worth mastering, and the misconceptions worth unlearning — born from today's news, built from first principles.</p>
       ${mech}
+      ${explHTML}
       ${mythHTML ? `<div class="section-head" style="border-bottom:1px solid var(--line);padding-top:8px"><h2 style="font-size:22px">What the consensus gets wrong</h2></div>${mythHTML}` : ''}
-    </section>`;
-}
-
-function watchPage(num, items) {
-  const tags = ['IT', 'Banks', 'Metals', 'GIFT', 'Eternal', 'Shriram'];
-  const labels = { IT: 'IT & Tech', Banks: 'Banks & NBFCs', Metals: 'Metals & Energy', GIFT: 'GIFT City / Funds', Eternal: 'Eternal', Shriram: 'Shriram Finance' };
-  const controls = tags.map((t) => `<button class="watch-tag" data-tag="${t}">${labels[t]}</button>`).join('');
-  const feed = items.map((it) => `
-    <article data-tags="${(it.watchTags || []).join(',')}">
-      <div class="eyebrow"><span class="src">${esc(it.source)}</span><span class="dot"></span><span class="time">${timeAgo(it.published)}</span>${chip(it.watchTags?.[0])}</div>
-      <h3 class="hl"><a href="${esc(it.link)}" target="_blank" rel="noopener">${esc(it.headline)}</a></h3>
-      <div class="summary">${esc(it.summary)}</div>
-    </article>`).join('');
-  return `<section class="page" id="page-watch">
-      <div class="section-head"><span class="pgnum">${num}</span><h2>My Watch</h2><span class="kicker">Your universe, tagged</span></div>
-      <p class="lede">Stories touching your holdings, tracked names and sectors. Tap a tag to narrow the feed.</p>
-      <div class="watch-controls">${controls}</div>
-      <div id="watch-feed">${feed || ''}</div>
-      <div class="watch-empty" id="watch-empty" style="display:none">No stories match the selected tags. Clear a filter to see the full feed.</div>
     </section>`;
 }
 
 /**
  * Build the full HTML. `data` shape:
- * { macro, sector, india, global, compliance, watch: [...items], mechanism, myths, ticker, runTime }
+ * { macro, sector, india, global, compliance, market, mechanism, explainers, myths, runTime }
  */
 export function buildHTML(data) {
   const tpl = fs.readFileSync(path.join(__dirname, 'template.html'), 'utf8');
+  const ticker = data.market ? tickerHTML(data.market) : '';
 
   const pages = [
-    sectionPage('macro', '01', 'Macroeconomy &amp; Policy', 'Forces moving the whole market', 'Central banks, growth, inflation, oil, and the flow of foreign capital.', data.macro, { active: true }),
+    sectionPage('macro', '01', 'Macroeconomy &amp; Policy', 'Forces moving the whole market', 'Central banks, growth, inflation, oil, and the flow of foreign capital.', data.macro, { active: true, prepend: marketDashboard(data.market) }),
     sectionPage('sector', '02', 'Sectoral Currents', 'Where the money is rotating', 'Which sectors are catching the bid and which are bleeding.', data.sector),
     sectionPage('india', '03', 'Indian Markets &amp; Stocks', 'FII flows · the big moves', 'Index-moving flows, restructurings, enforcement and the stock-specific events that matter.', data.india),
     sectionPage('global', '04', 'Global Equities', 'Megacaps that move sentiment', 'The US tape sets the risk mood worldwide — with read-through to Indian IT and the rupee.', data.global),
-    knowledgePage('05', data.mechanism, data.myths),
+    knowledgePage('05', data.mechanism, data.explainers, data.myths),
     sectionPage('compliance', '06', 'Compliance &amp; Regulation', 'SEBI · RBI · AMC moves', 'The regulatory changes that reshape how products are built, sold and reported.', data.compliance),
-    watchPage('07', data.watch),
   ].join('\n');
 
   return tpl
     .replace('__LOGO__', LOGO)
-    .replace('__TICKER__', data.ticker || '')
+    .replace('__TICKER__', ticker)
     .replace('__PAGES__', pages)
     .replace('__RUNTIME__', data.runTime || new Date().toUTCString());
 }

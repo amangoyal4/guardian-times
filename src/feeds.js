@@ -6,11 +6,11 @@
 export const FEEDS = [
   // ---- Indian markets & business ----
   { id: 'et-markets',     name: 'Economic Times — Markets', url: 'https://economictimes.indiatimes.com/markets/rssfeeds/1977021501.cms', section: 'india',      region: 'in', weight: 3, enabled: true },
-  { id: 'bs-markets',     name: 'Business Standard — Markets', url: 'https://www.business-standard.com/rss/markets-106.rss',               section: 'india',      region: 'in', weight: 3, enabled: false }, // 403 — server blocks automated fetchers
+  { id: 'bs-markets',     name: 'Business Standard — Markets', url: 'https://news.google.com/rss/search?q=site:business-standard.com/markets+when:1d&hl=en-IN&gl=IN&ceid=IN:en', section: 'india', region: 'in', weight: 3, enabled: true }, // direct RSS 403-blocks bots; routed via Google News
   { id: 'mint-markets',   name: 'Livemint — Markets',       url: 'https://www.livemint.com/rss/markets',                                   section: 'india',      region: 'in', weight: 3, enabled: true },
   { id: 'mc-business',    name: 'Moneycontrol — Business',  url: 'https://www.moneycontrol.com/rss/business.xml',                          section: 'india',      region: 'in', weight: 2, enabled: true },
   { id: 'bl-markets',     name: 'Hindu BusinessLine',       url: 'https://www.thehindubusinessline.com/markets/feeder/default.rss',        section: 'india',      region: 'in', weight: 2, enabled: true },
-  { id: 'fe-markets',     name: 'Financial Express — Market', url: 'https://www.financialexpress.com/market/feed/',                        section: 'india',      region: 'in', weight: 2, enabled: false }, // malformed XML on all endpoints
+  { id: 'fe-markets',     name: 'Financial Express — Market', url: 'https://news.google.com/rss/search?q=site:financialexpress.com/market+when:1d&hl=en-IN&gl=IN&ceid=IN:en', section: 'india', region: 'in', weight: 2, enabled: true }, // direct RSS malformed; routed via Google News
   { id: 'bt-money',       name: 'Business Today',           url: 'https://www.businesstoday.in/rssfeeds/?id=225',                          section: 'india',      region: 'in', weight: 2, enabled: true },
 
   // ---- Regulators / compliance ----
