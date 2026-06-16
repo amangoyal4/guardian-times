@@ -1,0 +1,16 @@
+{
+  "name": "guardian-times-engine",
+  "version": "1.0.0",
+  "description": "Personalised financial newspaper engine — RSS + Gemini, builds a static edition.",
+  "type": "module",
+  "scripts": {
+    "build": "node src/index.js",
+    "feeds:check": "node scripts/check-feeds.js"
+  },
+  "dependencies": {
+    "rss-parser": "^3.13.0"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}
