@@ -1,0 +1,131 @@
+{
+  "ts": "2026-06-16T19:03:52.800Z",
+  "health": [
+    {
+      "id": "et-markets",
+      "name": "Economic Times — Markets",
+      "ok": true,
+      "count": 50,
+      "error": null
+    },
+    {
+      "id": "mint-markets",
+      "name": "Livemint — Markets",
+      "ok": true,
+      "count": 35,
+      "error": null
+    },
+    {
+      "id": "mc-business",
+      "name": "Moneycontrol — Business",
+      "ok": false,
+      "count": 0,
+      "error": "Status code 403"
+    },
+    {
+      "id": "bl-markets",
+      "name": "Hindu BusinessLine",
+      "ok": true,
+      "count": 60,
+      "error": null
+    },
+    {
+      "id": "bt-money",
+      "name": "Business Today",
+      "ok": true,
+      "count": 0,
+      "error": null
+    },
+    {
+      "id": "rbi-press",
+      "name": "RBI — Press Releases",
+      "ok": true,
+      "count": 10,
+      "error": null
+    },
+    {
+      "id": "sebi-press",
+      "name": "SEBI — Press Releases",
+      "ok": true,
+      "count": 30,
+      "error": null
+    },
+    {
+      "id": "nse-circ",
+      "name": "NSE — Circulars",
+      "ok": true,
+      "count": 12,
+      "error": null
+    },
+    {
+      "id": "wsj-markets",
+      "name": "WSJ — Markets",
+      "ok": true,
+      "count": 61,
+      "error": null
+    },
+    {
+      "id": "wsj-world",
+      "name": "WSJ — World",
+      "ok": true,
+      "count": 74,
+      "error": null
+    },
+    {
+      "id": "bbg-markets",
+      "name": "Bloomberg — Markets",
+      "ok": true,
+      "count": 30,
+      "error": null
+    },
+    {
+      "id": "bbg-econ",
+      "name": "Bloomberg — Economics",
+      "ok": true,
+      "count": 30,
+      "error": null
+    },
+    {
+      "id": "ft-home",
+      "name": "Financial Times — Home",
+      "ok": true,
+      "count": 11,
+      "error": null
+    },
+    {
+      "id": "guardian-biz",
+      "name": "The Guardian — Business",
+      "ok": true,
+      "count": 39,
+      "error": null
+    },
+    {
+      "id": "cnbc-finance",
+      "name": "CNBC — Finance",
+      "ok": true,
+      "count": 30,
+      "error": null
+    },
+    {
+      "id": "mw-top",
+      "name": "MarketWatch — Top",
+      "ok": true,
+      "count": 10,
+      "error": null
+    },
+    {
+      "id": "economist-fin",
+      "name": "Economist — Finance",
+      "ok": true,
+      "count": 300,
+      "error": null
+    },
+    {
+      "id": "investing-news",
+      "name": "Investing.com — News",
+      "ok": true,
+      "count": 10,
+      "error": null
+    }
+  ]
+}
