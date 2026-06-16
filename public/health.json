@@ -1,11 +1,18 @@
 {
-  "ts": "2026-06-16T19:03:52.800Z",
+  "ts": "2026-06-16T20:02:19.404Z",
   "health": [
     {
       "id": "et-markets",
       "name": "Economic Times — Markets",
       "ok": true,
       "count": 50,
+      "error": null
+    },
+    {
+      "id": "bs-markets",
+      "name": "Business Standard — Markets",
+      "ok": true,
+      "count": 100,
       "error": null
     },
     {
@@ -27,6 +34,13 @@
       "name": "Hindu BusinessLine",
       "ok": true,
       "count": 60,
+      "error": null
+    },
+    {
+      "id": "fe-markets",
+      "name": "Financial Express — Market",
+      "ok": true,
+      "count": 59,
       "error": null
     },
     {
