@@ -5,7 +5,9 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const ROOT = path.join(__dirname, '..', 'public');
+// Prefer the gitignored preview/ (local render-test output); fall back to public/.
+const PREVIEW = path.join(__dirname, '..', 'preview');
+const ROOT = fs.existsSync(path.join(PREVIEW, 'index.html')) ? PREVIEW : path.join(__dirname, '..', 'public');
 const PORT = process.env.PORT || 4321;
 
 const TYPES = { '.html': 'text/html', '.json': 'application/json', '.png': 'image/png', '.svg': 'image/svg+xml', '.css': 'text/css', '.js': 'text/javascript' };

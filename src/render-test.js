@@ -1,12 +1,14 @@
 // render-test.js — local smoke test: real market data + mock stories, NO Gemini.
-// Run: node src/render-test.js  → writes public/index.html
+// Run: node src/render-test.js  → writes preview/index.html (gitignored, never
+// touches the tracked public/ that the build bot commits).
+import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import { fetchMarket } from './market.js';
-import { buildHTML, writeEdition } from './build.js';
+import { buildHTML } from './build.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const PUBLIC_DIR = path.join(__dirname, '..', 'public');
+const PREVIEW_DIR = path.join(__dirname, '..', 'preview');
 
 const now = Date.now();
 const mk = (o) => ({
@@ -61,5 +63,6 @@ const myths = [
 
 const market = await fetchMarket();
 const html = buildHTML({ macro, sector, india, global, compliance, market, mechanism, explainers, myths, runTime: new Date().toUTCString() });
-const stamp = writeEdition(html, PUBLIC_DIR);
-console.log(`\n✅ render-test wrote public/index.html (edition ${stamp})`);
+fs.mkdirSync(PREVIEW_DIR, { recursive: true });
+fs.writeFileSync(path.join(PREVIEW_DIR, 'index.html'), html);
+console.log('\n✅ render-test wrote preview/index.html');
