@@ -97,13 +97,13 @@ async function main() {
   const remap = (arr) => arr.map((it) => byLink.get(it.link) || it);
   for (const k of Object.keys(buckets)) buckets[k] = remap(buckets[k]);
 
-  // 6) KNOWLEDGE DESK — mechanism of the day + explainers + myth-busters
+  // 6) KNOWLEDGE DESK — mechanism of the day + explainers + myth-busters.
+  // Run sequentially (not Promise.all) so we don't fire 3 calls at once and
+  // blow the per-minute rate limit.
   const topAll = rank(summarised).slice(0, 12);
-  const [mechanism, explainers, myths] = await Promise.all([
-    generateMechanism(topAll),
-    generateExplainers(topAll),
-    generateMyths(topAll),
-  ]);
+  const mechanism = await generateMechanism(topAll);
+  const explainers = await generateExplainers(topAll);
+  const myths = await generateMyths(topAll);
 
   // 7) BUILD + WRITE
   const html = buildHTML({

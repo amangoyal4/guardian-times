@@ -8,10 +8,22 @@ const ENDPOINT = (model) =>
 
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
+// ---- rate-limit circuit breaker ----
+// On the free tier, once the API starts hard-throttling it rarely recovers
+// within a run. Rather than grind through hundreds of 429 backoffs (a single
+// run was observed taking 70 minutes), we trip a breaker after a few calls
+// exhaust their retries on 429 — every subsequent call then fails instantly
+// and the caller falls back. One success closes the breaker again.
+let rateLimitStrikes = 0;
+let circuitOpen = false;
+const STRIKE_LIMIT = 3;
+
 // ---- low-level call with backoff on 429/5xx ----
-async function callGemini(prompt, { maxTokens = 700, tries = 6 } = {}) {
+async function callGemini(prompt, { maxTokens = 700, tries = 4 } = {}) {
   if (!API_KEY) throw new Error('GEMINI_API_KEY not set');
+  if (circuitOpen) throw new Error('Gemini circuit open (sustained rate limiting)');
   let delay = 2000;
+  let saw429 = false;
   for (let attempt = 1; attempt <= tries; attempt++) {
     try {
       const res = await fetch(ENDPOINT(MODEL), {
@@ -30,6 +42,7 @@ async function callGemini(prompt, { maxTokens = 700, tries = 6 } = {}) {
         }),
       });
       if (res.status === 429 || res.status >= 500) {
+        saw429 = true;
         console.log(`    rate/again (${res.status}) — backoff ${delay}ms`);
         await sleep(delay); delay *= 2; continue;
       }
@@ -37,6 +50,7 @@ async function callGemini(prompt, { maxTokens = 700, tries = 6 } = {}) {
       const data = await res.json();
       const text = data?.candidates?.[0]?.content?.parts?.map((p) => p.text).join('') || '';
       if (!text.trim()) throw new Error('empty response from model');
+      rateLimitStrikes = 0; // a clean success resets the breaker
       return text.trim();
     } catch (err) {
       if (attempt === tries) throw err;
@@ -44,7 +58,11 @@ async function callGemini(prompt, { maxTokens = 700, tries = 6 } = {}) {
     }
   }
   // Exhausted all retries on 429/5xx without ever returning — fail cleanly so
-  // the caller falls back instead of receiving undefined.
+  // the caller falls back instead of receiving undefined, and count a strike.
+  if (saw429 && ++rateLimitStrikes >= STRIKE_LIMIT) {
+    circuitOpen = true;
+    console.log('    ⚡ rate-limit circuit OPEN — skipping remaining AI calls this run.');
+  }
   throw new Error('Gemini: exhausted retries (rate-limited)');
 }
 
