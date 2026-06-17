@@ -87,7 +87,18 @@ async function main() {
   // lead stories (first of each section) get the longer AI treatment + chart
   const leadIds = new Set(Object.values(buckets).map((arr) => arr[0]?.link).filter(Boolean));
 
-  // 5) SUMMARISE selected stories, and fetch market data in parallel
+  // 5) KNOWLEDGE DESK FIRST — mechanism + explainers + myth-busters.
+  // These need only the selected headlines (available pre-summary), so we run
+  // them BEFORE the bulk of story summaries. On the free tier the daily quota is
+  // the ceiling; spending it on the high-value desk + curation first means a
+  // throttle only degrades tail-end story summaries, never the Knowledge Desk.
+  // Sequential (not Promise.all) to stay under the per-minute limit.
+  const topAll = rank([...new Set(Object.values(buckets).flat())]).slice(0, 12);
+  const mechanism = await generateMechanism(topAll);
+  const explainers = await generateExplainers(topAll);
+  const myths = await generateMyths(topAll);
+
+  // 6) SUMMARISE selected stories, and fetch market data in parallel
   const flat = [...new Set(Object.values(buckets).flat())];
   const [summarised, market] = await Promise.all([
     summariseAll(flat, { leadIds }),
@@ -96,14 +107,6 @@ async function main() {
   const byLink = new Map(summarised.map((s) => [s.link, s]));
   const remap = (arr) => arr.map((it) => byLink.get(it.link) || it);
   for (const k of Object.keys(buckets)) buckets[k] = remap(buckets[k]);
-
-  // 6) KNOWLEDGE DESK — mechanism of the day + explainers + myth-busters.
-  // Run sequentially (not Promise.all) so we don't fire 3 calls at once and
-  // blow the per-minute rate limit.
-  const topAll = rank(summarised).slice(0, 12);
-  const mechanism = await generateMechanism(topAll);
-  const explainers = await generateExplainers(topAll);
-  const myths = await generateMyths(topAll);
 
   // 7) BUILD + WRITE
   const html = buildHTML({
