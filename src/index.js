@@ -14,8 +14,12 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const PUBLIC_DIR = path.join(__dirname, '..', 'public');
 const STATE_FILE = path.join(__dirname, '..', 'archive', 'seen.json');
 
-// how many stories to carry per section after the editorial cut
-const PER_SECTION = { macro: 7, india: 8, sector: 6, global: 7, compliance: 6 };
+// How many stories to carry per section after the editorial cut. Kept deliberately
+// tight (~19 total, India-first) so the WHOLE edition — every story summary PLUS the
+// curation pass PLUS the full Knowledge Desk — fits inside the free-tier daily quota
+// (~24 calls). Fewer stories, but every one is fully AI-written. Raise these only if
+// paid billing is enabled on the Gemini key.
+const PER_SECTION = { macro: 4, india: 5, sector: 4, global: 3, compliance: 3 };
 // larger pool handed to the AI editor so it has room to choose
 const POOL = 36;
 

@@ -131,7 +131,7 @@ export async function selectStories(bySection, perSection = 8) {
     const items = bySection[sec] || [];
     if (!items.length) continue;
     lines.push(`\n## ${sec.toUpperCase()}`);
-    for (const it of items.slice(0, 40)) {
+    for (const it of items.slice(0, 24)) {
       lines.push(`[${it.link}] ${it.isIndian ? 'IN' : 'GL'} (${it.source}) ${it.title}`);
     }
   }
