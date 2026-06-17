@@ -27,8 +27,9 @@ function articleHTML(item, { lead = false } = {}) {
   const head = `<h3 class="hl"><a href="${link}" target="_blank" rel="noopener">${esc(item.headline)}</a></h3>`;
   const soWhat = item.soWhat
     ? `<div class="sowhat"><b>So what for you</b>${esc(item.soWhat)}</div>` : '';
-  // Only lead stories carry an explanatory chart, and only when the AI produced one.
-  const chart = lead && item.chart ? storyChart(item.chart) : '';
+  // Any story carries an explanatory chart when the AI judged the news had real
+  // data worth interpreting (a trend/comparison) — not just leads, never decorative.
+  const chart = item.chart ? storyChart(item.chart) : '';
   return `
       <article${lead ? ' class="lead"' : ''}>
         <div class="eyebrow"><span class="src">${esc(item.source)}</span><span class="dot"></span><span class="time">${timeAgo(item.published)}</span></div>

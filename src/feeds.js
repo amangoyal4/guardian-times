@@ -2,6 +2,8 @@
 // `section` is a HINT for routing; the router also uses keyword rules, so a feed
 // can contribute stories to several pages. `weight` nudges ordering (higher = more likely to lead).
 // To disable a feed without deleting it, set enabled:false.
+// `paywall:true` marks sources that throw a hard subscription wall when opened —
+// the fetcher skips these so every link in the paper is free to read.
 
 export const FEEDS = [
   // ---- Indian markets & business ----
@@ -19,14 +21,15 @@ export const FEEDS = [
   { id: 'nse-circ',       name: 'NSE — Circulars',          url: 'https://nsearchives.nseindia.com/content/RSS/Circulars.xml',              section: 'compliance', region: 'in', weight: 2, enabled: true },
 
   // ---- Global markets & economy ----
-  { id: 'wsj-markets',    name: 'WSJ — Markets',            url: 'https://feeds.content.dowjones.io/public/rss/RSSMarketsMain',            section: 'global',     region: 'global', weight: 3, enabled: true },
-  { id: 'wsj-world',      name: 'WSJ — World',              url: 'https://feeds.content.dowjones.io/public/rss/RSSWorldNews',              section: 'macro',      region: 'global', weight: 2, enabled: true },
-  { id: 'bbg-markets',    name: 'Bloomberg — Markets',      url: 'https://feeds.bloomberg.com/markets/news.rss',                           section: 'global',     region: 'global', weight: 3, enabled: true },
-  { id: 'bbg-econ',       name: 'Bloomberg — Economics',    url: 'https://feeds.bloomberg.com/economics/news.rss',                         section: 'macro',      region: 'global', weight: 3, enabled: true },
-  { id: 'ft-home',        name: 'Financial Times — Home',   url: 'https://www.ft.com/rss/home',                                            section: 'global',     region: 'global', weight: 2, enabled: true },
-  { id: 'guardian-biz',   name: 'The Guardian — Business',  url: 'https://www.theguardian.com/uk/business/rss',                            section: 'global',     region: 'global', weight: 2, enabled: true }, // Reuters public RSS discontinued; Guardian Business as global-wire replacement
-  { id: 'cnbc-finance',   name: 'CNBC — Finance',           url: 'https://www.cnbc.com/id/10000664/device/rss/rss.html',                   section: 'global',     region: 'global', weight: 2, enabled: true },
-  { id: 'mw-top',         name: 'MarketWatch — Top',        url: 'https://feeds.content.dowjones.io/public/rss/mw_topstories',             section: 'global',     region: 'global', weight: 2, enabled: true },
-  { id: 'economist-fin',  name: 'Economist — Finance',      url: 'https://www.economist.com/finance-and-economics/rss.xml',                section: 'macro',      region: 'global', weight: 2, enabled: true },
-  { id: 'investing-news', name: 'Investing.com — News',     url: 'https://www.investing.com/rss/news.rss',                                 section: 'global',     region: 'global', weight: 1, enabled: true },
+  { id: 'wsj-markets',    name: 'WSJ — Markets',            url: 'https://feeds.content.dowjones.io/public/rss/RSSMarketsMain',            section: 'global',     region: 'global', weight: 3, enabled: true, paywall: true },
+  { id: 'wsj-world',      name: 'WSJ — World',              url: 'https://feeds.content.dowjones.io/public/rss/RSSWorldNews',              section: 'macro',      region: 'global', weight: 2, enabled: true, paywall: true },
+  { id: 'bbg-markets',    name: 'Bloomberg — Markets',      url: 'https://feeds.bloomberg.com/markets/news.rss',                           section: 'global',     region: 'global', weight: 3, enabled: true, paywall: true },
+  { id: 'bbg-econ',       name: 'Bloomberg — Economics',    url: 'https://feeds.bloomberg.com/economics/news.rss',                         section: 'macro',      region: 'global', weight: 3, enabled: true, paywall: true },
+  { id: 'ft-home',        name: 'Financial Times — Home',   url: 'https://www.ft.com/rss/home',                                            section: 'global',     region: 'global', weight: 2, enabled: true, paywall: true },
+  { id: 'guardian-biz',   name: 'The Guardian — Business',  url: 'https://www.theguardian.com/uk/business/rss',                            section: 'global',     region: 'global', weight: 3, enabled: true }, // Reuters public RSS discontinued; Guardian Business as global-wire replacement (free)
+  { id: 'cnbc-finance',   name: 'CNBC — Finance',           url: 'https://www.cnbc.com/id/10000664/device/rss/rss.html',                   section: 'global',     region: 'global', weight: 3, enabled: true }, // free
+  { id: 'mw-top',         name: 'MarketWatch — Top',        url: 'https://feeds.content.dowjones.io/public/rss/mw_topstories',             section: 'global',     region: 'global', weight: 2, enabled: true }, // free
+  { id: 'economist-fin',  name: 'Economist — Finance',      url: 'https://www.economist.com/finance-and-economics/rss.xml',                section: 'macro',      region: 'global', weight: 2, enabled: true, paywall: true },
+  { id: 'ap-business',    name: 'AP — Business',            url: 'https://rsshub.app/apnews/topics/business',                             section: 'global',     region: 'global', weight: 2, enabled: false }, // optional free wire; enable if reliable
+  { id: 'investing-news', name: 'Investing.com — News',     url: 'https://www.investing.com/rss/news.rss',                                 section: 'global',     region: 'global', weight: 1, enabled: true }, // free
 ];

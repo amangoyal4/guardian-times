@@ -79,13 +79,13 @@ Voice: precise, first-principles, analytical, clean prose — never hype, never 
 
 // Summarise ONE story into headline + summary + "so what" (+ optional chart for leads).
 async function summariseStory(item, { lead = false } = {}) {
-  // Only lead stories get the optional explanatory chart, to keep prompts tight.
-  const chartSpec = lead
-    ? `,
-  "chart": null OR — ONLY IF this item states concrete, comparable numeric figures — an object:
-    { "type":"bar" or "line", "title":"≤6-word title", "unit":"₹cr" or "%" or "$" or "", "dp":0, "series":[ {"label":"≤14 chars","value":number}, ... 2-6 entries ], "note":"≤12-word takeaway the reader should draw" }
-    STRICT: use ONLY numbers explicitly present in the item text. NEVER invent or estimate figures. If there are no concrete figures, set "chart": null.`
-    : '';
+  // Any story MAY carry a chart, but only when the news itself has a real data
+  // story to tell — a comparison or trend the reader should interpret. Most
+  // stories will (correctly) have no chart; a decorative chart is worse than none.
+  const chartSpec = `,
+  "chart": null in MOST cases. Include a chart object ONLY IF this item states 2-6 concrete, comparable numeric figures that genuinely reveal something (a trend over time, a before/after, a ranking, a breakdown) — NOT a single number, NOT a price quote, NOT vague mentions. The chart must EXPLAIN the story, not decorate it. Shape:
+    { "type":"bar" (for comparisons/rankings) or "line" (for a time trend), "title":"≤6-word title", "unit":"₹cr" or "%" or "$" or "", "dp":0, "series":[ {"label":"≤14 chars","value":number}, ... 2-6 entries ], "note":"≤12-word insight the reader should draw from the chart" }
+    STRICT: use ONLY numbers explicitly present in the item text — NEVER invent, estimate, or extrapolate. If the figures don't form a genuine comparison or trend, set "chart": null.`;
   const prompt = `${HOUSE}
 
 Rewrite this raw news item into Guardian Times editorial. Return ONLY JSON, no markdown:
@@ -101,13 +101,13 @@ Source: ${item.source}
 Text: ${item.rawSummary || '(no description in feed)'}`;
 
   try {
-    const out = extractJson(await callGemini(prompt, { maxTokens: lead ? 900 : 400 }));
+    const out = extractJson(await callGemini(prompt, { maxTokens: lead ? 900 : 520 }));
     return {
       ...item,
       headline: out.headline || item.title,
       summary: out.summary || item.rawSummary,
       soWhat: out.soWhat || '',
-      chart: lead ? out.chart || null : null,
+      chart: out.chart || null,
       aiGenerated: true,
     };
   } catch (err) {
