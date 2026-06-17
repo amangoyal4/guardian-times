@@ -6,8 +6,10 @@ import { fetchAll } from './fetcher.js';
 import { routeAll } from './router.js';
 import {
   summariseAll, selectStories, generateMechanism, generateExplainers, generateMyths,
+  curateLibrary,
 } from './summarize.js';
 import { fetchMarket } from './market.js';
+import { fetchLibrary } from './library.js';
 import { buildHTML, writeEdition } from './build.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -99,9 +101,16 @@ async function main() {
   // throttle only degrades tail-end story summaries, never the Knowledge Desk.
   // Sequential (not Promise.all) to stay under the per-minute limit.
   const topAll = rank([...new Set(Object.values(buckets).flat())]).slice(0, 14);
+  // Kick off the Library RSS fetch now (network-only) so it overlaps with the AI
+  // calls below; we await it just before curating.
+  const libraryPromise = fetchLibrary();
   const mechanism = await generateMechanism(topAll);
   const explainers = await generateExplainers(topAll);
   const myths = await generateMyths(topAll);
+  // Library curation — ONE Gemini call, kept in the protected pre-summary block so a
+  // quota throttle degrades only tail story summaries; it falls back to a recency
+  // pick with feed descriptions if the AI is unavailable.
+  const library = await curateLibrary(await libraryPromise);
 
   // 6) SUMMARISE selected stories, and fetch market data in parallel
   const flat = [...new Set(Object.values(buckets).flat())];
@@ -115,7 +124,7 @@ async function main() {
 
   // 7) BUILD + WRITE
   const html = buildHTML({
-    ...buckets, market, mechanism, explainers, myths,
+    ...buckets, market, mechanism, explainers, myths, library,
     runTime: new Date().toUTCString(),
   });
   const stamp = writeEdition(html, PUBLIC_DIR);

@@ -61,8 +61,29 @@ const myths = [
   { tag: 'Credit', claim: '"AAA-rated means risk-free"', correction: 'Ratings lag fundamentals; spread widening often precedes downgrades by quarters.' },
 ];
 
+const vid = (channel, title, videoId, blurb, hrsAgo) => ({
+  channel, title, link: `https://www.youtube.com/watch?v=${videoId}`, videoId,
+  thumb: `https://i.ytimg.com/vi/${videoId}/hqdefault.jpg`,
+  published: new Date(now - hrsAgo * 3.6e6).toISOString(), blurb,
+});
+const library = {
+  videos: [
+    vid('Markets by Zerodha', 'The finances of Indian states, explained', 'dQw4w9WgXcQ', 'Breaks down how state finances actually work — own-tax revenue, devolution and the borrowing limits that constrain capex.', 6),
+    vid('Zerodha Varsity', 'How to analyse con-call transcripts using AI', 'dQw4w9WgXcQ', 'A practical workflow for mining management commentary for guidance, capex and margin signals before the Street reprices them.', 30),
+    vid('CA Rachana Ranade', 'Can El Niño impact India’s economy?', 'dQw4w9WgXcQ', 'Connects monsoon risk to food inflation, rural demand and the RBI’s rate path in one clean causal chain.', 26),
+    vid('Akshat Shrivastava', 'High GDP, flat market: the curious case of India', 'dQw4w9WgXcQ', 'Why nominal growth and index returns can diverge for years — earnings concentration, valuation and the float that actually moves.', 28),
+    vid('Capitalmind', 'NRIs & OCIs investing in India: the tax mistake', 'dQw4w9WgXcQ', 'The TDS and capital-gains traps that can quietly cost overseas investors half their gains, and how to structure around them.', 50),
+  ],
+  podcast: {
+    show: 'Acquired', title: 'Vanguard', link: 'https://www.acquired.fm/episodes/vanguard',
+    published: new Date(now - 40 * 3.6e6).toISOString(), duration: '10800',
+    image: 'https://img.transistor.fm/placeholder.jpg',
+    blurb: 'The origin of index investing told as a business story — how Bogle’s mutual-ownership structure made low cost a permanent moat.',
+  },
+};
+
 const market = await fetchMarket();
-const html = buildHTML({ macro, sector, india, global, compliance, market, mechanism, explainers, myths, runTime: new Date().toUTCString() });
+const html = buildHTML({ macro, sector, india, global, compliance, market, mechanism, explainers, myths, library, runTime: new Date().toUTCString() });
 fs.mkdirSync(PREVIEW_DIR, { recursive: true });
 fs.writeFileSync(path.join(PREVIEW_DIR, 'index.html'), html);
 console.log('\n✅ render-test wrote preview/index.html');

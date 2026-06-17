@@ -1,6 +1,8 @@
 // summarize.js — turns raw stories into Guardian Times editorial via Gemini (free tier).
 // Handles rate limits with exponential backoff. Falls back to raw text if the API is unavailable.
 
+import { diverseVideos } from './library.js';
+
 const MODEL = process.env.GEMINI_MODEL || 'gemini-2.5-flash';
 const API_KEY = process.env.GEMINI_API_KEY;
 const ENDPOINT = (model) =>
@@ -238,6 +240,76 @@ ${context}`;
     return extractJson(await callGemini(prompt, { maxTokens: 1200 })).myths || [];
   } catch {
     return [];
+  }
+}
+
+/**
+ * Curate the LIBRARY desk: from the fetched RSS pool, pick the most knowledge-rich
+ * Indian-markets videos (diverse across channels) and the single best podcast
+ * episode, writing a tight editorial blurb for each. ONE Gemini call; on any
+ * failure it falls back to a deterministic recency+diversity pick using the feeds'
+ * own (cleaned) descriptions — so a quota throttle never blanks the section.
+ * @returns {Promise<{videos: object[], podcast: object|null}>}
+ */
+export async function curateLibrary({ videos = [], podcasts = [] } = {}, { pickVideos = 5 } = {}) {
+  const fallback = () => ({
+    videos: diverseVideos(videos, pickVideos).map((v) => ({ ...v, blurb: v.rawDesc || '' })),
+    podcast: podcasts[0] ? { ...podcasts[0], blurb: podcasts[0].rawDesc || '' } : null,
+  });
+  if (!videos.length && !podcasts.length) return { videos: [], podcast: null };
+
+  const vPool = videos.slice(0, 24);
+  const pPool = podcasts.slice(0, 8);
+  const vLines = vPool.map((v, i) => `[v${i}] (${v.channel}) ${v.title} :: ${v.rawDesc.slice(0, 160)}`);
+  const pLines = pPool.map((p, i) => `[p${i}] (${p.show}) ${p.title} :: ${p.rawDesc.slice(0, 200)}`);
+
+  const prompt = `${HOUSE}
+
+You are curating today's LIBRARY desk — the best finance learning to watch and listen to. From the candidate YouTube videos and podcast episodes below (each tagged with an [id], its channel/show, title and blurb), choose:
+- the ${pickVideos} MOST genuinely knowledge-rich, India-markets-relevant videos a serious investment professional would gain from. Favour depth and teaching over news recaps or shorts; pick DIFFERENT channels where possible for variety.
+- the ONE best, most substantive podcast episode of the day for a thoughtful investor.
+
+For each pick write a tight 1-2 sentence editorial blurb (your own words) on what the viewer/listener will actually LEARN — concrete, never hype.
+
+Return ONLY JSON, no markdown:
+{ "videos": [ {"id":"v0","blurb":"..."}, ... ${pickVideos} entries ], "podcast": {"id":"p0","blurb":"..."} }
+Use ONLY ids that appear below.
+
+VIDEOS:
+${vLines.join('\n')}
+
+PODCASTS:
+${pLines.join('\n')}`;
+
+  try {
+    const out = extractJson(await callGemini(prompt, { maxTokens: 1100 }));
+    const vById = new Map(vPool.map((v, i) => [`v${i}`, v]));
+    const pById = new Map(pPool.map((p, i) => [`p${i}`, p]));
+
+    const picked = (out.videos || [])
+      .map((x) => { const v = vById.get(x.id); return v ? { ...v, blurb: (x.blurb || v.rawDesc || '').trim() } : null; })
+      .filter(Boolean)
+      .slice(0, pickVideos);
+
+    // Top up with diverse recency picks if the model returned fewer than asked.
+    if (picked.length < pickVideos) {
+      const have = new Set(picked.map((v) => v.link));
+      for (const v of diverseVideos(videos, pickVideos * 2)) {
+        if (picked.length >= pickVideos) break;
+        if (!have.has(v.link)) { picked.push({ ...v, blurb: v.rawDesc || '' }); have.add(v.link); }
+      }
+    }
+
+    let podcast = null;
+    const pPick = out.podcast?.id && pById.get(out.podcast.id);
+    if (pPick) podcast = { ...pPick, blurb: (out.podcast.blurb || pPick.rawDesc || '').trim() };
+    else if (podcasts[0]) podcast = { ...podcasts[0], blurb: podcasts[0].rawDesc || '' };
+
+    if (!picked.length && !podcast) return fallback();
+    return { videos: picked, podcast };
+  } catch (err) {
+    console.log(`  ⚠ library curation failed (${err.message}); using recency fallback.`);
+    return fallback();
   }
 }
 
