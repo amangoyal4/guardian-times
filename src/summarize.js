@@ -84,15 +84,15 @@ async function summariseStory(item, { lead = false } = {}) {
   // stories will (correctly) have no chart; a decorative chart is worse than none.
   const chartSpec = `,
   "chart": null in MOST cases. Include a chart object ONLY IF this item states 2-6 concrete, comparable numeric figures that genuinely reveal something (a trend over time, a before/after, a ranking, a breakdown) — NOT a single number, NOT a price quote, NOT vague mentions. The chart must EXPLAIN the story, not decorate it. Shape:
-    { "type":"bar" (for comparisons/rankings) or "line" (for a time trend), "title":"≤6-word title", "unit":"₹cr" or "%" or "$" or "", "dp":0, "series":[ {"label":"≤14 chars","value":number}, ... 2-6 entries ], "note":"≤12-word insight the reader should draw from the chart" }
+    { "type":"bar" (for comparisons/rankings) or "line" (for a time trend), "title":"≤6-word title", "unit":"₹cr" or "%" or "$" or "", "dp":0, "series":[ {"label":"≤14 chars","value":number}, ... 2-6 entries ], "note":"a full, specific sentence (≤22 words) explaining what the chart shows and what the reader should conclude from it" }
     STRICT: use ONLY numbers explicitly present in the item text — NEVER invent, estimate, or extrapolate. If the figures don't form a genuine comparison or trend, set "chart": null.`;
   const prompt = `${HOUSE}
 
-Rewrite this raw news item into Guardian Times editorial. Return ONLY JSON, no markdown:
+Rewrite this raw news item into Guardian Times editorial — substantive and specific, never padded. Return ONLY JSON, no markdown:
 {
   "headline": "a sharp, specific headline that makes a professional want to read — not clickbait, ${lead ? '14-22' : '8-16'} words",
-  "summary": "${lead ? '3-4' : '2-3'} sentences, your own words, conveying what actually happened and why it matters. Never copy the source text.",
-  "soWhat": "${lead ? 'one tight paragraph' : 'one sentence'} on the investment implication for an Indian investor — the analytical 'so what'. ${lead ? '' : 'Keep it to a single sentence.'}"${chartSpec}
+  "summary": "${lead ? '4-5' : '3-4'} sentences, your own words. Cover WHAT happened, the key numbers/specifics, WHY it happened, and the read-through. Be concrete and information-dense — name the figures, the players, the cause. Never copy the source text, never waffle.",
+  "soWhat": "${lead ? 'two or three sentences' : 'one or two sentences'} on the investment implication for an Indian wealth/PMS/AIF professional — the analytical 'so what': who is affected, which way, and what to watch."${chartSpec}
 }
 
 RAW ITEM:
@@ -101,7 +101,7 @@ Source: ${item.source}
 Text: ${item.rawSummary || '(no description in feed)'}`;
 
   try {
-    const out = extractJson(await callGemini(prompt, { maxTokens: lead ? 900 : 520 }));
+    const out = extractJson(await callGemini(prompt, { maxTokens: lead ? 1200 : 800 }));
     return {
       ...item,
       headline: out.headline || item.title,
@@ -177,22 +177,22 @@ export async function generateMechanism(topItems) {
 
 From today's lead stories below, pick ONE genuinely non-obvious financial MECHANISM worth teaching from first principles — the plumbing most professionals never actually learn (tax mechanics, market microstructure, capital-structure detail, a valuation lever, settlement/clearing, an arbitrage). It must connect to at least one of today's stories.
 
-Teach it the way a great desk-head would: precise, first-principles, with the actual numbers and the lever that matters. Avoid platitudes. The reader is an Indian wealth/PMS/AIF professional — they already know the basics; give them the layer beneath.
+Teach it the way a great desk-head would, EXHAUSTIVELY: precise, first-principles, with the actual numbers, the worked example, the lever that matters, AND the second- and third-order consequences. Avoid platitudes and filler. The reader is an Indian wealth/PMS/AIF professional — they already know the basics; give them the deep layer beneath, the part that changes how they act.
 
 Return ONLY JSON:
 {
   "tier": "Foundations" or "Frontier",
   "title": "the mechanism, as a sharp question or statement (8-16 words)",
-  "hook": "1 sentence on why this matters TODAY, tied to a story",
-  "body": "4-6 substantial paragraphs explaining the mechanism step by step from first principles. Be concrete: use worked examples with ₹/% figures, name the cause-and-effect, and the second-order consequence. Use plain text; mark step labels like 'Step 1 —'. Separate paragraphs with a blank line.",
-  "takeaway": "1-2 sentences: the practical lesson the reader applies",
-  "points": [ {"n":"short stat/label","l":"≤8-word gloss"}, {"n":"...","l":"..."}, {"n":"...","l":"..."} ]
+  "hook": "1-2 sentences on why this matters TODAY, tied to a specific story",
+  "body": "6-8 substantial paragraphs explaining the mechanism step by step from first principles. Be concrete and rigorous: include at least one fully worked numerical example with ₹/% figures carried through, name each cause-and-effect link explicitly, cover the second- AND third-order consequences, and note where the textbook intuition breaks. Use plain text; mark step labels like 'Step 1 —'. Separate paragraphs with a blank line.",
+  "takeaway": "2-3 sentences: the practical lesson the reader applies, and the specific signal to watch",
+  "points": [ {"n":"short stat/label","l":"≤8-word gloss"}, {"n":"...","l":"..."}, {"n":"...","l":"..."}, {"n":"...","l":"..."} ]
 }
 
 TODAY'S STORIES:
 ${context}`;
   try {
-    return extractJson(await callGemini(prompt, { maxTokens: 1800 }));
+    return extractJson(await callGemini(prompt, { maxTokens: 2800 }));
   } catch (err) {
     console.log(`  ⚠ mechanism generation failed (${err.message}); using fallback.`);
     return null;
@@ -201,21 +201,23 @@ ${context}`;
 
 // Generate 2 deeper concept explainers ("things to learn") for the Knowledge Desk.
 export async function generateExplainers(topItems) {
-  const context = topItems.slice(0, 12).map((i) => `- ${i.headline || i.title}`).join('\n');
+  const context = topItems.slice(0, 14).map((i) => `- ${i.headline || i.title}`).join('\n');
   const prompt = `${HOUSE}
 
-From today's themes, write TWO short EXPLAINERS that expand the reader's knowledge base — concepts, instruments, or frameworks worth genuinely understanding, each tied to today's news but teaching something durable (not just recapping the news). Pick concepts that are DIFFERENT from each other and reward a professional with a real "I didn't fully get that before" moment.
+From today's themes, write FOUR substantial EXPLAINERS that expand the reader's knowledge base — concepts, instruments, frameworks, or financial-jargon worth genuinely understanding, each tied to today's news but teaching something durable (not just recapping the news). Make all four DIFFERENT from each other (mix instrument / tax / macro / market-structure), and make each reward a professional with a real "I didn't fully get that before" moment.
 
 Return ONLY JSON:
 { "explainers": [
-  { "tag":"one word, e.g. Instrument/Tax/Macro/Structure", "title":"the concept (6-12 words)", "body":"2-3 tight paragraphs explaining it from first principles with a concrete example; plain text, blank line between paragraphs.", "why":"≤18-word line on why it matters now" },
-  { ... second, on a different concept ... }
+  { "tag":"one word, e.g. Instrument/Tax/Macro/Structure", "title":"the concept (6-12 words)", "body":"2-3 tight, information-dense paragraphs explaining it from first principles with a concrete worked example; plain text, blank line between paragraphs.", "why":"≤20-word line on why it matters now" },
+  { ...second, different concept... },
+  { ...third, different concept... },
+  { ...fourth, different concept... }
 ] }
 
 TODAY'S THEMES:
 ${context}`;
   try {
-    return extractJson(await callGemini(prompt, { maxTokens: 1400 })).explainers || [];
+    return extractJson(await callGemini(prompt, { maxTokens: 2600 })).explainers || [];
   } catch (err) {
     console.log(`  ⚠ explainers generation failed (${err.message}).`);
     return [];
@@ -224,16 +226,16 @@ ${context}`;
 
 // Generate 3 "consensus gets wrong" myth-busters from the day's themes.
 export async function generateMyths(topItems) {
-  const context = topItems.slice(0, 10).map((i) => `- ${i.headline || i.title}`).join('\n');
+  const context = topItems.slice(0, 12).map((i) => `- ${i.headline || i.title}`).join('\n');
   const prompt = `${HOUSE}
 
-From today's themes, write 3 "what the consensus gets wrong" entries — common misconceptions a professional should unlearn, tied to today's news.
-Return ONLY JSON: { "myths": [ {"tag":"one word e.g. Flows/Valuation/Credit","claim":"the wrong belief in quotes","correction":"1-2 sentence correction"}, ... x3 ] }
+From today's themes, write 5 "what the consensus gets wrong" entries — common misconceptions a professional should unlearn, each tied to today's news. Make them genuinely non-obvious, not strawmen.
+Return ONLY JSON: { "myths": [ {"tag":"one word e.g. Flows/Valuation/Credit","claim":"the wrong belief in quotes","correction":"2-3 sentence correction with the real mechanism"}, ... x5 ] }
 
 THEMES:
 ${context}`;
   try {
-    return extractJson(await callGemini(prompt, { maxTokens: 700 })).myths || [];
+    return extractJson(await callGemini(prompt, { maxTokens: 1200 })).myths || [];
   } catch {
     return [];
   }

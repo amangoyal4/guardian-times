@@ -93,7 +93,7 @@ function knowledgePage(num, mechanism, explainers, myths) {
         ${mechanism.hook ? `<p class="kd-hook">${esc(mechanism.hook)}</p>` : ''}
         <div class="summary">${paras(mechanism.body)}</div>
         ${mechanism.takeaway ? `<div class="kd-takeaway"><b>The takeaway</b>${esc(mechanism.takeaway)}</div>` : ''}
-        <div class="kpoints">${(mechanism.points || []).slice(0, 3).map((p) => `<div class="kpoint"><div class="kn">${esc(p.n)}</div><div class="kl">${esc(p.l)}</div></div>`).join('')}</div>
+        <div class="kpoints">${(mechanism.points || []).slice(0, 4).map((p) => `<div class="kpoint"><div class="kn">${esc(p.n)}</div><div class="kl">${esc(p.l)}</div></div>`).join('')}</div>
       </div>` : '';
 
   const explHTML = (explainers || []).length

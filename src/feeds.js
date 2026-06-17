@@ -13,7 +13,24 @@ export const FEEDS = [
   { id: 'mc-business',    name: 'Moneycontrol — Business',  url: 'https://www.moneycontrol.com/rss/business.xml',                          section: 'india',      region: 'in', weight: 2, enabled: true },
   { id: 'bl-markets',     name: 'Hindu BusinessLine',       url: 'https://www.thehindubusinessline.com/markets/feeder/default.rss',        section: 'india',      region: 'in', weight: 2, enabled: true },
   { id: 'fe-markets',     name: 'Financial Express — Market', url: 'https://news.google.com/rss/search?q=site:financialexpress.com/market+when:1d&hl=en-IN&gl=IN&ceid=IN:en', section: 'india', region: 'in', weight: 2, enabled: true }, // direct RSS malformed; routed via Google News
-  { id: 'bt-money',       name: 'Business Today',           url: 'https://www.businesstoday.in/rssfeeds/?id=225',                          section: 'india',      region: 'in', weight: 2, enabled: true },
+  { id: 'bt-money',       name: 'Business Today',           url: 'https://www.businesstoday.in/rssfeeds/?id=225',                          section: 'india',      region: 'in', weight: 2, enabled: false }, // feed returns 0 items consistently — disabled
+
+  // ---- More Indian sources (all free to read) ----
+  { id: 'et-economy',     name: 'Economic Times — Economy', url: 'https://economictimes.indiatimes.com/news/economy/rssfeeds/1373380680.cms', section: 'macro',   region: 'in', weight: 3, enabled: true },
+  { id: 'et-industry',    name: 'Economic Times — Industry',url: 'https://economictimes.indiatimes.com/industry/rssfeeds/13352306.cms',     section: 'sector',     region: 'in', weight: 2, enabled: true },
+  { id: 'et-wealth',      name: 'Economic Times — Wealth',  url: 'https://economictimes.indiatimes.com/wealth/rssfeeds/837555174.cms',      section: 'india',      region: 'in', weight: 2, enabled: true },
+  { id: 'mint-companies', name: 'Livemint — Companies',     url: 'https://www.livemint.com/rss/companies',                                  section: 'india',      region: 'in', weight: 3, enabled: true },
+  { id: 'mint-economy',   name: 'Livemint — Economy',       url: 'https://www.livemint.com/rss/economy',                                    section: 'macro',      region: 'in', weight: 3, enabled: true },
+  { id: 'mint-money',     name: 'Livemint — Money',         url: 'https://www.livemint.com/rss/money',                                      section: 'india',      region: 'in', weight: 2, enabled: true },
+  { id: 'mc-markets',     name: 'Moneycontrol — Markets',   url: 'https://www.moneycontrol.com/rss/marketreports.xml',                      section: 'india',      region: 'in', weight: 2, enabled: true },
+  { id: 'mc-economy',     name: 'Moneycontrol — Economy',   url: 'https://www.moneycontrol.com/rss/economy.xml',                            section: 'macro',      region: 'in', weight: 2, enabled: true },
+  { id: 'bl-economy',     name: 'Hindu BusinessLine — Economy', url: 'https://www.thehindubusinessline.com/economy/feeder/default.rss',     section: 'macro',      region: 'in', weight: 2, enabled: true },
+  { id: 'bl-companies',   name: 'Hindu BusinessLine — Companies', url: 'https://www.thehindubusinessline.com/companies/feeder/default.rss', section: 'india',      region: 'in', weight: 2, enabled: true },
+  { id: 'bl-banking',     name: 'Hindu BusinessLine — Money & Banking', url: 'https://www.thehindubusinessline.com/money-and-banking/feeder/default.rss', section: 'compliance', region: 'in', weight: 2, enabled: true },
+  { id: 'cnbctv18-mkt',   name: 'CNBC-TV18 — Market',       url: 'https://news.google.com/rss/search?q=site:cnbctv18.com/market+when:1d&hl=en-IN&gl=IN&ceid=IN:en', section: 'india', region: 'in', weight: 2, enabled: true }, // via Google News (direct RSS unreliable)
+  { id: 'ndtvprofit',     name: 'NDTV Profit — Markets',    url: 'https://news.google.com/rss/search?q=site:ndtvprofit.com+when:1d&hl=en-IN&gl=IN&ceid=IN:en', section: 'india', region: 'in', weight: 2, enabled: true }, // via Google News
+  { id: 'bs-economy',     name: 'Business Standard — Economy', url: 'https://news.google.com/rss/search?q=site:business-standard.com/economy+when:1d&hl=en-IN&gl=IN&ceid=IN:en', section: 'macro', region: 'in', weight: 2, enabled: true },
+  { id: 'fe-economy',     name: 'Financial Express — Economy', url: 'https://news.google.com/rss/search?q=site:financialexpress.com/economy+when:1d&hl=en-IN&gl=IN&ceid=IN:en', section: 'macro', region: 'in', weight: 2, enabled: false }, // GN path returns 0 — disabled
 
   // ---- Regulators / compliance ----
   { id: 'rbi-press',      name: 'RBI — Press Releases',     url: 'https://www.rbi.org.in/pressreleases_rss.xml',                           section: 'compliance', region: 'in', weight: 3, enabled: true },
