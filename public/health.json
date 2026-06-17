@@ -1,5 +1,5 @@
 {
-  "ts": "2026-06-17T04:31:57.851Z",
+  "ts": "2026-06-17T06:39:51.496Z",
   "health": [
     {
       "id": "et-markets",
@@ -40,7 +40,7 @@
       "id": "fe-markets",
       "name": "Financial Express — Market",
       "ok": true,
-      "count": 62,
+      "count": 58,
       "error": null
     },
     {
@@ -68,42 +68,7 @@
       "id": "nse-circ",
       "name": "NSE — Circulars",
       "ok": true,
-      "count": 12,
-      "error": null
-    },
-    {
-      "id": "wsj-markets",
-      "name": "WSJ — Markets",
-      "ok": true,
-      "count": 61,
-      "error": null
-    },
-    {
-      "id": "wsj-world",
-      "name": "WSJ — World",
-      "ok": true,
-      "count": 74,
-      "error": null
-    },
-    {
-      "id": "bbg-markets",
-      "name": "Bloomberg — Markets",
-      "ok": true,
-      "count": 30,
-      "error": null
-    },
-    {
-      "id": "bbg-econ",
-      "name": "Bloomberg — Economics",
-      "ok": true,
-      "count": 30,
-      "error": null
-    },
-    {
-      "id": "ft-home",
-      "name": "Financial Times — Home",
-      "ok": true,
-      "count": 10,
+      "count": 1,
       "error": null
     },
     {
@@ -125,13 +90,6 @@
       "name": "MarketWatch — Top",
       "ok": true,
       "count": 10,
-      "error": null
-    },
-    {
-      "id": "economist-fin",
-      "name": "Economist — Finance",
-      "ok": true,
-      "count": 300,
       "error": null
     },
     {
