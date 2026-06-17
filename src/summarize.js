@@ -266,7 +266,7 @@ export async function curateLibrary({ videos = [], podcasts = [] } = {}, { pickV
   const prompt = `${HOUSE}
 
 You are curating today's LIBRARY desk — the best finance learning to watch and listen to. From the candidate YouTube videos and podcast episodes below (each tagged with an [id], its channel/show, title and blurb), choose:
-- the ${pickVideos} MOST genuinely knowledge-rich, India-markets-relevant videos a serious investment professional would gain from. Favour depth and teaching over news recaps or shorts; pick DIFFERENT channels where possible for variety.
+- the ${pickVideos} MOST genuinely knowledge-rich videos a serious Indian investment professional would gain from — either directly India-markets-relevant OR durable global investing/finance wisdom (valuation, portfolio construction, market structure, macro, behavioural finance). Favour depth and teaching over news recaps or shorts; pick DIFFERENT channels where possible for variety, and aim for a mix of Indian and global perspectives.
 - the ONE best, most substantive podcast episode of the day for a thoughtful investor.
 
 For each pick write a tight 1-2 sentence editorial blurb (your own words) on what the viewer/listener will actually LEARN — concrete, never hype.

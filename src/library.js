@@ -21,7 +21,8 @@ const parser = new Parser({
   customFields: { item: [['media:group', 'mediaGroup'], ['yt:videoId', 'videoId']] },
 });
 
-// High-quality Indian-markets finance channels (verified live 2026-06-17).
+// High-quality finance channels — Indian markets + global investing educators
+// (all verified live 2026-06-17). A wrong id just yields an empty feed (skipped).
 const YT_CHANNELS = [
   { name: 'Markets by Zerodha', channelId: 'UCXbKJML9pVclFHLFzpvBgWw' },
   { name: 'Zerodha Varsity',    channelId: 'UCQXwgooTlP6tk2a-u6vgyUA' },
@@ -30,6 +31,10 @@ const YT_CHANNELS = [
   { name: 'Finshots',           channelId: 'UC8uj-UFGDzAx3RfPzeRqnyA' },
   { name: 'ET Money',           channelId: 'UCxv9T8da7658T9R8LQT_3PQ' },
   { name: 'Capitalmind',        channelId: 'UCM9JulVK4nShhpiMWlEuIGA' },
+  // Global investing educators (verified 2026-06-17)
+  { name: 'Bloomberg Originals', channelId: 'UCUMZ7gohGI9HcU9VNsr2FJQ' },
+  { name: 'The Plain Bagel',     channelId: 'UCFCEuCsyWP0YkP3CZ3Mr01Q' },
+  { name: 'Ben Felix',           channelId: 'UCDXTQ8nWmx_EhZ2v-kp7QxA' },
 ];
 
 // Thoughtful finance/investing podcasts — Indian + global (verified live 2026-06-17).
@@ -38,6 +43,8 @@ const PODCASTS = [
   { name: 'Acquired',                  rss: 'https://feeds.transistor.fm/acquired' },
   { name: 'Paisa Vaisa',               rss: 'https://www.omnycontent.com/d/playlist/e0dce4b3-2eb8-48cb-822c-af1d00e03e20/b3d9fccc-662e-4aa7-a14a-af4e0097d44b/e2ba1850-2b92-4a77-b08f-af4e0097d46c/podcast.rss' },
   { name: 'The Knowledge Project',     rss: 'https://feeds.megaphone.fm/FSMI7575968096' },
+  { name: 'Odd Lots',                  rss: 'https://www.omnycontent.com/d/playlist/e73c998e-6e60-432f-8610-ae210140c5b1/8a94442e-5a74-4fa2-8b8d-ae27003a8d6b/982f5071-765c-403d-969d-ae27003a8d83/podcast.rss' },
+  { name: 'Rational Reminder',         rss: 'https://rationalreminder.libsyn.com/rss' },
 ];
 
 const YT_FEED = (id) => `https://www.youtube.com/feeds/videos.xml?channel_id=${id}`;
