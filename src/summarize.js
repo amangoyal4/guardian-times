@@ -9,9 +9,9 @@ const ENDPOINT = (model) =>
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
 // ---- low-level call with backoff on 429/5xx ----
-async function callGemini(prompt, { maxTokens = 700, tries = 5 } = {}) {
+async function callGemini(prompt, { maxTokens = 700, tries = 6 } = {}) {
   if (!API_KEY) throw new Error('GEMINI_API_KEY not set');
-  let delay = 1000;
+  let delay = 2000;
   for (let attempt = 1; attempt <= tries; attempt++) {
     try {
       const res = await fetch(ENDPOINT(MODEL), {
@@ -19,7 +19,14 @@ async function callGemini(prompt, { maxTokens = 700, tries = 5 } = {}) {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           contents: [{ parts: [{ text: prompt }] }],
-          generationConfig: { temperature: 0.4, maxOutputTokens: maxTokens },
+          generationConfig: {
+            temperature: 0.4,
+            maxOutputTokens: maxTokens,
+            // gemini-2.5-* default to "thinking", and thinking tokens are drawn
+            // from maxOutputTokens — leaving the text empty. Disable it so the
+            // whole budget goes to the actual answer.
+            thinkingConfig: { thinkingBudget: 0 },
+          },
         }),
       });
       if (res.status === 429 || res.status >= 500) {
@@ -29,12 +36,16 @@ async function callGemini(prompt, { maxTokens = 700, tries = 5 } = {}) {
       if (!res.ok) throw new Error(`Gemini ${res.status}: ${await res.text()}`);
       const data = await res.json();
       const text = data?.candidates?.[0]?.content?.parts?.map((p) => p.text).join('') || '';
+      if (!text.trim()) throw new Error('empty response from model');
       return text.trim();
     } catch (err) {
       if (attempt === tries) throw err;
       await sleep(delay); delay *= 2;
     }
   }
+  // Exhausted all retries on 429/5xx without ever returning — fail cleanly so
+  // the caller falls back instead of receiving undefined.
+  throw new Error('Gemini: exhausted retries (rate-limited)');
 }
 
 function extractJson(text) {
@@ -214,7 +225,7 @@ ${context}`;
  * Summarise a routed, ranked set of stories.
  * Spaces calls to respect free-tier RPM. `leadIds` get the longer treatment.
  */
-export async function summariseAll(items, { leadIds = new Set(), gapMs = 4500 } = {}) {
+export async function summariseAll(items, { leadIds = new Set(), gapMs = 6500 } = {}) {
   const out = [];
   console.log(`\n✍  Summarising ${items.length} stories via ${MODEL}…`);
   for (let i = 0; i < items.length; i++) {
