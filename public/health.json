@@ -1,5 +1,5 @@
 {
-  "ts": "2026-06-16T20:02:19.404Z",
+  "ts": "2026-06-17T04:31:57.851Z",
   "health": [
     {
       "id": "et-markets",
@@ -25,9 +25,9 @@
     {
       "id": "mc-business",
       "name": "Moneycontrol — Business",
-      "ok": false,
-      "count": 0,
-      "error": "Status code 403"
+      "ok": true,
+      "count": 15,
+      "error": null
     },
     {
       "id": "bl-markets",
@@ -40,7 +40,7 @@
       "id": "fe-markets",
       "name": "Financial Express — Market",
       "ok": true,
-      "count": 59,
+      "count": 62,
       "error": null
     },
     {
@@ -103,7 +103,7 @@
       "id": "ft-home",
       "name": "Financial Times — Home",
       "ok": true,
-      "count": 11,
+      "count": 10,
       "error": null
     },
     {
