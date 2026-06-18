@@ -6,7 +6,10 @@ on:
     # daily Gemini quota goes to one richer edition instead of being split
     # across two starved runs (the ~13:30 IST reset meant both old runs shared
     # one quota window). 07:00 IST = a pre-market briefing with overnight global news.
-    - cron: '30 1 * * *'    # 07:00 IST  (daily edition)
+    # NOTE: minute is 34 (not 00/30) on purpose — GitHub's free scheduler routinely
+    # delays/SKIPS jobs parked on congested :00/:30 marks (that lost the 18-Jun
+    # edition). An off-peak minute lands far more reliably.
+    - cron: '34 1 * * *'    # 07:04 IST  (daily edition)
   workflow_dispatch:         # manual "Run workflow" button in the Actions tab
 
 permissions:

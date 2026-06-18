@@ -10,8 +10,12 @@ import { tickerHTML } from './market.js';
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const LOGO = fs.readFileSync(path.join(__dirname, 'logo_b64.txt'), 'utf8').trim();
 
+// Escapes the 5 HTML-significant chars. The quote escapes matter because esc() is
+// also used inside double-quoted attributes (href/src) — without them a feed-supplied
+// URL containing a quote could break out of the attribute.
 const esc = (s = '') =>
-  s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
 
 // ---------- small render helpers ----------
 function timeAgo(d) {
