@@ -136,6 +136,28 @@ function dedupe(items, seenLinks = new Set()) {
   return out;
 }
 
+// Second-pass dedup across the FINAL, possibly AI-rewritten headlines, spanning ALL
+// sections. The fetch-time dedup above runs on raw RSS titles; the AI summariser can
+// rewrite two differently-worded raw titles into near-identical headlines, and the
+// editor-cut only dedups WITHIN a section — so a story filed in two sections (e.g. a
+// pre-market preview in both macro AND india) can survive. Iterate sections in the
+// given priority order and keep the first copy of each story; later near-dupes drop.
+// Returns a new buckets object; input is not mutated.
+export function dedupeBuckets(buckets, order, threshold = SIM_THRESHOLD) {
+  const kept = []; // fingerprints of stories already kept, across all sections
+  const out = {};
+  for (const sec of order) {
+    out[sec] = [];
+    for (const it of buckets[sec] || []) {
+      const fp = fingerprint(it.headline || it.title || '');
+      if (fp.size >= 3 && kept.some((k) => containment(fp, k) >= threshold)) continue;
+      kept.push(fp);
+      out[sec].push(it);
+    }
+  }
+  return out;
+}
+
 /**
  * Fetch all enabled feeds, filter to last `hours`, dedupe.
  * @param {object} opts

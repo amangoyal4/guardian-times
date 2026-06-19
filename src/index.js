@@ -2,7 +2,7 @@
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
-import { fetchAll } from './fetcher.js';
+import { fetchAll, dedupeBuckets } from './fetcher.js';
 import { routeAll } from './router.js';
 import {
   summariseAll, selectStories, generateMechanism, generateExplainers, generateMyths,
@@ -45,6 +45,15 @@ const NOISE = new RegExp([
   "ahead of market", 'things (to know|that will decide)', 'stocks? to watch',
   'quick wrap', 'market wrap', 'trading guide', 'stocks? to buy', '\\d+ stocks?',
   'market talk', 'roundup', "here'?s what", 'what to watch',
+  // Pre-market index "preview" filler — these are recurring daily noise (often
+  // several near-identical copies from different papers that even contradict each
+  // other: "cautious"/"flat"/"gap-down"). No lasting decision value. NOTE: this
+  // targets the GIFT NIFTY index signal, NOT genuine GIFT City / IFSCA regulatory
+  // news (which says "GIFT City"/"IFSC", never "GIFT Nifty").
+  'gift\\s*nifty',
+  'signals?\\s+(a\\s+)?(flat|cautious|gap-?up|gap-?down|positive|negative|subdued|muted|tepid|weak|strong|higher|lower|range-?bound)',
+  '(flat|gap-?up|gap-?down|cautious|tepid|muted|subdued|range-?bound)\\s+(open|opening|start)',
+  '(sensex|nifty|markets?|d-?street|dalal street)[^.]{0,25}(gap-?up|gap-?down)',
 ].join('|'), 'i');
 
 // generic wrappers — sink them within ranking even if not hard-dropped
@@ -121,6 +130,17 @@ async function main() {
   const byLink = new Map(summarised.map((s) => [s.link, s]));
   const remap = (arr) => arr.map((it) => byLink.get(it.link) || it);
   for (const k of Object.keys(buckets)) buckets[k] = remap(buckets[k]);
+
+  // 6b) FINAL CROSS-SECTION DEDUP on the AI-rewritten headlines. Fetch-time dedup ran
+  // on raw titles and the editor-cut dedups only within a section, so the same story
+  // filed in two sections (or rewritten into near-identical headlines) can survive to
+  // here. This last pass spans all sections in display order, keeping the first copy.
+  const SECTION_ORDER = ['macro', 'sector', 'india', 'global', 'compliance'];
+  const beforeCt = Object.values(buckets).reduce((n, a) => n + a.length, 0);
+  const dedupedBuckets = dedupeBuckets(buckets, SECTION_ORDER);
+  for (const k of Object.keys(buckets)) buckets[k] = dedupedBuckets[k] || [];
+  const afterCt = Object.values(buckets).reduce((n, a) => n + a.length, 0);
+  if (afterCt < beforeCt) console.log(`  ✂ cross-section dedup removed ${beforeCt - afterCt} near-duplicate(s)`);
 
   // 7) BUILD + WRITE
   const html = buildHTML({

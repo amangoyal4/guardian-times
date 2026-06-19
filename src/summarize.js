@@ -147,7 +147,8 @@ Your job: for EACH section, select the most IMPORTANT, decision-relevant stories
 - routine auction notices and results (RBI VRR/repo/reverse-repo auctions, T-bill / G-Sec / SDL auction announcements or cut-offs, "full auction result")
 - "Ahead of Market: N things", "things to know before", "quick wrap", "market wrap", generic daily roundups, "stocks to watch" lists
 - horoscope-style technical calls ("5 stocks to buy", "trading guide") with no real news
-- near-duplicates: keep the single best version of the same story
+- pre-market index "previews" ("GIFT Nifty signals a flat/gap-down open", "Sensex to open higher") — daily filler, drop them all
+- near-duplicates: keep the single best version of the same story. This applies ACROSS THE WHOLE EDITION, not just within one section — if the SAME underlying event appears in more than one section (e.g. an IPO in both 'india' and 'sector', or a pre-market preview in both 'macro' and 'india'), keep it ONCE in the single most relevant section and drop the rest. Two stories about the same company/IPO/event on the same day are duplicates even if the headlines are worded differently.
 
 Selection rules:
 - Each section: pick up to ${perSection}, fewer if the pool is thin — quality over filling slots.
