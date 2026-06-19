@@ -2,14 +2,17 @@ name: Build Guardian Times
 
 on:
   schedule:
-    # ONCE daily at 07:00 IST. Cron is UTC. Single run = the whole free-tier
-    # daily Gemini quota goes to one richer edition instead of being split
-    # across two starved runs (the ~13:30 IST reset meant both old runs shared
-    # one quota window). 07:00 IST = a pre-market briefing with overnight global news.
-    # NOTE: minute is 34 (not 00/30) on purpose — GitHub's free scheduler routinely
-    # delays/SKIPS jobs parked on congested :00/:30 marks (that lost the 18-Jun
-    # edition). An off-peak minute lands far more reliably.
-    - cron: '34 1 * * *'    # 07:04 IST  (daily edition)
+    # ONE daily edition at ~07:00 IST — but GitHub's FREE scheduler routinely
+    # delays or SKIPS cron jobs entirely (that lost the 18-Jun and 19-Jun
+    # editions). There is no setting to make a single cron reliable, so we fire
+    # THREE times across the morning as redundancy. The guard step below makes
+    # the build idempotent: the first run that succeeds writes today's edition,
+    # and every later run that morning detects it and SKIPS the expensive
+    # Gemini calls — so the free-tier daily quota is only ever spent ONCE.
+    # Minutes are off-peak (not :00/:30) because congested marks get dropped most.
+    - cron: '34 1 * * *'    # 07:04 IST  (primary)
+    - cron: '14 2 * * *'    # 07:44 IST  (backup 1)
+    - cron: '44 2 * * *'    # 08:14 IST  (backup 2)
   workflow_dispatch:         # manual "Run workflow" button in the Actions tab
 
 permissions:
@@ -24,6 +27,8 @@ concurrency:
 jobs:
   build:
     runs-on: ubuntu-latest
+    outputs:
+      skip: ${{ steps.guard.outputs.skip }}
     steps:
       - uses: actions/checkout@v4
 
@@ -31,16 +36,38 @@ jobs:
         with:
           node-version: '20'
 
+      # Once-per-day guard. Because we now fire 3 redundant cron schedules each
+      # morning (to survive GitHub dropping any single one), this stops the 2nd
+      # and 3rd runs from rebuilding — which would burn the free Gemini quota a
+      # second time. It compares the date stamped in public/health.json (written
+      # by the last successful build) against today's UTC date. A manual
+      # workflow_dispatch ALWAYS rebuilds (skip=false) so you can force a refresh.
+      - name: Guard — has today's edition already been built?
+        id: guard
+        run: |
+          today="$(date -u +'%Y-%m-%d')"
+          built="$(node -e "try{process.stdout.write((require('./public/health.json').ts||'').slice(0,10))}catch{process.stdout.write('')}" 2>/dev/null || echo '')"
+          echo "today=$today  last-built=$built  event=${{ github.event_name }}"
+          if [ "${{ github.event_name }}" = "schedule" ] && [ "$built" = "$today" ]; then
+            echo "skip=true" >> "$GITHUB_OUTPUT"
+            echo "✅ Today's edition ($today) already exists — skipping rebuild to protect the Gemini quota."
+          else
+            echo "skip=false" >> "$GITHUB_OUTPUT"
+          fi
+
       - name: Install dependencies
+        if: steps.guard.outputs.skip != 'true'
         run: npm ci || npm install
 
       - name: Build edition
+        if: steps.guard.outputs.skip != 'true'
         env:
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
           GEMINI_MODEL: gemini-2.5-flash
         run: npm run build
 
       - name: Commit edition + dedup state
+        if: steps.guard.outputs.skip != 'true'
         run: |
           git config user.name "guardian-bot"
           git config user.email "bot@users.noreply.github.com"
@@ -49,12 +76,14 @@ jobs:
           git push || echo "nothing to push"
 
       - name: Upload Pages artifact
+        if: steps.guard.outputs.skip != 'true'
         uses: actions/upload-pages-artifact@v3
         with:
           path: public
 
   deploy:
     needs: build
+    if: needs.build.outputs.skip != 'true'
     runs-on: ubuntu-latest
     environment:
       name: github-pages
