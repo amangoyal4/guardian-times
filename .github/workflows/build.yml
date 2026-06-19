@@ -2,17 +2,14 @@ name: Build Guardian Times
 
 on:
   schedule:
-    # ONE daily edition at ~07:00 IST — but GitHub's FREE scheduler routinely
-    # delays or SKIPS cron jobs entirely (that lost the 18-Jun and 19-Jun
-    # editions). There is no setting to make a single cron reliable, so we fire
-    # THREE times across the morning as redundancy. The guard step below makes
-    # the build idempotent: the first run that succeeds writes today's edition,
-    # and every later run that morning detects it and SKIPS the expensive
-    # Gemini calls — so the free-tier daily quota is only ever spent ONCE.
-    # Minutes are off-peak (not :00/:30) because congested marks get dropped most.
-    - cron: '34 1 * * *'    # 07:04 IST  (primary)
-    - cron: '14 2 * * *'    # 07:44 IST  (backup 1)
-    - cron: '44 2 * * *'    # 08:14 IST  (backup 2)
+    # The edition publishes at 07:00 AM IST. That is the only run that matters.
+    # The two later times are SILENT FALLBACKS: GitHub's free scheduler sometimes
+    # drops a cron entirely, so if the 7am slot is skipped, the next one catches
+    # it. The guard step below makes this safe — once today's edition exists, the
+    # fallbacks detect it and do nothing, so the Gemini quota is spent only ONCE.
+    - cron: '30 1 * * *'    # 07:00 IST  (the daily edition)
+    - cron: '15 2 * * *'    # 07:45 IST  (silent fallback, only if 7am was dropped)
+    - cron: '15 3 * * *'    # 08:45 IST  (silent fallback, only if both above dropped)
   workflow_dispatch:         # manual "Run workflow" button in the Actions tab
 
 permissions:
