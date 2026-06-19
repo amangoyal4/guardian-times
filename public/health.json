@@ -1,5 +1,5 @@
 {
-  "ts": "2026-06-17T08:26:54.497Z",
+  "ts": "2026-06-19T02:17:44.777Z",
   "health": [
     {
       "id": "et-markets",
@@ -40,14 +40,105 @@
       "id": "fe-markets",
       "name": "Financial Express — Market",
       "ok": true,
-      "count": 59,
+      "count": 57,
       "error": null
     },
     {
-      "id": "bt-money",
-      "name": "Business Today",
+      "id": "et-economy",
+      "name": "Economic Times — Economy",
       "ok": true,
-      "count": 0,
+      "count": 50,
+      "error": null
+    },
+    {
+      "id": "et-industry",
+      "name": "Economic Times — Industry",
+      "ok": true,
+      "count": 50,
+      "error": null
+    },
+    {
+      "id": "et-wealth",
+      "name": "Economic Times — Wealth",
+      "ok": true,
+      "count": 50,
+      "error": null
+    },
+    {
+      "id": "mint-companies",
+      "name": "Livemint — Companies",
+      "ok": true,
+      "count": 35,
+      "error": null
+    },
+    {
+      "id": "mint-economy",
+      "name": "Livemint — Economy",
+      "ok": true,
+      "count": 35,
+      "error": null
+    },
+    {
+      "id": "mint-money",
+      "name": "Livemint — Money",
+      "ok": true,
+      "count": 35,
+      "error": null
+    },
+    {
+      "id": "mc-markets",
+      "name": "Moneycontrol — Markets",
+      "ok": true,
+      "count": 4,
+      "error": null
+    },
+    {
+      "id": "mc-economy",
+      "name": "Moneycontrol — Economy",
+      "ok": true,
+      "count": 4,
+      "error": null
+    },
+    {
+      "id": "bl-economy",
+      "name": "Hindu BusinessLine — Economy",
+      "ok": true,
+      "count": 60,
+      "error": null
+    },
+    {
+      "id": "bl-companies",
+      "name": "Hindu BusinessLine — Companies",
+      "ok": true,
+      "count": 60,
+      "error": null
+    },
+    {
+      "id": "bl-banking",
+      "name": "Hindu BusinessLine — Money & Banking",
+      "ok": true,
+      "count": 60,
+      "error": null
+    },
+    {
+      "id": "cnbctv18-mkt",
+      "name": "CNBC-TV18 — Market",
+      "ok": true,
+      "count": 100,
+      "error": null
+    },
+    {
+      "id": "ndtvprofit",
+      "name": "NDTV Profit — Markets",
+      "ok": true,
+      "count": 100,
+      "error": null
+    },
+    {
+      "id": "bs-economy",
+      "name": "Business Standard — Economy",
+      "ok": true,
+      "count": 21,
       "error": null
     },
     {
@@ -68,14 +159,14 @@
       "id": "nse-circ",
       "name": "NSE — Circulars",
       "ok": true,
-      "count": 1,
+      "count": 23,
       "error": null
     },
     {
       "id": "guardian-biz",
       "name": "The Guardian — Business",
       "ok": true,
-      "count": 39,
+      "count": 40,
       "error": null
     },
     {
