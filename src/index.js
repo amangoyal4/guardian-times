@@ -54,6 +54,10 @@ const NOISE = new RegExp([
   'signals?\\s+(a\\s+)?(flat|cautious|gap-?up|gap-?down|positive|negative|subdued|muted|tepid|weak|strong|higher|lower|range-?bound)',
   '(flat|gap-?up|gap-?down|cautious|tepid|muted|subdued|range-?bound)\\s+(open|opening|start)',
   '(sensex|nifty|markets?|d-?street|dalal street)[^.]{0,25}(gap-?up|gap-?down)',
+  // US regulatory micro-filings — insider-sale/ownership notices that leak in via
+  // global wires. Pure noise for this audience.
+  '\\bform\\s?144\\b', '\\bform\\s?4\\b', '\\bform\\s?8-?k\\b', '\\b13[fdg]\\b',
+  'schedule 13[dg]', 'sec filing',
 ].join('|'), 'i');
 
 // generic wrappers — sink them within ranking even if not hard-dropped

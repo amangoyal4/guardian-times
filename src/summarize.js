@@ -141,9 +141,20 @@ export async function selectStories(bySection, perSection = 8) {
 
   const prompt = `${HOUSE}
 
-You are doing the morning EDITORIAL CUT for today's edition. Below is the candidate pool, grouped by section, each line tagged with its [id], region (IN/GL), source and headline.
+You are doing the morning EDITORIAL CUT for today's edition. Below is the candidate pool, grouped under the section each story was PROVISIONALLY filed in by an automated classifier, each line tagged with its [id], region (IN/GL), source and headline. The provisional filing is OFTEN WRONG — your job includes RE-FILING each story into the correct section.
 
-Your job: for EACH section, select the most IMPORTANT, decision-relevant stories a wealth/PMS professional must know — and RUTHLESSLY DROP procedural noise. Specifically DROP:
+Your job: select the most IMPORTANT, decision-relevant stories a wealth/PMS professional must know, PLACE EACH IN THE CORRECT SECTION, and RUTHLESSLY DROP procedural noise.
+
+SECTION DEFINITIONS — re-file every story by what it is ACTUALLY about, ignoring where it was provisionally placed:
+- macro = the economy & markets at large: interest rates, inflation, GDP, fiscal/trade data, currency (rupee/dollar), bond yields, banking-system liquidity & money-market rates, commodities (crude/gold), central-bank action. NOT single companies.
+- sector = a whole INDUSTRY or theme moving together (autos, pharma, banks, IT, realty, metals, defence, semiconductors). NOT a single company — one company's IPO/order/result is NOT a sector story.
+- india = a specific INDIAN company or Indian single-stock / IPO / listing / order win / earnings / M&A / market-index move.
+- global = a specific NON-INDIAN company or non-Indian market/index (Wall Street, Nasdaq, a US/EU/Asian stock). A story about a global event whose angle is its impact ON India is usually macro or india, not global.
+- compliance = a REGULATOR acting: SEBI/RBI orders, penalties, bans, new rules/norms, circulars, enforcement, probes. NOT a company simply doing an IPO or reporting earnings.
+
+Examples of correct re-filing: "Banking liquidity falls, money-market rates rise" → macro (not india). "Turtlemint IPO opens" → india (not sector). "Asian equities hit record highs" → global (not macro). "NSE FY26 earnings ahead of IPO" → india (not compliance). "SEBI reworks margin-trading rules" → compliance.
+
+RUTHLESSLY DROP procedural noise:
 - routine auction notices and results (RBI VRR/repo/reverse-repo auctions, T-bill / G-Sec / SDL auction announcements or cut-offs, "full auction result")
 - "Ahead of Market: N things", "things to know before", "quick wrap", "market wrap", generic daily roundups, "stocks to watch" lists
 - horoscope-style technical calls ("5 stocks to buy", "trading guide") with no real news
@@ -151,10 +162,10 @@ Your job: for EACH section, select the most IMPORTANT, decision-relevant stories
 - near-duplicates: keep the single best version of the same story. This applies ACROSS THE WHOLE EDITION, not just within one section — if the SAME underlying event appears in more than one section (e.g. an IPO in both 'india' and 'sector', or a pre-market preview in both 'macro' and 'india'), keep it ONCE in the single most relevant section and drop the rest. Two stories about the same company/IPO/event on the same day are duplicates even if the headlines are worded differently.
 
 Selection rules:
-- Each section: pick up to ${perSection}, fewer if the pool is thin — quality over filling slots.
+- Each section: pick up to ${perSection} of the BEST-FITTING stories, fewer if thin — quality over filling slots.
+- Place each chosen id under the section its CONTENT belongs to (per the definitions above), NOT where it was provisionally filed.
 - Within a section, order Indian stories first (IN), then global (GL); within each, most important first.
-- A story must stay in the section it was filed under.
-- Use ONLY ids that appear below. Do not invent ids.
+- Use ONLY ids that appear below. Do not invent ids. Put each id in at most ONE section.
 
 Return ONLY JSON, no markdown:
 { "macro":["id",...], "sector":["id",...], "india":["id",...], "global":["id",...], "compliance":["id",...] }
