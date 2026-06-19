@@ -149,7 +149,7 @@ SECTION DEFINITIONS — re-file every story by what it is ACTUALLY about, ignori
 - macro = the economy & markets at large: interest rates, inflation, GDP, fiscal/trade data, currency (rupee/dollar), bond yields, banking-system liquidity & money-market rates, commodities (crude/gold), central-bank action. NOT single companies.
 - sector = a whole INDUSTRY or theme moving together (autos, pharma, banks, IT, realty, metals, defence, semiconductors). NOT a single company — one company's IPO/order/result is NOT a sector story.
 - india = a specific INDIAN company or Indian single-stock / IPO / listing / order win / earnings / M&A / market-index move.
-- global = a specific NON-INDIAN company or non-Indian market/index (Wall Street, Nasdaq, a US/EU/Asian stock). A story about a global event whose angle is its impact ON India is usually macro or india, not global.
+- global = "Global Markets": a NON-INDIAN company, market/index (Wall Street, Nasdaq, a US/EU/Asian stock) or a global MARKET/ECONOMIC development with real read-through to investors. A story about a global event whose angle is its impact ON India is usually macro or india, not global.
 - compliance = a REGULATOR acting: SEBI/RBI orders, penalties, bans, new rules/norms, circulars, enforcement, probes. NOT a company simply doing an IPO or reporting earnings.
 
 Examples of correct re-filing: "Banking liquidity falls, money-market rates rise" → macro (not india). "Turtlemint IPO opens" → india (not sector). "Asian equities hit record highs" → global (not macro). "NSE FY26 earnings ahead of IPO" → india (not compliance). "SEBI reworks margin-trading rules" → compliance.
@@ -159,6 +159,7 @@ RUTHLESSLY DROP procedural noise:
 - "Ahead of Market: N things", "things to know before", "quick wrap", "market wrap", generic daily roundups, "stocks to watch" lists
 - horoscope-style technical calls ("5 stocks to buy", "trading guide") with no real news
 - pre-market index "previews" ("GIFT Nifty signals a flat/gap-down open", "Sensex to open higher") — daily filler, drop them all
+- WAR / GEOPOLITICS / DIPLOMACY as general news — DROP unless the PRIMARY context of the headline is a concrete FINANCIAL or MARKET impact. DROP pure political/military/diplomatic items (e.g. "VP pulls out of Iran meeting", "Pentagon needs $80bn for the war", "Macron releases Hindi message for Modi", troop movements, summits, election politics). KEEP only when the money angle leads (e.g. "Brent jumps 8% as Iran conflict threatens Hormuz oil flows", "rupee slides on war-driven dollar surge", "defence stocks rally on fresh orders"). If you would not trade or reallocate on it, drop it.
 - near-duplicates: keep the single best version of the same story. This applies ACROSS THE WHOLE EDITION, not just within one section — if the SAME underlying event appears in more than one section (e.g. an IPO in both 'india' and 'sector', or a pre-market preview in both 'macro' and 'india'), keep it ONCE in the single most relevant section and drop the rest. Two stories about the same company/IPO/event on the same day are duplicates even if the headlines are worded differently.
 
 Selection rules:

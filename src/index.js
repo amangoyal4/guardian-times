@@ -63,6 +63,16 @@ const NOISE = new RegExp([
 // generic wrappers — sink them within ranking even if not hard-dropped
 const JUNK = /(market talk|roundup|what to watch|things to know|here's what|stocks to watch)/i;
 
+// War / geopolitics / diplomacy as GENERAL news has no place here — but the same
+// event with a clear MONEY angle (oil spiking on a conflict, the rupee sliding,
+// defence orders) absolutely does. So drop a headline only when it reads as pure
+// geopolitics AND carries no financial signal. The AI editor-cut applies the same
+// "is the financial impact the primary context?" judgement; this is the deterministic
+// backstop for when the AI falls back (e.g. quota throttle).
+const WAR = /(\bwar\b|warfare|missile|air\s?strike|drone strike|\btroops?\b|ceasefire|militar(?:y|ia)|nuclear (?:talks|deal|programme|program|weapon)|negotiator|diplomat|pentagon|\bnato\b|airbase|warship|hostage|invasion|\bcoup\b|peace talks)/i;
+const FIN = /(stock|share|equit|market|index|nifty|sensex|rupee|dollar|currency|\boil\b|crude|brent|gold|metal|yield|bond|inflation|\bgdp\b|\brate\b|earnings|\bipo\b|\bfund\b|investor|tariff|export|import|commodit|price|rally|plunge|surge|\btrade\b|\bfii\b|\bdii\b|revenue|profit|defen[cs]e (?:stock|order|deal|contract))/i;
+const isPureGeopolitics = (t = '') => WAR.test(t) && !FIN.test(t);
+
 function score(it) {
   const t = it.published?.getTime() || 0;
   return t + it.weight * 3.6e6 - (JUNK.test(it.title) ? 1e15 : 0);
@@ -84,7 +94,7 @@ async function main() {
   const { items, health } = await fetchAll({ hours: 24, seenLinks: seen });
 
   // 2) ROUTE + TAG, then drop hard procedural noise
-  const routed = routeAll(items).filter((it) => !NOISE.test(it.title));
+  const routed = routeAll(items).filter((it) => !NOISE.test(it.title) && !isPureGeopolitics(it.title));
 
   // 3) BUILD CANDIDATE POOLS (ranked, generous) per section
   const pools = { macro: [], sector: [], india: [], global: [], compliance: [] };

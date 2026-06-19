@@ -196,7 +196,7 @@ export function buildHTML(data) {
     sectionPage('macro', '01', 'Macroeconomy &amp; Policy', 'Forces moving the whole market', 'Central banks, growth, inflation, oil, and the flow of foreign capital.', data.macro, { active: true, prepend: marketDashboard(data.market) }),
     sectionPage('sector', '02', 'Sectoral Currents', 'Where the money is rotating', 'Which sectors are catching the bid and which are bleeding.', data.sector),
     sectionPage('india', '03', 'Indian Markets &amp; Stocks', 'FII flows · the big moves', 'Index-moving flows, restructurings, enforcement and the stock-specific events that matter.', data.india),
-    sectionPage('global', '04', 'Global Equities', 'Megacaps that move sentiment', 'The US tape sets the risk mood worldwide — with read-through to Indian IT and the rupee.', data.global),
+    sectionPage('global', '04', 'Global Markets', 'Forces that move world sentiment', 'The US tape and global developments with real market read-through to Indian IT, the rupee and commodities.', data.global),
     knowledgePage('05', data.mechanism, data.explainers, data.myths),
     sectionPage('compliance', '06', 'Compliance &amp; Regulation', 'SEBI · RBI · AMC moves', 'The regulatory changes that reshape how products are built, sold and reported.', data.compliance),
     libraryPage('07', data.library),
