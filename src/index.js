@@ -22,7 +22,7 @@ const STATE_FILE = path.join(__dirname, '..', 'archive', 'seen.json');
 // so if the quota throttles, only the tail-end story summaries degrade to raw
 // headlines — and even those keep clean titles + free links. Raise further only with
 // paid billing on the Gemini key.
-const PER_SECTION = { macro: 5, india: 7, sector: 4, global: 4, compliance: 4 };
+const PER_SECTION = { macro: 6, india: 8, sector: 5, global: 5, compliance: 4 };
 // larger pool handed to the AI editor so it has room to choose
 const POOL = 40;
 

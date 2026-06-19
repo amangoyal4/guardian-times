@@ -264,7 +264,7 @@ ${context}`;
  * own (cleaned) descriptions — so a quota throttle never blanks the section.
  * @returns {Promise<{videos: object[], podcast: object|null}>}
  */
-export async function curateLibrary({ videos = [], podcasts = [] } = {}, { pickVideos = 5 } = {}) {
+export async function curateLibrary({ videos = [], podcasts = [] } = {}, { pickVideos = 6 } = {}) {
   const fallback = () => ({
     videos: diverseVideos(videos, pickVideos).map((v) => ({ ...v, blurb: v.rawDesc || '' })),
     podcast: podcasts[0] ? { ...podcasts[0], blurb: podcasts[0].rawDesc || '' } : null,
@@ -280,7 +280,7 @@ export async function curateLibrary({ videos = [], podcasts = [] } = {}, { pickV
 
 You are curating today's LIBRARY desk — the best finance learning to watch and listen to. From the candidate YouTube videos and podcast episodes below (each tagged with an [id], its channel/show, title and blurb), choose:
 - the ${pickVideos} MOST genuinely knowledge-rich videos a serious Indian investment professional would gain from — either directly India-markets-relevant OR durable global investing/finance wisdom (valuation, portfolio construction, market structure, macro, behavioural finance). Favour depth and teaching over news recaps or shorts; pick DIFFERENT channels where possible for variety, and aim for a mix of Indian and global perspectives.
-- the ONE best, most substantive podcast episode of the day for a thoughtful investor.
+- the ONE best, most substantive podcast episode for a thoughtful investor. It need NOT be the very newest — pick the most rewarding episode in the pool. STRONGLY prefer episodes about markets, investing, business, the economy, companies or money; SKIP pure entertainment, celebrity, politics or generic self-help episodes even if they are recent.
 
 For each pick write a tight 1-2 sentence editorial blurb (your own words) on what the viewer/listener will actually LEARN — concrete, never hype.
 

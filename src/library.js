@@ -47,6 +47,17 @@ const PODCASTS = [
   { name: 'Rational Reminder',         rss: 'https://rationalreminder.libsyn.com/rss' },
 ];
 
+// Long-form business/finance PODCASTS that live primarily on YouTube (verified
+// live 2026-06-19, recent within the month). These feed the SAME podcast pool as
+// the RSS shows above — so the "podcast of the day" can be a YouTube episode. The
+// YouTube Atom feed carries no episode list filtering, so Shorts are dropped by
+// title and only items inside the time window are kept (see fetchYtPodcast).
+const YT_PODCASTS = [
+  { name: 'Figuring Out · Raj Shamani', channelId: 'UCzwCEE_PchiBULMnAJqhGVg' },
+  { name: 'Founder Thesis',             channelId: 'UChwUqkuczHA_d-TV3n0LN9w' },
+  { name: 'The Morning Context',        channelId: 'UCYAZQvp_LMnL_IAVB8L-rOQ' },
+];
+
 const YT_FEED = (id) => `https://www.youtube.com/feeds/videos.xml?channel_id=${id}`;
 
 const stripHtml = (s = '') =>
@@ -103,23 +114,56 @@ async function fetchChannel(ch) {
   }
 }
 
-async function fetchPodcast(p) {
+// A podcast pick need NOT be the absolute latest — anything within the window is a
+// fair candidate. Return up to 2 recent episodes per show so the curator has range.
+async function fetchPodcast(p, days) {
+  const cutoff = Date.now() - days * 24 * 3600 * 1000;
   try {
     const data = await parser.parseURL(p.rss);
-    const it = (data.items || [])[0];
-    if (!it) return null;
-    return {
-      show: p.name,
-      title: stripHtml(it.title || ''),
-      link: it.link || it.enclosure?.url || '',
-      published: it.isoDate || it.pubDate || null,
-      duration: it.itunes?.duration || '',
-      image: it.itunes?.image || data.itunes?.image || data.image?.url || '',
-      rawDesc: cleanDesc(it.contentSnippet || it.content || it.summary || it.description || '', 480),
-    };
+    return (data.items || [])
+      .map((it) => ({
+        show: p.name,
+        title: stripHtml(it.title || ''),
+        link: it.link || it.enclosure?.url || '',
+        published: it.isoDate || it.pubDate || null,
+        duration: it.itunes?.duration || '',
+        image: it.itunes?.image || data.itunes?.image || data.image?.url || '',
+        rawDesc: cleanDesc(it.contentSnippet || it.content || it.summary || it.description || '', 480),
+        source: 'podcast',
+      }))
+      .filter((e) => e.title && e.link)
+      .filter((e) => { const t = e.published ? new Date(e.published).getTime() : 0; return t === 0 || t >= cutoff; })
+      .slice(0, 2);
   } catch (err) {
     console.log(`    ⚠ Podcast feed failed: ${p.name} (${err.message})`);
-    return null;
+    return [];
+  }
+}
+
+// A YouTube long-form show treated as a podcast. Same shape as an RSS episode so
+// it drops straight into the podcast pool. Shorts are filtered by title; only
+// items inside the window survive.
+async function fetchYtPodcast(ch, days) {
+  const cutoff = Date.now() - days * 24 * 3600 * 1000;
+  try {
+    const data = await parser.parseURL(YT_FEED(ch.channelId));
+    return (data.items || [])
+      .map((it) => ({
+        show: ch.name,
+        title: stripHtml(it.title || ''),
+        link: it.link || '',
+        published: it.isoDate || it.pubDate || null,
+        duration: '',
+        image: ytThumb(it),
+        rawDesc: cleanDesc(ytDescription(it), 480),
+        source: 'youtube',
+      }))
+      .filter((e) => e.title && e.link && !/#?\bshorts?\b/i.test(e.title))
+      .filter((e) => { const t = e.published ? new Date(e.published).getTime() : 0; return t === 0 || t >= cutoff; })
+      .slice(0, 2);
+  } catch (err) {
+    console.log(`    ⚠ YouTube podcast feed failed: ${ch.name} (${err.message})`);
+    return [];
   }
 }
 
@@ -149,10 +193,11 @@ export function diverseVideos(videos, n) {
  * @returns {Promise<{videos: object[], podcasts: object[]}>}
  */
 export async function fetchLibrary({ days = 45 } = {}) {
-  console.log('\n📚 Fetching Library (YouTube + podcasts, keyless RSS)…');
-  const [vidLists, pods] = await Promise.all([
+  console.log('\n📚 Fetching Library (YouTube videos + podcasts incl. YouTube shows, keyless RSS)…');
+  const [vidLists, rssPods, ytPods] = await Promise.all([
     Promise.all(YT_CHANNELS.map(fetchChannel)),
-    Promise.all(PODCASTS.map(fetchPodcast)),
+    Promise.all(PODCASTS.map((p) => fetchPodcast(p, days))),
+    Promise.all(YT_PODCASTS.map((c) => fetchYtPodcast(c, days))),
   ]);
 
   const cutoff = Date.now() - days * 24 * 3600 * 1000;
@@ -160,10 +205,13 @@ export async function fetchLibrary({ days = 45 } = {}) {
     .filter((v) => { const t = v.published ? new Date(v.published).getTime() : 0; return t === 0 || t >= cutoff; })
     .sort((a, b) => (new Date(b.published).getTime() || 0) - (new Date(a.published).getTime() || 0));
 
-  const podcasts = pods.filter(Boolean)
+  // RSS podcasts + YouTube podcast shows share one pool; the curator picks the best.
+  const podcasts = [...rssPods.flat(), ...ytPods.flat()]
+    .filter(Boolean)
     .sort((a, b) => (new Date(b.published).getTime() || 0) - (new Date(a.published).getTime() || 0));
 
   const liveChannels = vidLists.filter((l) => l.length).length;
-  console.log(`   ${videos.length} recent videos from ${liveChannels}/${YT_CHANNELS.length} channels · ${podcasts.length}/${PODCASTS.length} podcasts live`);
+  const ytPodLive = ytPods.filter((l) => l.length).length;
+  console.log(`   ${videos.length} recent videos from ${liveChannels}/${YT_CHANNELS.length} channels · ${podcasts.length} podcast episodes (${ytPodLive}/${YT_PODCASTS.length} YouTube shows + RSS) live`);
   return { videos, podcasts };
 }
