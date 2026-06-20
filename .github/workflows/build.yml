@@ -10,6 +10,14 @@ on:
     - cron: '30 1 * * *'    # 07:00 IST  (the daily edition)
     - cron: '15 2 * * *'    # 07:45 IST  (silent fallback, only if 7am was dropped)
     - cron: '15 3 * * *'    # 08:45 IST  (silent fallback, only if both above dropped)
+  # PRIMARY reliable trigger: an external cron service (e.g. cron-job.org) hits the
+  # GitHub API at 07:00 IST sharp and fires this. GitHub's own scheduler is best-
+  # effort and keeps DROPPING the cron entirely (18/19/20-Jun all missed), so the
+  # crons above are now just free backups. The guard step below dedupes them all —
+  # whoever runs first that morning builds; the rest skip. See repo notes for the
+  # one-time cron-job.org + token setup.
+  repository_dispatch:
+    types: [daily-build]
   workflow_dispatch:         # manual "Run workflow" button in the Actions tab
 
 permissions:
@@ -33,19 +41,20 @@ jobs:
         with:
           node-version: '20'
 
-      # Once-per-day guard. Because we now fire 3 redundant cron schedules each
-      # morning (to survive GitHub dropping any single one), this stops the 2nd
-      # and 3rd runs from rebuilding — which would burn the free Gemini quota a
-      # second time. It compares the date stamped in public/health.json (written
-      # by the last successful build) against today's UTC date. A manual
-      # workflow_dispatch ALWAYS rebuilds (skip=false) so you can force a refresh.
+      # Once-per-day guard. The external cron service (repository_dispatch) is the
+      # primary trigger; GitHub's own schedules are flaky backups. Whichever fires
+      # FIRST that morning builds today's edition; any later automatic trigger
+      # detects it and SKIPS — so the free Gemini quota is only ever spent ONCE.
+      # It compares the date stamped in public/health.json (written by the last
+      # successful build) against today's UTC date. A manual workflow_dispatch
+      # ALWAYS rebuilds (skip=false) so you can force a refresh.
       - name: Guard — has today's edition already been built?
         id: guard
         run: |
           today="$(date -u +'%Y-%m-%d')"
           built="$(node -e "try{process.stdout.write((require('./public/health.json').ts||'').slice(0,10))}catch{process.stdout.write('')}" 2>/dev/null || echo '')"
           echo "today=$today  last-built=$built  event=${{ github.event_name }}"
-          if [ "${{ github.event_name }}" = "schedule" ] && [ "$built" = "$today" ]; then
+          if [ "${{ github.event_name }}" != "workflow_dispatch" ] && [ "$built" = "$today" ]; then
             echo "skip=true" >> "$GITHUB_OUTPUT"
             echo "✅ Today's edition ($today) already exists — skipping rebuild to protect the Gemini quota."
           else
