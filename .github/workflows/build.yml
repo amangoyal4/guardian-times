@@ -7,15 +7,14 @@ on:
     # drops a cron entirely, so if the 7am slot is skipped, the next one catches
     # it. The guard step below makes this safe — once today's edition exists, the
     # fallbacks detect it and do nothing, so the Gemini quota is spent only ONCE.
-    - cron: '30 1 * * *'    # 07:00 IST  (the daily edition)
-    - cron: '15 2 * * *'    # 07:45 IST  (silent fallback, only if 7am was dropped)
-    - cron: '15 3 * * *'    # 08:45 IST  (silent fallback, only if both above dropped)
+    - cron: '0 2 * * *'     # 07:30 IST  (the daily edition)
+    - cron: '45 2 * * *'    # 08:15 IST  (silent fallback, only if 7:30 was late/dropped)
+    - cron: '45 3 * * *'    # 09:15 IST  (silent fallback, only if both above missed)
   # PRIMARY reliable trigger: an external cron service (e.g. cron-job.org) hits the
-  # GitHub API at 07:00 IST sharp and fires this. GitHub's own scheduler is best-
-  # effort and keeps DROPPING the cron entirely (18/19/20-Jun all missed), so the
-  # crons above are now just free backups. The guard step below dedupes them all —
-  # whoever runs first that morning builds; the rest skip. See repo notes for the
-  # one-time cron-job.org + token setup.
+  # GitHub API at 07:30 IST sharp and fires this. GitHub's own scheduler is best-
+  # effort and runs cron HOURS LATE (or skips it), so the crons above are just free
+  # backups. The guard step below dedupes them all — whoever runs first that morning
+  # builds; the rest skip. See repo notes for the one-time cron-job.org + token setup.
   repository_dispatch:
     types: [daily-build]
   workflow_dispatch:         # manual "Run workflow" button in the Actions tab
