@@ -319,17 +319,33 @@ ${pLines.join('\n')}`;
     const vById = new Map(vPool.map((v, i) => [`v${i}`, v]));
     const pById = new Map(pPool.map((p, i) => [`p${i}`, p]));
 
+    // Cap how many videos any one channel can contribute, so a single prolific
+    // channel can't crowd out variety even if the model over-picks from it.
+    const perChannel = Math.max(2, Math.ceil(pickVideos / 3));
+    const channelCount = new Map();
     const picked = (out.videos || [])
       .map((x) => { const v = vById.get(x.id); return v ? { ...v, blurb: (x.blurb || v.rawDesc || '').trim() } : null; })
       .filter(Boolean)
+      .filter((v) => {
+        const n = channelCount.get(v.channel) || 0;
+        if (n >= perChannel) return false;
+        channelCount.set(v.channel, n + 1);
+        return true;
+      })
       .slice(0, pickVideos);
 
-    // Top up with diverse recency picks if the model returned fewer than asked.
+    // Top up with diverse recency picks if the model returned fewer than asked
+    // (under-pick OR channel-cap trimming). Respect the same per-channel cap.
     if (picked.length < pickVideos) {
       const have = new Set(picked.map((v) => v.link));
-      for (const v of diverseVideos(videos, pickVideos * 2)) {
+      for (const v of diverseVideos(videos, pickVideos * 3)) {
         if (picked.length >= pickVideos) break;
-        if (!have.has(v.link)) { picked.push({ ...v, blurb: v.rawDesc || '' }); have.add(v.link); }
+        if (have.has(v.link)) continue;
+        const n = channelCount.get(v.channel) || 0;
+        if (n >= perChannel) continue;
+        picked.push({ ...v, blurb: v.rawDesc || '' });
+        have.add(v.link);
+        channelCount.set(v.channel, n + 1);
       }
     }
 

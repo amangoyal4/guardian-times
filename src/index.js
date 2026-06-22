@@ -15,6 +15,10 @@ import { buildHTML, writeEdition } from './build.js';
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const PUBLIC_DIR = path.join(__dirname, '..', 'public');
 const STATE_FILE = path.join(__dirname, '..', 'archive', 'seen.json');
+// Library has its own rolling seen-state so videos/podcasts shown in recent
+// editions rotate OUT — without this the same evergreen videos resurface daily
+// (the feeds change slowly). Kept separate from the news seen.json.
+const LIB_STATE = path.join(__dirname, '..', 'archive', 'seen-library.json');
 
 // How many stories to carry per section after the editorial cut (~24 total,
 // India-first). Now that the build runs ONCE a day it gets the full free-tier daily
@@ -34,6 +38,44 @@ function saveSeen(links) {
   fs.mkdirSync(path.dirname(STATE_FILE), { recursive: true });
   // keep last ~500 links so the dedup window doesn't grow forever
   fs.writeFileSync(STATE_FILE, JSON.stringify([...links].slice(-500)));
+}
+
+// ---- Library anti-repetition: rolling seen-state for videos + podcasts ----
+// A stable key per item. YouTube items key on the videoId (the watch link carries
+// a ?v= query that must NOT be stripped); everything else keys on the link sans
+// fragment. Used to push recently-shown items to the back of the candidate pool.
+function libKey(x) {
+  if (x?.videoId) return `yt:${x.videoId}`;
+  const m = (x?.link || '').match(/[?&]v=([^&]+)/);
+  if (m) return `yt:${m[1]}`;
+  return (x?.link || '').split('#')[0];
+}
+function loadSeenLib() {
+  try { return new Set(JSON.parse(fs.readFileSync(LIB_STATE, 'utf8'))); }
+  catch { return new Set(); }
+}
+function saveSeenLib(prev, library) {
+  fs.mkdirSync(path.dirname(LIB_STATE), { recursive: true });
+  const fresh = [
+    ...(library?.videos || []).map(libKey),
+    ...(library?.podcast ? [libKey(library.podcast)] : []),
+  ].filter(Boolean);
+  // keep last ~150 keys: enough to rotate a few weeks of editions out, small
+  // enough that the pool never starves of "unseen" candidates.
+  const merged = [...prev, ...fresh];
+  fs.writeFileSync(LIB_STATE, JSON.stringify(merged.slice(-150)));
+}
+// Reorder the candidate pool so items NOT shown recently come first, preserving
+// recency order within each partition. The curator (and its fallback) then
+// naturally favour fresh content, while still being able to reach back to a
+// recently-shown item if the unseen pool is thin.
+function preferUnseen({ videos = [], podcasts = [] } = {}, seen) {
+  const split = (arr) => {
+    const unseen = [], shown = [];
+    for (const x of arr) (seen.has(libKey(x)) ? shown : unseen).push(x);
+    return [...unseen, ...shown];
+  };
+  return { videos: split(videos), podcasts: split(podcasts) };
 }
 
 // Procedural noise with no decision value — auction notices/results and daily
@@ -156,8 +198,11 @@ async function main() {
   const myths = await generateMyths(topAll);
   // Library curation — ONE Gemini call, kept in the protected pre-summary block so a
   // quota throttle degrades only tail story summaries; it falls back to a recency
-  // pick with feed descriptions if the AI is unavailable.
-  const library = await curateLibrary(await libraryPromise);
+  // pick with feed descriptions if the AI is unavailable. We reorder the pool so
+  // items shown in recent editions sink to the back (anti-repetition), then record
+  // today's picks after the build.
+  const seenLib = loadSeenLib();
+  const library = await curateLibrary(preferUnseen(await libraryPromise, seenLib));
 
   // 6) SUMMARISE selected stories, and fetch market data in parallel
   const flat = [...new Set(Object.values(buckets).flat())];
@@ -190,6 +235,7 @@ async function main() {
   // 8) persist dedup state + health log
   const allLinks = new Set([...seen, ...summarised.map((s) => s.link.split('?')[0].replace(/\/$/, ''))]);
   saveSeen(allLinks);
+  saveSeenLib(seenLib, library); // record today's Library picks so they rotate out
   fs.writeFileSync(path.join(PUBLIC_DIR, 'health.json'), JSON.stringify({ ts: new Date().toISOString(), health }, null, 2));
 
   const counts = Object.entries(buckets).map(([k, v]) => `${k}:${v.length}`).join(' ');
