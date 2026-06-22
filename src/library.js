@@ -96,10 +96,36 @@ function ytDescription(item) {
   return d || item.contentSnippet || item.content || '';
 }
 
+// Is this video a YouTube SHORT? The channel Atom feed carries no duration, so we
+// use YouTube's own routing: requesting youtube.com/shorts/<id> returns 200 for a
+// real Short but 303-redirects to /watch for a normal long-form video. A HEAD with
+// manual redirect handling tells them apart without downloading anything. Best
+// effort: on any error/timeout we treat it as NOT a short (keep it) so the filter
+// can only ever remove genuine Shorts, never silently drop real videos.
+async function isShort(id) {
+  if (!id) return false;
+  try {
+    const ctrl = new AbortController();
+    const t = setTimeout(() => ctrl.abort(), 8000);
+    const r = await fetch(`https://www.youtube.com/shorts/${id}`, {
+      method: 'HEAD',
+      redirect: 'manual',
+      signal: ctrl.signal,
+      headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)' },
+    });
+    clearTimeout(t);
+    return r.status === 200; // 200 = Short; 303 redirect to /watch = normal video
+  } catch {
+    return false;
+  }
+}
+
 async function fetchChannel(ch) {
   try {
     const data = await parser.parseURL(YT_FEED(ch.channelId));
-    return (data.items || []).slice(0, 4).map((it) => ({
+    // Take a wider window than we need, drop Shorts, then keep the freshest few —
+    // so a channel that just posted three Shorts still yields real long-form videos.
+    const cand = (data.items || []).slice(0, 8).map((it) => ({
       channel: ch.name,
       title: stripHtml(it.title || ''),
       link: it.link || '',
@@ -107,7 +133,11 @@ async function fetchChannel(ch) {
       thumb: ytThumb(it),
       published: it.isoDate || it.pubDate || null,
       rawDesc: cleanDesc(ytDescription(it)),
-    })).filter((v) => v.title && v.link);
+    })).filter((v) => v.title && v.link && !/#?\bshorts?\b/i.test(v.title));
+    // Drop YouTube Shorts (≤ ~3 min vertical clips) — a learning library wants
+    // long-form teaching, not Shorts. Probe in parallel; best-effort (see isShort).
+    const shortFlags = await Promise.all(cand.map((v) => isShort(v.videoId)));
+    return cand.filter((_, i) => shortFlags[i] !== true).slice(0, 4);
   } catch (err) {
     console.log(`    ⚠ YouTube feed failed: ${ch.name} (${err.message})`);
     return [];
@@ -147,11 +177,12 @@ async function fetchYtPodcast(ch, days) {
   const cutoff = Date.now() - days * 24 * 3600 * 1000;
   try {
     const data = await parser.parseURL(YT_FEED(ch.channelId));
-    return (data.items || [])
+    const cand = (data.items || [])
       .map((it) => ({
         show: ch.name,
         title: stripHtml(it.title || ''),
         link: it.link || '',
+        videoId: it.videoId || '',
         published: it.isoDate || it.pubDate || null,
         duration: '',
         image: ytThumb(it),
@@ -159,8 +190,11 @@ async function fetchYtPodcast(ch, days) {
         source: 'youtube',
       }))
       .filter((e) => e.title && e.link && !/#?\bshorts?\b/i.test(e.title))
-      .filter((e) => { const t = e.published ? new Date(e.published).getTime() : 0; return t === 0 || t >= cutoff; })
-      .slice(0, 2);
+      .filter((e) => { const t = e.published ? new Date(e.published).getTime() : 0; return t === 0 || t >= cutoff; });
+    // Long-form shows shouldn't be Shorts, but probe anyway so a stray Short clip
+    // never sneaks into the podcast-of-the-day pool.
+    const shortFlags = await Promise.all(cand.map((e) => isShort(e.videoId)));
+    return cand.filter((_, i) => shortFlags[i] !== true).slice(0, 2);
   } catch (err) {
     console.log(`    ⚠ YouTube podcast feed failed: ${ch.name} (${err.message})`);
     return [];
