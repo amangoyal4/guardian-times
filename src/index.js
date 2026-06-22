@@ -63,6 +63,28 @@ const NOISE = new RegExp([
 // generic wrappers — sink them within ranking even if not hard-dropped
 const JUNK = /(market talk|roundup|what to watch|things to know|here's what|stocks to watch)/i;
 
+// IRRELEVANT non-financial noise that leaks in from the wider wires and has NO
+// decision value for an Indian wealth/PMS audience. These slipped into the live
+// edition (e.g. "AI-Powered GTA 6 Beta Scams Target Gamers", "UK Companies House
+// Strikes Off 50 Film Production Firms", "Ebbw Vale: Brexit's Unfulfilled Promise")
+// because they carry stray finance-ish tokens (scam, firms, companies) that the
+// keyword router can't tell apart from real market news. Hard-drop them before the
+// editor even sees them. Kept deliberately specific so it never eats real stories.
+const IRRELEVANT = new RegExp([
+  // consumer-tech / gaming / scams aimed at the public, not markets
+  '\\bgta\\s?6?\\b', 'grand theft auto', 'video\\s?game', '\\bgamers?\\b', '\\bgaming\\b',
+  'beta scam', 'phishing', 'romance scam', 'crypto scam', 'giveaway scam', 'whatsapp scam',
+  // company-registry / administrative filler (UK Companies House strike-offs etc.)
+  // NB: deliberately NOT a bare "strikes off" — a REGULATOR striking off a rule/
+  // entity is real compliance news; we anchor on the registry/film-firm context.
+  'companies house', 'dissolved compan', 'dormant compan',
+  'film production', 'production firm', 'shell compan',
+  // regional political / human-interest colour with no market read-through
+  'brexit', 'ebbw vale', "unfulfilled promise", 'cost of living crisis',
+  // lifestyle / celebrity / entertainment that occasionally rides finance feeds
+  'box office', 'celebrity', 'royal family', 'football', 'cricket score', 'horoscope', 'astrolog',
+].join('|'), 'i');
+
 // War / geopolitics / diplomacy as GENERAL news has no place here — but the same
 // event with a clear MONEY angle (oil spiking on a conflict, the rupee sliding,
 // defence orders) absolutely does. So drop a headline only when it reads as pure
@@ -94,7 +116,9 @@ async function main() {
   const { items, health } = await fetchAll({ hours: 24, seenLinks: seen });
 
   // 2) ROUTE + TAG, then drop hard procedural noise
-  const routed = routeAll(items).filter((it) => !NOISE.test(it.title) && !isPureGeopolitics(it.title));
+  const routed = routeAll(items).filter(
+    (it) => !NOISE.test(it.title) && !IRRELEVANT.test(it.title) && !isPureGeopolitics(it.title),
+  );
 
   // 3) BUILD CANDIDATE POOLS (ranked, generous) per section
   const pools = { macro: [], sector: [], india: [], global: [], compliance: [] };

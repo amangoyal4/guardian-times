@@ -126,22 +126,32 @@ Text: ${item.rawSummary || '(no description in feed)'}`;
  * Returns { macro:[link,...], sector:[...], india:[...], global:[...], compliance:[...] }.
  */
 export async function selectStories(bySection, perSection = 8) {
-  // Build a compact, id-tagged catalogue the model can reference by link.
+  // Build a compact catalogue. CRITICAL: reference each story by a SHORT INTEGER
+  // id, never its full URL. Earlier versions tagged lines with the raw link and
+  // asked the model to echo links back; with ~40 selections that output ran past
+  // maxTokens and truncated mid-JSON (no closing brace), so extractJson threw
+  // "no JSON in response" and the whole editor cut fell back to the dumb keyword
+  // router — the root cause of stories landing in the wrong section. Tiny integer
+  // ids keep the response small enough to always complete.
   const sections = ['macro', 'sector', 'india', 'global', 'compliance'];
+  const idToLink = new Map();
   const lines = [];
+  let nextId = 1;
   for (const sec of sections) {
     const items = bySection[sec] || [];
     if (!items.length) continue;
     lines.push(`\n## ${sec.toUpperCase()}`);
     for (const it of items.slice(0, 24)) {
-      lines.push(`[${it.link}] ${it.isIndian ? 'IN' : 'GL'} (${it.source}) ${it.title}`);
+      const id = nextId++;
+      idToLink.set(id, it.link);
+      lines.push(`${id}. ${it.isIndian ? 'IN' : 'GL'} (${it.source}) ${it.title}`);
     }
   }
   const catalogue = lines.join('\n');
 
   const prompt = `${HOUSE}
 
-You are doing the morning EDITORIAL CUT for today's edition. Below is the candidate pool, grouped under the section each story was PROVISIONALLY filed in by an automated classifier, each line tagged with its [id], region (IN/GL), source and headline. The provisional filing is OFTEN WRONG — your job includes RE-FILING each story into the correct section.
+You are doing the morning EDITORIAL CUT for today's edition. Below is the candidate pool, grouped under the section each story was PROVISIONALLY filed in by an automated classifier. Each line starts with a numeric id, then region (IN/GL), source and headline. The provisional filing is OFTEN WRONG — your job includes RE-FILING each story into the correct section.
 
 Your job: select the most IMPORTANT, decision-relevant stories a wealth/PMS professional must know, PLACE EACH IN THE CORRECT SECTION, and RUTHLESSLY DROP procedural noise.
 
@@ -166,10 +176,10 @@ Selection rules:
 - Each section: pick up to ${perSection} of the BEST-FITTING stories, fewer if thin — quality over filling slots.
 - Place each chosen id under the section its CONTENT belongs to (per the definitions above), NOT where it was provisionally filed.
 - Within a section, order Indian stories first (IN), then global (GL); within each, most important first.
-- Use ONLY ids that appear below. Do not invent ids. Put each id in at most ONE section.
+- Use ONLY the numeric ids that appear below. Do not invent ids. Put each id in at most ONE section.
 
-Return ONLY JSON, no markdown:
-{ "macro":["id",...], "sector":["id",...], "india":["id",...], "global":["id",...], "compliance":["id",...] }
+Return ONLY JSON, no markdown. Use the bare integers (not strings):
+{ "macro":[1,2], "sector":[3], "india":[4,5], "global":[6], "compliance":[7] }
 
 CANDIDATE POOL:
 ${catalogue}`;
@@ -177,7 +187,17 @@ ${catalogue}`;
   try {
     const out = extractJson(await callGemini(prompt, { maxTokens: 1500 }));
     const valid = {};
-    for (const sec of sections) valid[sec] = Array.isArray(out[sec]) ? out[sec] : [];
+    for (const sec of sections) {
+      const ids = Array.isArray(out[sec]) ? out[sec] : [];
+      // Map the model's integer ids back to story links; drop anything unknown.
+      valid[sec] = ids
+        .map((id) => idToLink.get(Number(id)))
+        .filter(Boolean);
+    }
+    // Guard against a degenerate response (e.g. all sections empty) — treat it as
+    // a failure so the caller keeps its own ranking rather than blanking the paper.
+    const total = Object.values(valid).reduce((n, a) => n + a.length, 0);
+    if (!total) throw new Error('editor returned no usable ids');
     return valid;
   } catch (err) {
     console.log(`  ⚠ editor cut failed (${err.message}); falling back to ranking.`);

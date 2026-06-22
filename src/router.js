@@ -38,6 +38,16 @@ const TOPICS = [
   { name: 'equity', weight: 1, kws: ['sensex', 'nifty', ' stock', 'shares', 'share price', ' ipo', ' qip', 'dividend', 'buyback', 'earnings', 'results', ' q1', ' q2', ' q3', ' q4', 'block deal', 'bulk deal', ' fii', ' dii', 'listing', 'debut', ' m&a', 'acquisition', 'merger', ' stake', 'demerger', 'nasdaq', ' dow', 's&p', 'rally', 'surge', 'jumps', 'plunge', 'tumble', 'valuation', 'market cap', 'bond sale', 'offering'] },
 ];
 
+// A genuine SECTOR story moves a whole industry/theme together — typically a
+// sectoral index or an explicitly sector-wide phrase. These are unambiguous.
+const SECTOR_INDEX = /(nifty (pharma|bank|realty|it|auto|metal|fmcg|psu|energy|financial|media)|bank nifty|sectoral|sector index|sector rotation|across the sector|industry-wide|sector-wide)/i;
+// A SINGLE-COMPANY action. When a headline is one company doing one of these, it
+// is an equity (india/global) story even if it name-drops a sector word like
+// "cement"/"pharma"/"realty" — e.g. "Dalmia Bharat Targets 110-130 MTPA Cement
+// Capacity" or "Tech Mahindra Leases 4 Lakh Sq Ft". Without this, such items get
+// mis-filed into Sector by the keyword scorer whenever the AI editor-cut is down.
+const COMPANY_ACTION = /(\btargets?\b|\bleases?\b|\bwins?\b|\bbags?\b|\bsecures?\b|\bq[1-4]\b|\bresults?\b|earnings|\bipo\b|\bqip\b|\blists?\b|\bdebut\b|\bstake\b|acquir|\bmerg|demerg|\braises?\b|\bappoints?\b|board approv|order win|bond sale|buyback|\bdividend\b|\bexpansion\b|\bcapacity\b|\bplant\b|\bfunding\b)/i;
+
 function pad(text) {
   return ' ' + text.toLowerCase().replace(/\s+/g, ' ') + ' ';
 }
@@ -70,7 +80,15 @@ function detectTopic(t) {
 export function routeItem(item) {
   const t = pad(`${item.title} ${item.rawSummary}`);
   const isIndian = detectIndian(t, item.region);
-  const topic = detectTopic(t);
+  let topic = detectTopic(t);
+
+  // Single-company action that only happens to mention a sector word is an equity
+  // story, not a sector story — unless the headline is genuinely about a sectoral
+  // index / industry-wide move. Classify on the TITLE so a stray sector word in the
+  // feed blurb can't drag a single company into Sector.
+  if (topic === 'sector' && COMPANY_ACTION.test(item.title) && !SECTOR_INDEX.test(t)) {
+    topic = 'equity';
+  }
 
   let section;
   if (topic === 'compliance') section = 'compliance';
