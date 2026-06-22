@@ -184,11 +184,58 @@ function libraryPage(num, library) {
     </section>`;
 }
 
+// Turn on-screen financial text into something a TTS voice reads like a human news
+// anchor rather than a teleprompter. Display text is never touched — this only
+// shapes the words the spoken-briefing receives, expanding the symbols, currency
+// and finance shorthand ("₹500 cr", "3.2% YoY", "Q1FY25", "F&O", "(NSE: INFY)")
+// that otherwise come out as robotic gibberish.
+function speechify(s = '') {
+  const UNIT = { cr: 'crore', lk: 'lakh', bn: 'billion', mn: 'million', tn: 'trillion' };
+  const unit = (u) => (u ? (UNIT[u.toLowerCase()] || u.toLowerCase()) : '');
+  let t = ' ' + String(s).replace(/\s+/g, ' ') + ' ';
+  t = t
+    // drop exchange/ticker parentheticals — they read as gibberish
+    .replace(/\((?:NSE|BSE|NYSE|NASDAQ)[:\s][^)]*\)/gi, ' ')
+    // finance shorthand spelled out (before the generic '&' swap below)
+    .replace(/\bM&A\b/gi, 'mergers and acquisitions')
+    .replace(/\bF&O\b/gi, 'futures and options')
+    .replace(/\bP\/E\b/gi, 'price to earnings')
+    .replace(/\bR&D\b/gi, 'research and development')
+    .replace(/\bH1B\b/gi, 'H 1 B')
+    // currency + amount → natural spoken order ("₹500 cr" → "500 crore rupees").
+    // Units are matched LONGEST-FIRST so "cr" can't bite the front off "crore",
+    // and the Indian compound "lakh crore"/"thousand crore" stays intact.
+    .replace(/₹\s?([\d,.]+)\s*(lakh crore|thousand crore|crore|cr|lakh|lk|billion|bn|million|mn|trillion|tn)?/gi,
+      (m, n, u) => `${n}${u ? ' ' + unit(u) : ''} rupees `)
+    .replace(/(?:\bRs\.?|\bINR)\s?([\d,.]+)\s*(lakh crore|thousand crore|crore|cr|lakh|lk|billion|bn|million|mn|trillion|tn)?/gi,
+      (m, n, u) => `${n}${u ? ' ' + unit(u) : ''} rupees `)
+    .replace(/\$\s?([\d,.]+)\s*(trillion|tn|billion|bn|million|mn)?/gi,
+      (m, n, u) => `${n}${u ? ' ' + unit(u) : ''} dollars `)
+    // symbols
+    .replace(/%/g, ' percent')
+    .replace(/&/g, ' and ')
+    // reporting periods / ratios ("Q1FY25" → "first quarter fiscal year 25")
+    .replace(/\bQ([1-4])(?=FY)/gi, (m, q) => ['first', 'second', 'third', 'fourth'][q - 1] + ' quarter ')
+    .replace(/\bQ([1-4])\b/gi, (m, q) => ['first', 'second', 'third', 'fourth'][q - 1] + ' quarter')
+    .replace(/\bH([12])\b/g, (m, h) => (h === '1' ? 'first' : 'second') + ' half')
+    .replace(/\bFY\s?(\d{2,4})\b/gi, 'fiscal year $1')
+    .replace(/\bbps\b/gi, 'basis points')
+    .replace(/\bY-?o-?Y\b/gi, 'year on year')
+    .replace(/\bQ-?o-?Q\b/gi, 'quarter on quarter')
+    .replace(/\bM-?o-?M\b/gi, 'month on month')
+    // numeric ranges "5–7" → "5 to 7"
+    .replace(/(\d)\s?[–—]\s?(\d)/g, '$1 to $2')
+    .replace(/\s+/g, ' ')
+    .trim();
+  return t;
+}
+
 // Assemble the spoken "morning briefing" script the in-browser AI voice reads.
 // Plain text only (no HTML) — every story's headline + summary, in display order,
-// announced section by section. Returned as an array of {label,text} segments so
-// the player can show which section it's currently reading. Generated at build
-// time from the summaries already in hand, so it costs ZERO extra Gemini calls.
+// announced section by section, with light connective tissue so it flows like a
+// read briefing instead of a flat list. Returned as an array of {label,text}
+// segments so the player can show which section it's currently reading. Generated
+// at build time from summaries already in hand, so it costs ZERO extra Gemini calls.
 function buildAudioScript(data) {
   const sections = [
     ['Macroeconomy and Policy', data.macro],
@@ -197,17 +244,21 @@ function buildAudioScript(data) {
     ['Global Markets', data.global],
     ['Compliance and Regulation', data.compliance],
   ];
-  const clean = (s = '') => String(s).replace(/\s+/g, ' ').trim();
+  const clean = (s = '') => speechify(String(s).replace(/\s+/g, ' ').trim());
   const segments = [];
   const total = sections.reduce((n, [, arr]) => n + (arr?.length || 0), 0);
   const live = sections.filter(([, arr]) => arr && arr.length).length;
   segments.push({
     label: 'Briefing',
-    text: `Good morning. This is your Guardian Times briefing — ${total} ${total === 1 ? 'story' : 'stories'} across ${live} ${live === 1 ? 'section' : 'sections'}.`,
+    text: `Good morning, and welcome to your Guardian Times briefing. Here are today's ${total} ${total === 1 ? 'story' : 'stories'} across ${live} ${live === 1 ? 'section' : 'sections'}. Let's begin.`,
   });
+  let first = true;
   for (const [name, items] of sections) {
     if (!items || !items.length) continue;
-    segments.push({ label: name, text: `${name}.` });
+    // A spoken lead-in rather than a bare label — "We begin with…", then "Turning to…".
+    const lead = first ? `First, ${name}.` : `Turning now to ${name}.`;
+    first = false;
+    segments.push({ label: name, text: lead });
     for (const it of items) {
       const head = clean(it.headline || it.title);
       const summ = clean(it.summary);
@@ -217,7 +268,7 @@ function buildAudioScript(data) {
       segments.push({ label: name, text: `${headSpoken} ${summ}`.trim() });
     }
   }
-  segments.push({ label: 'Briefing', text: 'That concludes your briefing. Have a profitable day.' });
+  segments.push({ label: 'Briefing', text: 'And that brings your briefing to a close. Wishing you a profitable day ahead.' });
   return segments;
 }
 

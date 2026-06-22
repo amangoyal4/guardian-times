@@ -397,18 +397,37 @@ __PAGES__
     var pausedInChunk = 0;   // seconds already elapsed in chunk when paused
     var boundaryChars = 0;   // latest onboundary charIndex (refines the playhead)
 
+    // Pick the most human-sounding available voice. Modern "Natural"/"Online"/
+    // "Neural" voices (Microsoft Edge) and Google voices sound like a real anchor;
+    // the legacy local SAPI/eSpeak voices (David, Zira, Mark, Hazel…) are the flat
+    // robotic ones we avoid unless nothing better exists. An Indian-English voice
+    // is ideal for this audience.
     function pickVoice(){
       var vs = synth.getVoices() || [];
       if(!vs.length) return null;
-      var prefs = [/en[-_]IN/i, /Google UK English/i, /Google US English/i, /Microsoft.*(Natural|Online)/i, /en[-_]GB/i, /en[-_]US/i, /^en/i];
+      var en = vs.filter(function(x){ return /^en([-_]|$)/i.test(x.lang || ''); });
+      var pool = en.length ? en : vs;
+      var bad = /eSpeak|David|Zira|Mark|Hazel|Susan|George|Catherine|James|Richard|Linda/i;
+      var prefs = [
+        function(v){ return /en[-_]IN/i.test(v.lang) && /Natural|Online|Neural/i.test(v.name); },
+        function(v){ return /Natural|Online|Neural/i.test(v.name); },
+        function(v){ return /Google/i.test(v.name) && /en[-_]IN/i.test(v.lang); },
+        function(v){ return /Google/i.test(v.name); },
+        function(v){ return /en[-_]IN/i.test(v.lang); },
+        function(v){ return !bad.test(v.name); },
+        function(v){ return true; }
+      ];
       for(var i=0;i<prefs.length;i++){
-        var v = vs.find(function(x){ return prefs[i].test(x.lang) || prefs[i].test(x.name); });
+        var v = pool.find(prefs[i]);
         if(v) return v;
       }
-      return vs[0];
+      return pool[0] || vs[0];
     }
     voice = pickVoice();
-    if(synth.onvoiceschanged !== undefined){ synth.onvoiceschanged = function(){ if(!voice) voice = pickVoice(); }; }
+    // Chrome loads the high-quality online/natural voices asynchronously AFTER the
+    // first getVoices() call, so re-pick whenever the list changes — otherwise we'd
+    // stay stuck on whatever robotic local voice was available at load.
+    if(synth.onvoiceschanged !== undefined){ synth.onvoiceschanged = function(){ voice = pickVoice() || voice; }; }
 
     function fmt(t){ t = Math.max(0, Math.round(t || 0)); var m = Math.floor(t/60), s = t%60; return m + ':' + (s<10?'0':'') + s; }
     function reading(label){ statusEl.innerHTML = '<span class="live-dot"></span>Reading &middot; ' + label; }
@@ -441,8 +460,8 @@ __PAGES__
       if(idx >= queue.length){ finish(); return; }
       var item = queue[idx];
       var u = new SpeechSynthesisUtterance(item.text);
-      if(voice) u.voice = voice;
-      u.rate = rates[ri]; u.pitch = 1;
+      if(voice){ u.voice = voice; if(voice.lang) u.lang = voice.lang; }
+      u.rate = rates[ri]; u.pitch = 1; u.volume = 1;
       u.onboundary = function(e){ if(typeof e.charIndex === 'number') boundaryChars = e.charIndex; };
       u.onend = function(){ if(playing && !paused){ idx++; boundaryChars = 0; pausedInChunk = 0; chunkStartedAt = performance.now(); render(); speakCurrent(); } };
       u.onerror = function(){ if(playing && !paused){ idx++; boundaryChars = 0; pausedInChunk = 0; chunkStartedAt = performance.now(); speakCurrent(); } };
