@@ -35,21 +35,37 @@
 
   /* Audio briefing player */
   .audiobar{max-width:var(--maxw);margin:14px auto 0;padding:0 28px}
-  .audiobar-inner{display:flex;align-items:center;gap:14px;background:var(--ink);color:var(--paper);border-radius:6px;padding:10px 14px 10px 10px;box-shadow:0 2px 14px rgba(0,0,0,.14)}
-  .audio-btn{flex:0 0 auto;width:42px;height:42px;border-radius:50%;border:none;background:var(--gold-bright);color:#0a0a0a;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:15px;transition:transform .15s ease,background .2s ease;padding:0}
-  .audio-btn:hover{transform:scale(1.06)}
-  .audio-btn .ico-pause{display:none;letter-spacing:1px}
-  .audio-btn.playing .ico-play{display:none}
-  .audio-btn.playing .ico-pause{display:inline}
-  .audio-meta{flex:1 1 auto;min-width:0;line-height:1.25}
+  .audiobar-inner{display:flex;flex-direction:column;gap:11px;background:var(--ink);color:var(--paper);border-radius:7px;padding:13px 18px 15px;box-shadow:0 2px 14px rgba(0,0,0,.16)}
+  .audio-head{display:flex;align-items:center;justify-content:space-between;gap:14px}
+  .audio-meta{min-width:0;line-height:1.2}
   .audio-title{display:block;font-family:'Fraunces',serif;font-weight:600;font-size:15px}
   .audio-status{display:block;font-family:'IBM Plex Mono',monospace;font-size:10.5px;letter-spacing:.04em;text-transform:uppercase;color:#9a9aa2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:2px}
   .audio-status .live-dot{display:inline-block;width:6px;height:6px;border-radius:50%;background:var(--gold-bright);margin-right:6px;vertical-align:middle;animation:apulse 1.2s ease-in-out infinite}
   @keyframes apulse{0%,100%{opacity:1}50%{opacity:.3}}
-  .audio-ctrl{flex:0 0 auto;background:none;border:1px solid #3a3a42;color:var(--paper);cursor:pointer;font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:.04em;padding:7px 9px;border-radius:4px;transition:all .15s ease}
-  .audio-ctrl:hover{background:#26262c;border-color:#55555f}
-  .audio-ctrl[hidden]{display:none}
-  @media(max-width:560px){.audio-status{font-size:9.5px}.audio-title{font-size:14px}}
+  .audio-time{flex:0 0 auto;font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:.04em;color:#9a9aa2;font-variant-numeric:tabular-nums;white-space:nowrap}
+
+  .audio-wave{position:relative;height:40px;cursor:pointer;touch-action:none;-webkit-user-select:none;user-select:none}
+  .audio-wave:focus{outline:none}
+  .audio-wave:focus-visible{outline:1px solid var(--gold-bright);outline-offset:3px;border-radius:2px}
+  .wave-bars{position:absolute;inset:0;display:flex;align-items:center;gap:2px;pointer-events:none}
+  .wave-bars span{flex:1 1 0;min-width:0;height:30%;background:#3a3a42;border-radius:1px}
+  .wave-played{clip-path:inset(0 calc(100% - var(--p,0%)) 0 0)}
+  .wave-played span{background:var(--gold-bright)}
+  .wave-thumb{position:absolute;top:-2px;bottom:-2px;left:var(--p,0%);width:2px;margin-left:-1px;background:#fff;border-radius:2px;pointer-events:none;box-shadow:0 0 0 1px rgba(0,0,0,.35)}
+
+  .audio-controls{display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:8px}
+  .audio-trio{grid-column:2;display:flex;align-items:center;gap:16px}
+  .audio-btn{width:48px;height:48px;border-radius:50%;border:none;background:var(--gold-bright);color:#0a0a0a;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:16px;transition:transform .15s ease;padding:0}
+  .audio-btn:hover{transform:scale(1.06)}
+  .audio-btn .ico-pause{display:none;letter-spacing:1px}
+  .audio-btn.playing .ico-play{display:none}
+  .audio-btn.playing .ico-pause{display:inline}
+  .audio-skip{width:40px;height:40px;border-radius:50%;border:1px solid #3a3a42;background:none;color:var(--paper);cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0;transition:all .15s ease}
+  .audio-skip:hover{background:#26262c;border-color:#5a5a64}
+  .audio-skip svg{width:25px;height:25px}
+  .audio-speed{grid-column:3;justify-self:end;background:none;border:1px solid #3a3a42;color:var(--paper);cursor:pointer;font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:.04em;padding:7px 10px;border-radius:4px;transition:all .15s ease}
+  .audio-speed:hover{background:#26262c;border-color:#5a5a64}
+  @media(max-width:560px){.audio-title{font-size:14px}.audio-status{font-size:9.5px}.audio-trio{gap:12px}}
 
   /* Nav */
   .nav-wrap{position:sticky;top:0;z-index:50;background:rgba(251,250,247,.94);backdrop-filter:blur(8px);border-bottom:1px solid var(--line)}
@@ -231,15 +247,32 @@
 
 <div class="audiobar" id="audiobar" hidden>
   <div class="audiobar-inner">
-    <button class="audio-btn" id="audioToggle" aria-label="Play the audio briefing">
-      <span class="ico-play">&#9658;</span><span class="ico-pause">&#10073;&#10073;</span>
-    </button>
-    <div class="audio-meta">
-      <span class="audio-title">Listen to today&rsquo;s briefing</span>
-      <span class="audio-status" id="audioStatus">AI voice &middot; reads every headline &amp; summary</span>
+    <div class="audio-head">
+      <div class="audio-meta">
+        <span class="audio-title">Listen to today&rsquo;s briefing</span>
+        <span class="audio-status" id="audioStatus">AI voice &middot; reads every headline &amp; summary</span>
+      </div>
+      <span class="audio-time" id="audioTime">0:00 / --:--</span>
     </div>
-    <button class="audio-ctrl" id="audioSpeed" aria-label="Playback speed">1&times;</button>
-    <button class="audio-ctrl" id="audioStop" aria-label="Stop briefing" hidden>&#9632;</button>
+    <div class="audio-wave" id="audioWave" role="slider" aria-label="Seek through the briefing" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" tabindex="0">
+      <div class="wave-bars" id="waveBase"></div>
+      <div class="wave-bars wave-played" id="wavePlayed"></div>
+      <div class="wave-thumb" id="waveThumb"></div>
+    </div>
+    <div class="audio-controls">
+      <div class="audio-trio">
+        <button class="audio-skip" id="audioBack" aria-label="Back 10 seconds">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3.5 12a8.5 8.5 0 1 0 2.7-6.2"/><path d="M3 4.2V9h4.8"/><text x="12.4" y="15.4" text-anchor="middle" font-size="8.5" stroke="none" fill="currentColor" style="font-family:'IBM Plex Mono',monospace;font-weight:600">10</text></svg>
+        </button>
+        <button class="audio-btn" id="audioToggle" aria-label="Play or pause the briefing">
+          <span class="ico-play">&#9658;</span><span class="ico-pause">&#10073;&#10073;</span>
+        </button>
+        <button class="audio-skip" id="audioFwd" aria-label="Forward 10 seconds">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20.5 12a8.5 8.5 0 1 1 -2.7-6.2"/><path d="M21 4.2V9h-4.8"/><text x="11.6" y="15.4" text-anchor="middle" font-size="8.5" stroke="none" fill="currentColor" style="font-family:'IBM Plex Mono',monospace;font-weight:600">10</text></svg>
+        </button>
+      </div>
+      <button class="audio-speed" id="audioSpeed" aria-label="Playback speed">1&times;</button>
+    </div>
   </div>
 </div>
 
@@ -286,19 +319,24 @@ __PAGES__
     window.scrollTo({top:0,behavior:'smooth'});
   }));
 
-  /* ----- Audio briefing: in-browser AI voice (Web Speech API) ----- */
+  /* ----- Audio briefing: in-browser AI voice (Web Speech API) -----
+     Note on the scrubber: the Web Speech API exposes no audio buffer and no real
+     timeline — you cannot start speaking from an arbitrary millisecond. So the
+     waveform is a faux visual, the timeline is ESTIMATED from text length at the
+     current rate, and a seek/skip SNAPS to the nearest sentence (the smallest unit
+     TTS can begin from). An onboundary refinement keeps the playhead honest while a
+     sentence is being read. It behaves like a normal scrubber within those limits. */
   (function(){
     var synth = window.speechSynthesis;
     var bar = document.getElementById('audiobar');
     var dataEl = document.getElementById('audio-script');
     var segments = [];
     try { segments = JSON.parse(dataEl.textContent || '[]'); } catch(e){}
-    // No speech support or nothing to read -> leave the bar hidden.
     if(!synth || typeof SpeechSynthesisUtterance === 'undefined' || !segments.length) return;
 
     // Flatten segments into short utterance chunks (<=180 chars, split on sentence
-    // ends). Chrome cuts long utterances off after ~15s, so keeping each chunk short
-    // — plus the periodic resume() heartbeat below — keeps playback going to the end.
+    // ends). Short chunks give finer seek granularity AND dodge Chrome's ~15s
+    // long-utterance cutoff (belt-and-braces with the resume() heartbeat below).
     function chunkify(text){
       var parts = String(text).match(/[^.!?]+[.!?]*\s*/g) || [text];
       var out = [], buf = '';
@@ -315,14 +353,49 @@ __PAGES__
       chunkify(seg.text).forEach(function(t){ queue.push({label:seg.label, text:t}); });
     });
 
-    var toggle = document.getElementById('audioToggle');
-    var stopBtn = document.getElementById('audioStop');
+    var toggle   = document.getElementById('audioToggle');
+    var backBtn  = document.getElementById('audioBack');
+    var fwdBtn   = document.getElementById('audioFwd');
     var speedBtn = document.getElementById('audioSpeed');
     var statusEl = document.getElementById('audioStatus');
+    var timeEl   = document.getElementById('audioTime');
+    var wave     = document.getElementById('audioWave');
+    var wavePlayed = document.getElementById('wavePlayed');
+    var thumb    = document.getElementById('waveThumb');
     var idleStatus = statusEl.innerHTML;
 
-    var idx = 0, playing = false, paused = false, voice = null, heartbeat = null;
+    // Build the faux waveform (same bar heights in both layers so they line up).
+    (function buildWave(){
+      var base = document.getElementById('waveBase');
+      var n = Math.min(150, Math.max(60, queue.length * 6)), html = '', seed = 7;
+      for(var i=0;i<n;i++){
+        seed = (seed*1103515245 + 12345) & 0x7fffffff;       // cheap deterministic PRNG
+        var r = (seed % 1000) / 1000;
+        var h = 16 + Math.round(Math.abs(Math.sin(i*0.5)) * 60 + r * 24); // 16-100%
+        html += '<span style="height:' + Math.min(100,h) + '%"></span>';
+      }
+      base.innerHTML = html; wavePlayed.innerHTML = html;
+    })();
+
     var rates = [1, 1.25, 1.5, 0.85], ri = 0;
+    var CPS = 15, GAP = 0.32; // est. chars/sec at rate 1, + inter-chunk pause (s)
+    var durations = [], starts = [], totalDur = 0;
+    function computeTimeline(){
+      durations = []; starts = []; var acc = 0, cps = CPS * rates[ri];
+      for(var i=0;i<queue.length;i++){
+        starts[i] = acc;
+        durations[i] = queue[i].text.length / cps + GAP;
+        acc += durations[i];
+      }
+      totalDur = acc || 0.1;
+    }
+    computeTimeline();
+
+    var idx = 0, playing = false, paused = false, voice = null;
+    var heartbeat = null, ticker = null, dragging = false;
+    var chunkStartedAt = 0;  // performance.now() when current chunk (re)started
+    var pausedInChunk = 0;   // seconds already elapsed in chunk when paused
+    var boundaryChars = 0;   // latest onboundary charIndex (refines the playhead)
 
     function pickVoice(){
       var vs = synth.getVoices() || [];
@@ -337,55 +410,103 @@ __PAGES__
     voice = pickVoice();
     if(synth.onvoiceschanged !== undefined){ synth.onvoiceschanged = function(){ if(!voice) voice = pickVoice(); }; }
 
-    function setStatus(html){ statusEl.innerHTML = html; }
-    function reading(label){ setStatus('<span class="live-dot"></span>Reading &middot; ' + label); }
+    function fmt(t){ t = Math.max(0, Math.round(t || 0)); var m = Math.floor(t/60), s = t%60; return m + ':' + (s<10?'0':'') + s; }
+    function reading(label){ statusEl.innerHTML = '<span class="live-dot"></span>Reading &middot; ' + label; }
 
-    function speakNext(){
-      if(idx >= queue.length){ stop(); return; }
+    function withinChunk(){
+      if(idx >= queue.length) return 0;
+      var w;
+      if(playing && !paused) w = (performance.now() - chunkStartedAt) / 1000;
+      else w = pausedInChunk;
+      if(boundaryChars > 0){            // refine with the real word position if we have it
+        var est = (boundaryChars / Math.max(1, queue[idx].text.length)) * durations[idx];
+        if(est > w) w = est;
+      }
+      return Math.min(w, durations[idx]);
+    }
+    function currentTime(){ return (starts[idx] || 0) + withinChunk(); }
+
+    function paint(t){
+      var p = Math.max(0, Math.min(100, (t / totalDur) * 100));
+      wavePlayed.style.setProperty('--p', p + '%');
+      thumb.style.setProperty('--p', p + '%');
+      wave.setAttribute('aria-valuenow', Math.round(p));
+      timeEl.textContent = fmt(t) + ' / ' + fmt(totalDur);
+    }
+    function render(){ if(!dragging) paint(currentTime()); }
+    function startTicker(){ stopTicker(); ticker = setInterval(render, 120); }
+    function stopTicker(){ if(ticker){ clearInterval(ticker); ticker = null; } }
+
+    function speakCurrent(){
+      if(idx >= queue.length){ finish(); return; }
       var item = queue[idx];
       var u = new SpeechSynthesisUtterance(item.text);
       if(voice) u.voice = voice;
       u.rate = rates[ri]; u.pitch = 1;
-      u.onend = function(){ if(playing && !paused){ idx++; speakNext(); } };
-      u.onerror = function(){ if(playing && !paused){ idx++; speakNext(); } };
+      u.onboundary = function(e){ if(typeof e.charIndex === 'number') boundaryChars = e.charIndex; };
+      u.onend = function(){ if(playing && !paused){ idx++; boundaryChars = 0; pausedInChunk = 0; chunkStartedAt = performance.now(); render(); speakCurrent(); } };
+      u.onerror = function(){ if(playing && !paused){ idx++; boundaryChars = 0; pausedInChunk = 0; chunkStartedAt = performance.now(); speakCurrent(); } };
+      boundaryChars = 0; chunkStartedAt = performance.now();
       reading(item.label);
       synth.speak(u);
     }
-    function start(){
-      synth.cancel();
-      playing = true; paused = false;
+    function speakFrom(i){ synth.cancel(); idx = i; boundaryChars = 0; pausedInChunk = 0; chunkStartedAt = performance.now(); speakCurrent(); }
+
+    function play(){
       if(idx >= queue.length) idx = 0;
+      playing = true; paused = false;
       toggle.classList.add('playing');
-      stopBtn.hidden = false;
       clearInterval(heartbeat);
       heartbeat = setInterval(function(){ if(playing && !paused) synth.resume(); }, 10000);
-      speakNext();
+      startTicker();
+      speakFrom(idx);
     }
-    function pause(){ paused = true; synth.pause(); toggle.classList.remove('playing'); setStatus('Paused'); }
-    function resume(){ paused = false; toggle.classList.add('playing'); synth.resume(); }
-    function stop(){
-      playing = false; paused = false; idx = 0;
-      clearInterval(heartbeat);
-      synth.cancel();
-      toggle.classList.remove('playing');
-      stopBtn.hidden = true;
-      setStatus(idleStatus);
+    function pause(){ pausedInChunk = withinChunk(); paused = true; synth.pause(); toggle.classList.remove('playing'); statusEl.textContent = 'Paused'; }
+    function resume(){ paused = false; chunkStartedAt = performance.now() - pausedInChunk*1000; toggle.classList.add('playing'); synth.resume(); reading(queue[idx] ? queue[idx].label : ''); }
+    function finish(){
+      playing = false; paused = false; idx = 0; pausedInChunk = 0; boundaryChars = 0;
+      stopTicker(); clearInterval(heartbeat); synth.cancel();
+      toggle.classList.remove('playing'); statusEl.innerHTML = idleStatus; paint(0);
     }
 
-    toggle.addEventListener('click', function(){
-      if(!playing) start();
-      else if(paused) resume();
-      else pause();
-    });
-    stopBtn.addEventListener('click', stop);
+    // Move the playhead to time t (seconds). Snaps to the chunk that contains t.
+    function seekTo(t){
+      t = Math.max(0, Math.min(totalDur, t));
+      if(t >= totalDur - 0.05){ finish(); return; }
+      var i = 0; while(i < queue.length-1 && starts[i+1] <= t) i++;
+      idx = i; boundaryChars = 0; pausedInChunk = 0; chunkStartedAt = performance.now();
+      if(playing && !paused) speakFrom(i); else synth.cancel();
+      paint(starts[i]); // the playhead lands at the sentence start we'll read from
+    }
+
+    // --- controls ---
+    toggle.addEventListener('click', function(){ if(!playing) play(); else if(paused) resume(); else pause(); });
+    backBtn.addEventListener('click', function(){ seekTo(currentTime() - 10); });
+    fwdBtn.addEventListener('click',  function(){ seekTo(currentTime() + 10); });
     speedBtn.addEventListener('click', function(){
-      ri = (ri + 1) % rates.length;
-      speedBtn.textContent = rates[ri] + '×';
-      // Apply the new rate immediately by restarting the current chunk.
-      if(playing && !paused){ synth.cancel(); speakNext(); }
+      var t = currentTime();
+      ri = (ri + 1) % rates.length; speedBtn.textContent = rates[ri] + '×';
+      computeTimeline();                 // timeline rescales with the new rate
+      if(playing && !paused) speakFrom(idx); else { pausedInChunk = 0; }
+      paint(Math.min(t, totalDur));
     });
+
+    // --- draggable waveform seek ---
+    function xToTime(clientX){ var r = wave.getBoundingClientRect(); var f = (clientX - r.left) / r.width; return Math.max(0, Math.min(1, f)) * totalDur; }
+    wave.addEventListener('pointerdown', function(e){ dragging = true; try{ wave.setPointerCapture(e.pointerId); }catch(_){} paint(xToTime(e.clientX)); });
+    wave.addEventListener('pointermove', function(e){ if(dragging) paint(xToTime(e.clientX)); });
+    function endDrag(e){ if(!dragging) return; dragging = false; seekTo(xToTime(e.clientX)); }
+    wave.addEventListener('pointerup', endDrag);
+    wave.addEventListener('pointercancel', function(){ dragging = false; render(); });
+    wave.addEventListener('keydown', function(e){
+      if(e.key === 'ArrowRight'){ e.preventDefault(); seekTo(currentTime() + 5); }
+      else if(e.key === 'ArrowLeft'){ e.preventDefault(); seekTo(currentTime() - 5); }
+      else if(e.key === ' ' || e.key === 'Enter'){ e.preventDefault(); toggle.click(); }
+    });
+
     window.addEventListener('beforeunload', function(){ synth.cancel(); });
 
+    paint(0);
     bar.hidden = false; // speech is supported — reveal the player
   })();
 
