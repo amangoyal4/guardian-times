@@ -184,6 +184,43 @@ function libraryPage(num, library) {
     </section>`;
 }
 
+// Assemble the spoken "morning briefing" script the in-browser AI voice reads.
+// Plain text only (no HTML) — every story's headline + summary, in display order,
+// announced section by section. Returned as an array of {label,text} segments so
+// the player can show which section it's currently reading. Generated at build
+// time from the summaries already in hand, so it costs ZERO extra Gemini calls.
+function buildAudioScript(data) {
+  const sections = [
+    ['Macroeconomy and Policy', data.macro],
+    ['Sectoral Currents', data.sector],
+    ['Indian Markets and Stocks', data.india],
+    ['Global Markets', data.global],
+    ['Compliance and Regulation', data.compliance],
+  ];
+  const clean = (s = '') => String(s).replace(/\s+/g, ' ').trim();
+  const segments = [];
+  const total = sections.reduce((n, [, arr]) => n + (arr?.length || 0), 0);
+  const live = sections.filter(([, arr]) => arr && arr.length).length;
+  segments.push({
+    label: 'Briefing',
+    text: `Good morning. This is your Guardian Times briefing — ${total} ${total === 1 ? 'story' : 'stories'} across ${live} ${live === 1 ? 'section' : 'sections'}.`,
+  });
+  for (const [name, items] of sections) {
+    if (!items || !items.length) continue;
+    segments.push({ label: name, text: `${name}.` });
+    for (const it of items) {
+      const head = clean(it.headline || it.title);
+      const summ = clean(it.summary);
+      if (!head && !summ) continue;
+      // End the headline with a full stop so the voice pauses before the summary.
+      const headSpoken = head ? (/[.!?]$/.test(head) ? head : head + '.') : '';
+      segments.push({ label: name, text: `${headSpoken} ${summ}`.trim() });
+    }
+  }
+  segments.push({ label: 'Briefing', text: 'That concludes your briefing. Have a profitable day.' });
+  return segments;
+}
+
 /**
  * Build the full HTML. `data` shape:
  * { macro, sector, india, global, compliance, market, mechanism, explainers, myths, library, runTime }
@@ -202,10 +239,15 @@ export function buildHTML(data) {
     libraryPage('07', data.library),
   ].join('\n');
 
+  // Embed the spoken-briefing script as JSON. Neutralise '<' so a feed-supplied
+  // "</script>" inside a summary can't close the data block early.
+  const audioJson = JSON.stringify(buildAudioScript(data)).replace(/</g, '\\u003c');
+
   return tpl
     .replace('__LOGO__', LOGO)
     .replace('__TICKER__', ticker)
     .replace('__PAGES__', pages)
+    .replace('__AUDIODATA__', audioJson)
     .replace('__RUNTIME__', data.runTime || new Date().toUTCString());
 }
 

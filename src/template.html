@@ -33,6 +33,24 @@
   .masthead-meta{display:flex;justify-content:center;gap:20px;flex-wrap:wrap;font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:.05em;text-transform:uppercase;color:var(--faint);margin-top:16px;border-top:1px solid var(--line);border-bottom:2px solid var(--line-strong);padding:10px 0}
   .masthead-meta .pos{color:var(--pos)} .masthead-meta .neg{color:var(--neg)}
 
+  /* Audio briefing player */
+  .audiobar{max-width:var(--maxw);margin:14px auto 0;padding:0 28px}
+  .audiobar-inner{display:flex;align-items:center;gap:14px;background:var(--ink);color:var(--paper);border-radius:6px;padding:10px 14px 10px 10px;box-shadow:0 2px 14px rgba(0,0,0,.14)}
+  .audio-btn{flex:0 0 auto;width:42px;height:42px;border-radius:50%;border:none;background:var(--gold-bright);color:#0a0a0a;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:15px;transition:transform .15s ease,background .2s ease;padding:0}
+  .audio-btn:hover{transform:scale(1.06)}
+  .audio-btn .ico-pause{display:none;letter-spacing:1px}
+  .audio-btn.playing .ico-play{display:none}
+  .audio-btn.playing .ico-pause{display:inline}
+  .audio-meta{flex:1 1 auto;min-width:0;line-height:1.25}
+  .audio-title{display:block;font-family:'Fraunces',serif;font-weight:600;font-size:15px}
+  .audio-status{display:block;font-family:'IBM Plex Mono',monospace;font-size:10.5px;letter-spacing:.04em;text-transform:uppercase;color:#9a9aa2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:2px}
+  .audio-status .live-dot{display:inline-block;width:6px;height:6px;border-radius:50%;background:var(--gold-bright);margin-right:6px;vertical-align:middle;animation:apulse 1.2s ease-in-out infinite}
+  @keyframes apulse{0%,100%{opacity:1}50%{opacity:.3}}
+  .audio-ctrl{flex:0 0 auto;background:none;border:1px solid #3a3a42;color:var(--paper);cursor:pointer;font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:.04em;padding:7px 9px;border-radius:4px;transition:all .15s ease}
+  .audio-ctrl:hover{background:#26262c;border-color:#55555f}
+  .audio-ctrl[hidden]{display:none}
+  @media(max-width:560px){.audio-status{font-size:9.5px}.audio-title{font-size:14px}}
+
   /* Nav */
   .nav-wrap{position:sticky;top:0;z-index:50;background:rgba(251,250,247,.94);backdrop-filter:blur(8px);border-bottom:1px solid var(--line)}
   nav{max-width:var(--maxw);margin:0 auto;display:flex;align-items:center;gap:3px;padding:8px 18px;overflow-x:auto;scrollbar-width:none}
@@ -211,6 +229,20 @@
   <div class="masthead-meta">__TICKER__</div>
 </header>
 
+<div class="audiobar" id="audiobar" hidden>
+  <div class="audiobar-inner">
+    <button class="audio-btn" id="audioToggle" aria-label="Play the audio briefing">
+      <span class="ico-play">&#9658;</span><span class="ico-pause">&#10073;&#10073;</span>
+    </button>
+    <div class="audio-meta">
+      <span class="audio-title">Listen to today&rsquo;s briefing</span>
+      <span class="audio-status" id="audioStatus">AI voice &middot; reads every headline &amp; summary</span>
+    </div>
+    <button class="audio-ctrl" id="audioSpeed" aria-label="Playback speed">1&times;</button>
+    <button class="audio-ctrl" id="audioStop" aria-label="Stop briefing" hidden>&#9632;</button>
+  </div>
+</div>
+
 <div class="nav-wrap">
   <nav id="nav">
     <button class="nav-btn active" data-page="macro"><span class="pg">01</span> Macro &amp; Economy</button>
@@ -232,6 +264,7 @@ __PAGES__
   <div class="disclaimer">Headlines and summaries are original editorial prepared from publicly reported facts; full articles open at the original source and may require a subscription. Market data is sourced live from Yahoo Finance and may be delayed. Not investment advice.</div>
 </footer>
 
+<script type="application/json" id="audio-script">__AUDIODATA__</script>
 <script>
   const navBtns=document.querySelectorAll('.nav-btn');
   const pages=document.querySelectorAll('.page');
@@ -252,6 +285,109 @@ __PAGES__
     pages.forEach(p=>p.classList.toggle('active',p.id==='page-knowledge'));
     window.scrollTo({top:0,behavior:'smooth'});
   }));
+
+  /* ----- Audio briefing: in-browser AI voice (Web Speech API) ----- */
+  (function(){
+    var synth = window.speechSynthesis;
+    var bar = document.getElementById('audiobar');
+    var dataEl = document.getElementById('audio-script');
+    var segments = [];
+    try { segments = JSON.parse(dataEl.textContent || '[]'); } catch(e){}
+    // No speech support or nothing to read -> leave the bar hidden.
+    if(!synth || typeof SpeechSynthesisUtterance === 'undefined' || !segments.length) return;
+
+    // Flatten segments into short utterance chunks (<=180 chars, split on sentence
+    // ends). Chrome cuts long utterances off after ~15s, so keeping each chunk short
+    // — plus the periodic resume() heartbeat below — keeps playback going to the end.
+    function chunkify(text){
+      var parts = String(text).match(/[^.!?]+[.!?]*\s*/g) || [text];
+      var out = [], buf = '';
+      for(var i=0;i<parts.length;i++){
+        var p = parts[i];
+        if((buf+p).length > 180 && buf){ out.push(buf.trim()); buf = p; }
+        else buf += p;
+      }
+      if(buf.trim()) out.push(buf.trim());
+      return out;
+    }
+    var queue = [];
+    segments.forEach(function(seg){
+      chunkify(seg.text).forEach(function(t){ queue.push({label:seg.label, text:t}); });
+    });
+
+    var toggle = document.getElementById('audioToggle');
+    var stopBtn = document.getElementById('audioStop');
+    var speedBtn = document.getElementById('audioSpeed');
+    var statusEl = document.getElementById('audioStatus');
+    var idleStatus = statusEl.innerHTML;
+
+    var idx = 0, playing = false, paused = false, voice = null, heartbeat = null;
+    var rates = [1, 1.25, 1.5, 0.85], ri = 0;
+
+    function pickVoice(){
+      var vs = synth.getVoices() || [];
+      if(!vs.length) return null;
+      var prefs = [/en[-_]IN/i, /Google UK English/i, /Google US English/i, /Microsoft.*(Natural|Online)/i, /en[-_]GB/i, /en[-_]US/i, /^en/i];
+      for(var i=0;i<prefs.length;i++){
+        var v = vs.find(function(x){ return prefs[i].test(x.lang) || prefs[i].test(x.name); });
+        if(v) return v;
+      }
+      return vs[0];
+    }
+    voice = pickVoice();
+    if(synth.onvoiceschanged !== undefined){ synth.onvoiceschanged = function(){ if(!voice) voice = pickVoice(); }; }
+
+    function setStatus(html){ statusEl.innerHTML = html; }
+    function reading(label){ setStatus('<span class="live-dot"></span>Reading &middot; ' + label); }
+
+    function speakNext(){
+      if(idx >= queue.length){ stop(); return; }
+      var item = queue[idx];
+      var u = new SpeechSynthesisUtterance(item.text);
+      if(voice) u.voice = voice;
+      u.rate = rates[ri]; u.pitch = 1;
+      u.onend = function(){ if(playing && !paused){ idx++; speakNext(); } };
+      u.onerror = function(){ if(playing && !paused){ idx++; speakNext(); } };
+      reading(item.label);
+      synth.speak(u);
+    }
+    function start(){
+      synth.cancel();
+      playing = true; paused = false;
+      if(idx >= queue.length) idx = 0;
+      toggle.classList.add('playing');
+      stopBtn.hidden = false;
+      clearInterval(heartbeat);
+      heartbeat = setInterval(function(){ if(playing && !paused) synth.resume(); }, 10000);
+      speakNext();
+    }
+    function pause(){ paused = true; synth.pause(); toggle.classList.remove('playing'); setStatus('Paused'); }
+    function resume(){ paused = false; toggle.classList.add('playing'); synth.resume(); }
+    function stop(){
+      playing = false; paused = false; idx = 0;
+      clearInterval(heartbeat);
+      synth.cancel();
+      toggle.classList.remove('playing');
+      stopBtn.hidden = true;
+      setStatus(idleStatus);
+    }
+
+    toggle.addEventListener('click', function(){
+      if(!playing) start();
+      else if(paused) resume();
+      else pause();
+    });
+    stopBtn.addEventListener('click', stop);
+    speedBtn.addEventListener('click', function(){
+      ri = (ri + 1) % rates.length;
+      speedBtn.textContent = rates[ri] + '×';
+      // Apply the new rate immediately by restarting the current chunk.
+      if(playing && !paused){ synth.cancel(); speakNext(); }
+    });
+    window.addEventListener('beforeunload', function(){ synth.cancel(); });
+
+    bar.hidden = false; // speech is supported — reveal the player
+  })();
 
 </script>
 </body>
