@@ -86,13 +86,30 @@ Voice: precise, first-principles, analytical, confident, clean prose — the reg
 
 // Summarise ONE story into headline + summary + "so what" (+ optional chart for leads).
 async function summariseStory(item, { lead = false } = {}) {
+  // For leads we may have fetched the FULL article text (see article.js). That body
+  // usually contains the historical/comparative figures a publisher prints in its
+  // graphs/pictographs — the very numbers the short RSS snippet drops. Using it lets
+  // us re-create that data as OUR OWN clean house-style chart (legal: facts in,
+  // original SVG out; we never copy their image).
+  const hasFull = item.fullText && item.fullText.length > 200;
+
   // Any story MAY carry a chart, but only when the news itself has a real data
   // story to tell — a comparison or trend the reader should interpret. Most
   // stories will (correctly) have no chart; a decorative chart is worse than none.
   const chartSpec = `,
-  "chart": null in MOST cases. Include a chart object ONLY IF this item states 2-6 concrete, comparable numeric figures that genuinely reveal something (a trend over time, a before/after, a ranking, a breakdown) — NOT a single number, NOT a price quote, NOT vague mentions. The chart must EXPLAIN the story, not decorate it. Shape:
+  "chart": null in MOST cases. Include a chart object ONLY IF the provided text states 2-6 concrete, comparable numeric figures that genuinely reveal something (a trend over time, a before/after, a ranking, a breakdown) — NOT a single number, NOT a price quote, NOT vague mentions. ${hasFull ? 'PREFER a "line" time-series when the article body gives a metric across several periods (quarters/years) — those historical trends are the most valuable charts; reconstruct the full series from the figures stated in the body. ' : ''}The chart must EXPLAIN the story, not decorate it. Shape:
     { "type":"bar" (for comparisons/rankings) or "line" (for a time trend), "title":"≤6-word title", "unit":"₹cr" or "%" or "$" or "", "dp":0, "series":[ {"label":"≤14 chars","value":number}, ... 2-6 entries ], "note":"a full, specific sentence (≤22 words) explaining what the chart shows and what the reader should conclude from it" }
-    STRICT: use ONLY numbers explicitly present in the item text — NEVER invent, estimate, or extrapolate. If the figures don't form a genuine comparison or trend, set "chart": null.`;
+    STRICT: use ONLY numbers explicitly present in the provided text (headline, snippet, or full article body when given) — NEVER invent, estimate, extrapolate, or recall figures from memory. If the figures don't form a genuine comparison or trend, set "chart": null.`;
+  const sourceBlock = hasFull
+    ? `RAW ITEM:
+Title: ${item.title}
+Source: ${item.source}
+Full article body (use this to extract figures for the chart — including any historical or year-on-year series the headline omits; do NOT copy its wording into the summary):
+${item.fullText}`
+    : `RAW ITEM:
+Title: ${item.title}
+Source: ${item.source}
+Text: ${item.rawSummary || '(no description in feed)'}`;
   const prompt = `${HOUSE}
 
 Rewrite this raw news item into Guardian Times editorial — substantive, specific, and tight. Reason about what actually matters before you write. Return ONLY JSON, no markdown:
@@ -102,14 +119,11 @@ Rewrite this raw news item into Guardian Times editorial — substantive, specif
   "soWhat": "${lead ? 'two or three sentences' : 'one or two sentences'} of genuine analysis for an Indian wealth/PMS/AIF professional — the 'so what' the source won't tell them: who is affected and which way, the second-order effect, and the specific thing to watch next. Not a restatement of the summary."${chartSpec}
 }
 
-RAW ITEM:
-Title: ${item.title}
-Source: ${item.source}
-Text: ${item.rawSummary || '(no description in feed)'}`;
+${sourceBlock}`;
 
   try {
     const out = extractJson(await callGemini(prompt, lead
-      ? { maxTokens: 1500, thinking: 900, temperature: 0.45 }
+      ? { maxTokens: 1500, thinking: 1100, temperature: 0.45 }
       : { maxTokens: 900, thinking: 600, temperature: 0.45 }));
     return {
       ...item,

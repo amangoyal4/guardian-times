@@ -10,6 +10,7 @@ import {
 } from './summarize.js';
 import { fetchMarket } from './market.js';
 import { fetchLibrary } from './library.js';
+import { attachFullText } from './article.js';
 import { buildHTML, writeEdition } from './build.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -204,10 +205,14 @@ async function main() {
   const seenLib = loadSeenLib();
   const library = await curateLibrary(preferUnseen(await libraryPromise, seenLib));
 
-  // 6) SUMMARISE selected stories, and fetch market data in parallel
+  // 6) SUMMARISE selected stories, and fetch market data in parallel.
+  // Lead stories first get their FULL article text fetched (best-effort) so the
+  // chart engine can re-create the publisher's graph data — including the historical
+  // figures the RSS snippet drops — as our own house-style SVG. Article fetch
+  // overlaps with the market fetch; summaries run once enrichment is done.
   const flat = [...new Set(Object.values(buckets).flat())];
   const [summarised, market] = await Promise.all([
-    summariseAll(flat, { leadIds }),
+    attachFullText(flat, leadIds).then(() => summariseAll(flat, { leadIds })),
     fetchMarket(),
   ]);
   const byLink = new Map(summarised.map((s) => [s.link, s]));
