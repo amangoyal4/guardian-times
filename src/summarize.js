@@ -1,9 +1,12 @@
-// summarize.js — turns raw stories into Guardian Times editorial via Gemini (free tier).
+// summarize.js — turns raw stories into Guardian Times editorial via Gemini.
+// Runs on the PAID tier with Gemini 2.5 Pro + "thinking" for sharper reasoning.
 // Handles rate limits with exponential backoff. Falls back to raw text if the API is unavailable.
 
 import { diverseVideos } from './library.js';
 
-const MODEL = process.env.GEMINI_MODEL || 'gemini-2.5-flash';
+// Gemini 2.5 Pro is the editorial brain. Override with GEMINI_MODEL if needed
+// (e.g. 'gemini-2.5-flash' for a cheaper/faster run).
+const MODEL = process.env.GEMINI_MODEL || 'gemini-2.5-pro';
 const API_KEY = process.env.GEMINI_API_KEY;
 const ENDPOINT = (model) =>
   `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${API_KEY}`;
@@ -21,7 +24,12 @@ let circuitOpen = false;
 const STRIKE_LIMIT = 3;
 
 // ---- low-level call with backoff on 429/5xx ----
-async function callGemini(prompt, { maxTokens = 700, tries = 4 } = {}) {
+// `maxTokens` is the budget for the VISIBLE answer; `thinking` is a separate
+// budget for the model's internal reasoning. Gemini 2.5 draws thinking tokens
+// from maxOutputTokens, so we send (answer + thinking) as the cap — otherwise a
+// rich think pass eats the whole budget and the visible answer returns empty.
+// (Gemini 2.5 Pro cannot turn thinking off; Flash can, via thinking: 0.)
+async function callGemini(prompt, { maxTokens = 1024, tries = 4, thinking = 256, temperature = 0.4 } = {}) {
   if (!API_KEY) throw new Error('GEMINI_API_KEY not set');
   if (circuitOpen) throw new Error('Gemini circuit open (sustained rate limiting)');
   let delay = 2000;
@@ -34,12 +42,9 @@ async function callGemini(prompt, { maxTokens = 700, tries = 4 } = {}) {
         body: JSON.stringify({
           contents: [{ parts: [{ text: prompt }] }],
           generationConfig: {
-            temperature: 0.4,
-            maxOutputTokens: maxTokens,
-            // gemini-2.5-* default to "thinking", and thinking tokens are drawn
-            // from maxOutputTokens — leaving the text empty. Disable it so the
-            // whole budget goes to the actual answer.
-            thinkingConfig: { thinkingBudget: 0 },
+            temperature,
+            maxOutputTokens: maxTokens + thinking,
+            thinkingConfig: { thinkingBudget: thinking },
           },
         }),
       });
@@ -76,8 +81,8 @@ function extractJson(text) {
   return JSON.parse(cleaned.slice(start, end + 1));
 }
 
-const HOUSE = `You are the editor of "Guardian Times", a sophisticated personalised financial newspaper for an Indian investment professional (wealth/PMS/AIF advisory).
-Voice: precise, first-principles, analytical, clean prose — never hype, never filler. Indian-English spelling. Currency in ₹ where Indian, $ where global.`;
+const HOUSE = `You are the editor of "Guardian Times", a sophisticated personalised financial newspaper read each morning by a demanding Indian investment professional (wealth/PMS/AIF advisory) who already knows the basics.
+Voice: precise, first-principles, analytical, confident, clean prose — the register of the FT or The Economist, never hype, never filler, never hedging. Lead with the most important fact. Every sentence must earn its place by adding new information. Prefer concrete figures and named entities over adjectives. Avoid clichés ("in a significant development", "it remains to be seen", "only time will tell", "sent shockwaves"). Indian-English spelling. Currency in ₹ where Indian, $ where global; write large numbers the Indian way (₹ crore/lakh) for Indian figures.`;
 
 // Summarise ONE story into headline + summary + "so what" (+ optional chart for leads).
 async function summariseStory(item, { lead = false } = {}) {
@@ -90,11 +95,11 @@ async function summariseStory(item, { lead = false } = {}) {
     STRICT: use ONLY numbers explicitly present in the item text — NEVER invent, estimate, or extrapolate. If the figures don't form a genuine comparison or trend, set "chart": null.`;
   const prompt = `${HOUSE}
 
-Rewrite this raw news item into Guardian Times editorial — substantive and specific, never padded. Return ONLY JSON, no markdown:
+Rewrite this raw news item into Guardian Times editorial — substantive, specific, and tight. Reason about what actually matters before you write. Return ONLY JSON, no markdown:
 {
-  "headline": "a sharp, specific headline that makes a professional want to read — not clickbait, ${lead ? '14-22' : '8-16'} words",
-  "summary": "${lead ? '4-5' : '3-4'} sentences, your own words. Cover WHAT happened, the key numbers/specifics, WHY it happened, and the read-through. Be concrete and information-dense — name the figures, the players, the cause. Never copy the source text, never waffle.",
-  "soWhat": "${lead ? 'two or three sentences' : 'one or two sentences'} on the investment implication for an Indian wealth/PMS/AIF professional — the analytical 'so what': who is affected, which way, and what to watch."${chartSpec}
+  "headline": "a sharp, specific headline that makes a professional want to read — not clickbait, carries the actual news (who + what + the key number), ${lead ? '14-22' : '8-16'} words",
+  "summary": "${lead ? '4-5' : '3-4'} sentences, your own words. Open with the single most important fact. Then the key numbers/specifics, WHY it happened, and the read-through. Be concrete and information-dense — name the figures, the players, the cause, the magnitude. Where the feed text is thin, add the context a professional needs (but NEVER invent specific numbers). Never copy the source wording, never waffle, never hedge.",
+  "soWhat": "${lead ? 'two or three sentences' : 'one or two sentences'} of genuine analysis for an Indian wealth/PMS/AIF professional — the 'so what' the source won't tell them: who is affected and which way, the second-order effect, and the specific thing to watch next. Not a restatement of the summary."${chartSpec}
 }
 
 RAW ITEM:
@@ -103,7 +108,9 @@ Source: ${item.source}
 Text: ${item.rawSummary || '(no description in feed)'}`;
 
   try {
-    const out = extractJson(await callGemini(prompt, { maxTokens: lead ? 1200 : 800 }));
+    const out = extractJson(await callGemini(prompt, lead
+      ? { maxTokens: 1500, thinking: 900, temperature: 0.45 }
+      : { maxTokens: 900, thinking: 600, temperature: 0.45 }));
     return {
       ...item,
       headline: out.headline || item.title,
@@ -141,7 +148,7 @@ export async function selectStories(bySection, perSection = 8) {
     const items = bySection[sec] || [];
     if (!items.length) continue;
     lines.push(`\n## ${sec.toUpperCase()}`);
-    for (const it of items.slice(0, 24)) {
+    for (const it of items.slice(0, 30)) {
       const id = nextId++;
       idToLink.set(id, it.link);
       lines.push(`${id}. ${it.isIndian ? 'IN' : 'GL'} (${it.source}) ${it.title}`);
@@ -173,9 +180,9 @@ RUTHLESSLY DROP procedural noise:
 - near-duplicates: keep the single best version of the same story. This applies ACROSS THE WHOLE EDITION, not just within one section — if the SAME underlying event appears in more than one section (e.g. an IPO in both 'india' and 'sector', or a pre-market preview in both 'macro' and 'india'), keep it ONCE in the single most relevant section and drop the rest. Two stories about the same company/IPO/event on the same day are duplicates even if the headlines are worded differently.
 
 Selection rules:
-- Each section: pick up to ${perSection} of the BEST-FITTING stories, fewer if thin — quality over filling slots.
+- Each section: pick up to ${perSection} of the BEST-FITTING stories, fewer if thin — QUALITY OVER FILLING SLOTS. Apply a high bar: a story earns its place ONLY if a serious professional would act, reallocate, or update their view because of it. Four excellent stories beat eight padded ones — leave weak slots empty.
 - Place each chosen id under the section its CONTENT belongs to (per the definitions above), NOT where it was provisionally filed.
-- Within a section, order Indian stories first (IN), then global (GL); within each, most important first.
+- Within a section, order Indian stories first (IN), then global (GL); within each, MOST IMPORTANT FIRST — the lead (first) story of each section gets the longest treatment, so make it the single most consequential item, not merely the newest.
 - Use ONLY the numeric ids that appear below. Do not invent ids. Put each id in at most ONE section.
 
 Return ONLY JSON, no markdown. Use the bare integers (not strings):
@@ -185,7 +192,7 @@ CANDIDATE POOL:
 ${catalogue}`;
 
   try {
-    const out = extractJson(await callGemini(prompt, { maxTokens: 1500 }));
+    const out = extractJson(await callGemini(prompt, { maxTokens: 1800, thinking: 3000, temperature: 0.3 }));
     const valid = {};
     for (const sec of sections) {
       const ids = Array.isArray(out[sec]) ? out[sec] : [];
@@ -207,7 +214,7 @@ ${catalogue}`;
 
 // Generate the Knowledge Desk "mechanism of the day" from the day's lead stories.
 export async function generateMechanism(topItems) {
-  const context = topItems.slice(0, 10).map((i) => `- ${i.headline || i.title}`).join('\n');
+  const context = topItems.slice(0, 12).map((i) => `- ${i.headline || i.title}`).join('\n');
   const prompt = `${HOUSE}
 
 From today's lead stories below, pick ONE genuinely non-obvious financial MECHANISM worth teaching from first principles — the plumbing most professionals never actually learn (tax mechanics, market microstructure, capital-structure detail, a valuation lever, settlement/clearing, an arbitrage). It must connect to at least one of today's stories.
@@ -219,7 +226,7 @@ Return ONLY JSON:
   "tier": "Foundations" or "Frontier",
   "title": "the mechanism, as a sharp question or statement (8-16 words)",
   "hook": "1-2 sentences on why this matters TODAY, tied to a specific story",
-  "body": "6-8 substantial paragraphs explaining the mechanism step by step from first principles. Be concrete and rigorous: include at least one fully worked numerical example with ₹/% figures carried through, name each cause-and-effect link explicitly, cover the second- AND third-order consequences, and note where the textbook intuition breaks. Use plain text; mark step labels like 'Step 1 —'. Separate paragraphs with a blank line.",
+  "body": "7-9 substantial paragraphs explaining the mechanism step by step from first principles. Be concrete and rigorous: include at least one fully worked numerical example with ₹/% figures carried through end to end, name each cause-and-effect link explicitly, cover the second- AND third-order consequences, contrast it with the common (wrong) intuition, and note the edge case where it breaks. Write for a professional — assume the basics, deliver the deep layer. Use plain text; mark step labels like 'Step 1 —'. Separate paragraphs with a blank line.",
   "takeaway": "2-3 sentences: the practical lesson the reader applies, and the specific signal to watch",
   "points": [ {"n":"short stat/label","l":"≤8-word gloss"}, {"n":"...","l":"..."}, {"n":"...","l":"..."}, {"n":"...","l":"..."} ]
 }
@@ -227,7 +234,7 @@ Return ONLY JSON:
 TODAY'S STORIES:
 ${context}`;
   try {
-    return extractJson(await callGemini(prompt, { maxTokens: 2800 }));
+    return extractJson(await callGemini(prompt, { maxTokens: 3400, thinking: 2600, temperature: 0.5 }));
   } catch (err) {
     console.log(`  ⚠ mechanism generation failed (${err.message}); using fallback.`);
     return null;
@@ -236,14 +243,14 @@ ${context}`;
 
 // Generate 2 deeper concept explainers ("things to learn") for the Knowledge Desk.
 export async function generateExplainers(topItems) {
-  const context = topItems.slice(0, 14).map((i) => `- ${i.headline || i.title}`).join('\n');
+  const context = topItems.slice(0, 16).map((i) => `- ${i.headline || i.title}`).join('\n');
   const prompt = `${HOUSE}
 
 From today's themes, write FOUR substantial EXPLAINERS that expand the reader's knowledge base — concepts, instruments, frameworks, or financial-jargon worth genuinely understanding, each tied to today's news but teaching something durable (not just recapping the news). Make all four DIFFERENT from each other (mix instrument / tax / macro / market-structure), and make each reward a professional with a real "I didn't fully get that before" moment.
 
 Return ONLY JSON:
 { "explainers": [
-  { "tag":"one word, e.g. Instrument/Tax/Macro/Structure", "title":"the concept (6-12 words)", "body":"2-3 tight, information-dense paragraphs explaining it from first principles with a concrete worked example; plain text, blank line between paragraphs.", "why":"≤20-word line on why it matters now" },
+  { "tag":"one word, e.g. Instrument/Tax/Macro/Structure", "title":"the concept (6-12 words)", "body":"3 tight, information-dense paragraphs explaining it from first principles with a concrete worked example carrying real ₹/% figures; plain text, blank line between paragraphs.", "why":"≤20-word line on why it matters now" },
   { ...second, different concept... },
   { ...third, different concept... },
   { ...fourth, different concept... }
@@ -252,7 +259,7 @@ Return ONLY JSON:
 TODAY'S THEMES:
 ${context}`;
   try {
-    return extractJson(await callGemini(prompt, { maxTokens: 2600 })).explainers || [];
+    return extractJson(await callGemini(prompt, { maxTokens: 3200, thinking: 2200, temperature: 0.5 })).explainers || [];
   } catch (err) {
     console.log(`  ⚠ explainers generation failed (${err.message}).`);
     return [];
@@ -261,16 +268,16 @@ ${context}`;
 
 // Generate 3 "consensus gets wrong" myth-busters from the day's themes.
 export async function generateMyths(topItems) {
-  const context = topItems.slice(0, 12).map((i) => `- ${i.headline || i.title}`).join('\n');
+  const context = topItems.slice(0, 14).map((i) => `- ${i.headline || i.title}`).join('\n');
   const prompt = `${HOUSE}
 
-From today's themes, write 5 "what the consensus gets wrong" entries — common misconceptions a professional should unlearn, each tied to today's news. Make them genuinely non-obvious, not strawmen.
-Return ONLY JSON: { "myths": [ {"tag":"one word e.g. Flows/Valuation/Credit","claim":"the wrong belief in quotes","correction":"2-3 sentence correction with the real mechanism"}, ... x5 ] }
+From today's themes, write 5 "what the consensus gets wrong" entries — common misconceptions a professional should unlearn, each tied to today's news. Make them genuinely non-obvious, not strawmen: the kind of belief a competent practitioner actually holds. Each correction must name the REAL mechanism and, where possible, the figure or example that proves it.
+Return ONLY JSON: { "myths": [ {"tag":"one word e.g. Flows/Valuation/Credit","claim":"the wrong belief in quotes","correction":"2-3 sentence correction with the real mechanism and a concrete proof point"}, ... x5 ] }
 
 THEMES:
 ${context}`;
   try {
-    return extractJson(await callGemini(prompt, { maxTokens: 1200 })).myths || [];
+    return extractJson(await callGemini(prompt, { maxTokens: 1800, thinking: 1400, temperature: 0.5 })).myths || [];
   } catch {
     return [];
   }
@@ -315,7 +322,7 @@ PODCASTS:
 ${pLines.join('\n')}`;
 
   try {
-    const out = extractJson(await callGemini(prompt, { maxTokens: 1100 }));
+    const out = extractJson(await callGemini(prompt, { maxTokens: 1600, thinking: 1200, temperature: 0.4 }));
     const vById = new Map(vPool.map((v, i) => [`v${i}`, v]));
     const pById = new Map(pPool.map((p, i) => [`p${i}`, p]));
 
@@ -364,16 +371,17 @@ ${pLines.join('\n')}`;
 
 /**
  * Summarise a routed, ranked set of stories.
- * Spaces calls to respect free-tier RPM. `leadIds` get the longer treatment.
+ * A small inter-call gap keeps us polite to the paid-tier RPM limit (no longer
+ * the 6.5s the free tier needed). `leadIds` get the longer treatment.
  */
-export async function summariseAll(items, { leadIds = new Set(), gapMs = 6500 } = {}) {
+export async function summariseAll(items, { leadIds = new Set(), gapMs = 1500 } = {}) {
   const out = [];
   console.log(`\n✍  Summarising ${items.length} stories via ${MODEL}…`);
   for (let i = 0; i < items.length; i++) {
     const item = items[i];
     const lead = leadIds.has(item.link);
     out.push(await summariseStory(item, { lead }));
-    if (i < items.length - 1) await sleep(gapMs); // stay under free-tier RPM
+    if (i < items.length - 1) await sleep(gapMs); // stay polite to paid-tier RPM
   }
   console.log(`   done (${out.filter((x) => x.aiGenerated).length}/${out.length} AI-written)\n`);
   return out;

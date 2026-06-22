@@ -26,9 +26,9 @@ const LIB_STATE = path.join(__dirname, '..', 'archive', 'seen-library.json');
 // so if the quota throttles, only the tail-end story summaries degrade to raw
 // headlines — and even those keep clean titles + free links. Raise further only with
 // paid billing on the Gemini key.
-const PER_SECTION = { macro: 6, india: 8, sector: 5, global: 5, compliance: 4 };
+const PER_SECTION = { macro: 7, india: 10, sector: 6, global: 6, compliance: 5 };
 // larger pool handed to the AI editor so it has room to choose
-const POOL = 40;
+const POOL = 50;
 
 function loadSeen() {
   try { return new Set(JSON.parse(fs.readFileSync(STATE_FILE, 'utf8'))); }
@@ -189,7 +189,7 @@ async function main() {
   // the ceiling; spending it on the high-value desk + curation first means a
   // throttle only degrades tail-end story summaries, never the Knowledge Desk.
   // Sequential (not Promise.all) to stay under the per-minute limit.
-  const topAll = rank([...new Set(Object.values(buckets).flat())]).slice(0, 14);
+  const topAll = rank([...new Set(Object.values(buckets).flat())]).slice(0, 18);
   // Kick off the Library RSS fetch now (network-only) so it overlaps with the AI
   // calls below; we await it just before curating.
   const libraryPromise = fetchLibrary();
