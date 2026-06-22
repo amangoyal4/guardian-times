@@ -36,7 +36,7 @@ function articleHTML(item, { lead = false } = {}) {
   const chart = item.chart ? storyChart(item.chart) : '';
   return `
       <article${lead ? ' class="lead"' : ''}>
-        <div class="eyebrow"><span class="src">${esc(item.source)}</span><span class="dot"></span><span class="time">${timeAgo(item.published)}</span></div>
+        <div class="eyebrow"><span class="src">${esc(item.source)}</span></div>
         ${head}
         <div class="summary">${lead ? '<p>' + esc(item.summary) + '</p>' : esc(item.summary)}</div>
         ${chart}
