@@ -206,7 +206,12 @@ CANDIDATE POOL:
 ${catalogue}`;
 
   try {
-    const out = extractJson(await callGemini(prompt, { maxTokens: 1800, thinking: 3000, temperature: 0.3 }));
+    // Heavier `tries` + a lighter thinking budget: this is the FIRST call of the run
+    // and the single biggest request, and on a freshly-billed tier it was the one
+    // call that kept tripping a transient 429 (then falling back to the dumb keyword
+    // router — the cause of e.g. an NBFC landing in Macro). More retry headroom and a
+    // smaller token footprint get it through the cold-start burst limit reliably.
+    const out = extractJson(await callGemini(prompt, { maxTokens: 1800, thinking: 2048, temperature: 0.3, tries: 6 }));
     const valid = {};
     for (const sec of sections) {
       const ids = Array.isArray(out[sec]) ? out[sec] : [];
@@ -294,6 +299,43 @@ ${context}`;
     return extractJson(await callGemini(prompt, { maxTokens: 1800, thinking: 1400, temperature: 0.5 })).myths || [];
   } catch {
     return [];
+  }
+}
+
+/**
+ * Write the spoken MORNING AUDIO BRIEFING script — a ~8-minute broadcast covering
+ * ONLY the most important stories, written for the EAR (not a readout of every
+ * headline). Returns plain spoken text (numbers/symbols already spelled out) ready
+ * for TTS; '' on failure so the caller falls back to the per-story Web Speech script.
+ * @param {object[]} items  the top stories (already summarised), most important first
+ */
+export async function generateBriefingScript(items, { weekday = '' } = {}) {
+  if (!items || !items.length) return '';
+  const lines = items
+    .map((it, i) => `${i + 1}. [${it.section}] ${it.headline || it.title}${it.summary ? ` — ${it.summary}` : ''}`)
+    .join('\n');
+  const prompt = `${HOUSE}
+
+Write the script for today's spoken MORNING AUDIO BRIEFING — a polished broadcast a busy Indian investment professional listens to over their morning coffee. This is for the EAR, not the page.
+
+WHAT TO COVER: only the stories that genuinely matter — judge and SELECT the 10 to 13 most important from the list below, lead with the most consequential, and weave them into ONE flowing narrative. Do NOT mechanically read every item. Group naturally: the big macro and market picture first, then the standout Indian corporate and sector moves, then the key global and regulatory items. Add one crisp line of "why it matters" only where it earns it.
+
+HOW TO WRITE IT (spoken English for a warm Indian news anchor):
+- Short, clear sentences. Natural connective tissue ("Meanwhile,", "Turning to the corporate desk,", "On the global front,", "And finally,").
+- Spell EVERYTHING the way it is SPOKEN. Numbers, currency and symbols become words: write "five hundred crore rupees" not "₹500 cr"; "up three point two per cent" not "+3.2%"; "the first quarter of financial year twenty-six" not "Q1FY26". Never emit the characters ₹, $, %, &, or shorthand like "bps", "YoY", "Q1FY26".
+- Open with a warm greeting ("Good morning. This is your Guardian Times briefing for ${weekday || 'today'}.") and close with a short, gracious sign-off.
+- Target 1150 to 1350 words (about eight minutes spoken). Plain paragraphs only — NO headings, NO bullet points, NO stage directions, NO speaker labels. Just the words to be read aloud.
+
+Return ONLY the script text, nothing else.
+
+TODAY'S STORIES (most important first):
+${lines}`;
+  try {
+    const text = await callGemini(prompt, { maxTokens: 3200, thinking: 1600, temperature: 0.6 });
+    return (text || '').replace(/```/g, '').trim();
+  } catch (err) {
+    console.log(`  ⚠ briefing script generation failed (${err.message}); audio falls back to per-story readout.`);
+    return '';
   }
 }
 

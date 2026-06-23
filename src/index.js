@@ -6,11 +6,12 @@ import { fetchAll, dedupeBuckets } from './fetcher.js';
 import { routeAll } from './router.js';
 import {
   summariseAll, selectStories, generateMechanism, generateExplainers, generateMyths,
-  curateLibrary,
+  curateLibrary, generateBriefingScript,
 } from './summarize.js';
 import { fetchMarket } from './market.js';
 import { fetchLibrary } from './library.js';
 import { attachFullText } from './article.js';
+import { synthesizeBriefing } from './tts.js';
 import { buildHTML, writeEdition } from './build.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -230,9 +231,30 @@ async function main() {
   const afterCt = Object.values(buckets).reduce((n, a) => n + a.length, 0);
   if (afterCt < beforeCt) console.log(`  ✂ cross-section dedup removed ${beforeCt - afterCt} near-duplicate(s)`);
 
+  // 6c) MORNING AUDIO BRIEFING — important stories only (~8 min), AI-scripted for the
+  // ear, then voiced by a natural Indian anchor (Gemini TTS) into a single MP3 the
+  // page plays. Best-effort: if the script or the voice fails, the page falls back to
+  // the browser's Web Speech voice reading whatever script we have. We take the top
+  // few per section (the editor's most important picks) and let the script writer
+  // curate down to the ~10-13 that truly matter.
+  const BRIEF_ORDER = ['macro', 'india', 'sector', 'global', 'compliance'];
+  const briefingInput = BRIEF_ORDER.flatMap((s) => (buckets[s] || []).slice(0, 3));
+  const weekday = new Date().toLocaleDateString('en-GB', { weekday: 'long', timeZone: 'Asia/Kolkata' });
+  const audioScript = await generateBriefingScript(briefingInput, { weekday });
+  let audioFile = '';
+  if (audioScript) {
+    const mp3 = await synthesizeBriefing(audioScript);
+    if (mp3) {
+      fs.mkdirSync(PUBLIC_DIR, { recursive: true });
+      fs.writeFileSync(path.join(PUBLIC_DIR, 'briefing.mp3'), mp3);
+      audioFile = `briefing.mp3?v=${Date.now()}`; // cache-bust so today's voice isn't stale-cached
+    }
+  }
+
   // 7) BUILD + WRITE
   const html = buildHTML({
     ...buckets, market, mechanism, explainers, myths, library,
+    audioScript, audioFile,
     runTime: new Date().toUTCString(),
   });
   const stamp = writeEdition(html, PUBLIC_DIR);

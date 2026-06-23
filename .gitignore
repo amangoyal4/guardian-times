@@ -3,3 +3,6 @@ node_modules/
 .DS_Store
 preview/
 live.tmp.html
+# Daily briefing audio: regenerated every build and deployed via the Pages
+# artifact (from disk), so it never needs to be committed — keeps history slim.
+public/briefing.mp3

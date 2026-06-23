@@ -8,6 +8,7 @@
     "feeds:check": "node scripts/check-feeds.js"
   },
   "dependencies": {
+    "@breezystack/lamejs": "^1.2.7",
     "rss-parser": "^3.13.0"
   },
   "engines": {

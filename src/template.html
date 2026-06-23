@@ -250,7 +250,7 @@
     <div class="audio-head">
       <div class="audio-meta">
         <span class="audio-title">Listen to today&rsquo;s briefing</span>
-        <span class="audio-status" id="audioStatus">AI voice &middot; reads every headline &amp; summary</span>
+        <span class="audio-status" id="audioStatus">AI voice &middot; your 8-minute morning briefing</span>
       </div>
       <span class="audio-time" id="audioTime">0:00 / --:--</span>
     </div>
@@ -297,6 +297,7 @@ __PAGES__
   <div class="disclaimer">Headlines and summaries are original editorial prepared from publicly reported facts; full articles open at the original source and may require a subscription. Market data is sourced live from Yahoo Finance and may be delayed. Not investment advice.</div>
 </footer>
 
+<script>window.__BRIEFING_AUDIO__="__BRIEFINGAUDIO__";</script>
 <script type="application/json" id="audio-script">__AUDIODATA__</script>
 <script>
   const navBtns=document.querySelectorAll('.nav-btn');
@@ -327,8 +328,15 @@ __PAGES__
      TTS can begin from). An onboundary refinement keeps the playhead honest while a
      sentence is being read. It behaves like a normal scrubber within those limits. */
   (function(){
-    var synth = window.speechSynthesis;
     var bar = document.getElementById('audiobar');
+
+    // PREFERRED PATH — a real MP3 voiced at build time (natural Indian anchor voice).
+    // Gives a true timeline: real duration, real seek/scrub, real playback speed.
+    var AUDIO_URL = (window.__BRIEFING_AUDIO__ || '').trim();
+    if(AUDIO_URL){ initFilePlayer(AUDIO_URL); return; }
+
+    // FALLBACK PATH — no MP3 this edition: read the script with the browser voice.
+    var synth = window.speechSynthesis;
     var dataEl = document.getElementById('audio-script');
     var segments = [];
     try { segments = JSON.parse(dataEl.textContent || '[]'); } catch(e){}
@@ -527,6 +535,76 @@ __PAGES__
 
     paint(0);
     bar.hidden = false; // speech is supported — reveal the player
+
+    /* ----- Real MP3 player (preferred): a build-time briefing voiced by a natural
+       Indian anchor. Unlike Web Speech this has a true timeline, so seek/scrub and
+       speed are exact. Reuses the same controls. Hoisted, so the early dispatch at
+       the top of this IIFE can call it. ----- */
+    function initFilePlayer(url){
+      var audio = new Audio();
+      audio.preload = 'metadata';
+      var toggle   = document.getElementById('audioToggle');
+      var backBtn  = document.getElementById('audioBack');
+      var fwdBtn   = document.getElementById('audioFwd');
+      var speedBtn = document.getElementById('audioSpeed');
+      var statusEl = document.getElementById('audioStatus');
+      var timeEl   = document.getElementById('audioTime');
+      var wave     = document.getElementById('audioWave');
+      var wavePlayed = document.getElementById('wavePlayed');
+      var thumb    = document.getElementById('waveThumb');
+      var idleStatus = statusEl.innerHTML;
+      var dragging = false;
+
+      (function buildWave(){
+        var base = document.getElementById('waveBase'), n = 132, html = '', seed = 7;
+        for(var i=0;i<n;i++){
+          seed = (seed*1103515245 + 12345) & 0x7fffffff;
+          var r = (seed % 1000) / 1000;
+          var h = 16 + Math.round(Math.abs(Math.sin(i*0.5)) * 60 + r * 24);
+          html += '<span style="height:' + Math.min(100,h) + '%"></span>';
+        }
+        base.innerHTML = html; wavePlayed.innerHTML = html;
+      })();
+
+      var rates = [1, 1.25, 1.5, 0.85], ri = 0;
+      function fmt(t){ t = Math.max(0, Math.round(t || 0)); var m = Math.floor(t/60), s = t%60; return m + ':' + (s<10?'0':'') + s; }
+      function dur(){ return (audio.duration && isFinite(audio.duration)) ? audio.duration : 0; }
+      function paint(t){
+        var D = dur(), p = D ? Math.max(0, Math.min(100, (t/D)*100)) : 0;
+        wavePlayed.style.setProperty('--p', p + '%');
+        thumb.style.setProperty('--p', p + '%');
+        wave.setAttribute('aria-valuenow', Math.round(p));
+        timeEl.textContent = fmt(t) + ' / ' + (D ? fmt(D) : '--:--');
+      }
+      audio.addEventListener('loadedmetadata', function(){ paint(0); });
+      audio.addEventListener('timeupdate', function(){ if(!dragging) paint(audio.currentTime); });
+      audio.addEventListener('play',  function(){ toggle.classList.add('playing'); statusEl.innerHTML = '<span class="live-dot"></span>Playing &middot; your briefing'; });
+      audio.addEventListener('pause', function(){ if(!audio.ended){ toggle.classList.remove('playing'); statusEl.textContent = 'Paused'; } });
+      audio.addEventListener('ended', function(){ toggle.classList.remove('playing'); statusEl.innerHTML = idleStatus; paint(0); });
+      audio.addEventListener('error', function(){ bar.hidden = true; }); // file missing/blocked — hide rather than show a dead player
+
+      toggle.addEventListener('click', function(){ if(audio.paused) audio.play(); else audio.pause(); });
+      backBtn.addEventListener('click', function(){ audio.currentTime = Math.max(0, audio.currentTime - 10); });
+      fwdBtn.addEventListener('click',  function(){ audio.currentTime = Math.min(dur(), audio.currentTime + 10); });
+      speedBtn.addEventListener('click', function(){ ri = (ri + 1) % rates.length; audio.playbackRate = rates[ri]; speedBtn.textContent = rates[ri] + '×'; });
+
+      function xToTime(clientX){ var r = wave.getBoundingClientRect(); var f = (clientX - r.left) / r.width; return Math.max(0, Math.min(1, f)) * dur(); }
+      wave.addEventListener('pointerdown', function(e){ dragging = true; try{ wave.setPointerCapture(e.pointerId); }catch(_){} paint(xToTime(e.clientX)); });
+      wave.addEventListener('pointermove', function(e){ if(dragging) paint(xToTime(e.clientX)); });
+      function endDrag(e){ if(!dragging) return; dragging = false; var t = xToTime(e.clientX); audio.currentTime = t; paint(t); }
+      wave.addEventListener('pointerup', endDrag);
+      wave.addEventListener('pointercancel', function(){ dragging = false; paint(audio.currentTime); });
+      wave.addEventListener('keydown', function(e){
+        if(e.key === 'ArrowRight'){ e.preventDefault(); audio.currentTime = Math.min(dur(), audio.currentTime + 5); }
+        else if(e.key === 'ArrowLeft'){ e.preventDefault(); audio.currentTime = Math.max(0, audio.currentTime - 5); }
+        else if(e.key === ' ' || e.key === 'Enter'){ e.preventDefault(); toggle.click(); }
+      });
+      window.addEventListener('beforeunload', function(){ try{ audio.pause(); }catch(_){} });
+
+      audio.src = url;       // kick off metadata load
+      paint(0);
+      bar.hidden = false;    // reveal the player
+    }
   })();
 
 </script>

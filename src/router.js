@@ -46,7 +46,16 @@ const SECTOR_INDEX = /(nifty (pharma|bank|realty|it|auto|metal|fmcg|psu|energy|f
 // "cement"/"pharma"/"realty" — e.g. "Dalmia Bharat Targets 110-130 MTPA Cement
 // Capacity" or "Tech Mahindra Leases 4 Lakh Sq Ft". Without this, such items get
 // mis-filed into Sector by the keyword scorer whenever the AI editor-cut is down.
-const COMPANY_ACTION = /(\btargets?\b|\bleases?\b|\bwins?\b|\bbags?\b|\bsecures?\b|\bq[1-4]\b|\bresults?\b|earnings|\bipo\b|\bqip\b|\blists?\b|\bdebut\b|\bstake\b|acquir|\bmerg|demerg|\braises?\b|\bappoints?\b|board approv|order win|bond sale|buyback|\bdividend\b|\bexpansion\b|\bcapacity\b|\bplant\b|\bfunding\b)/i;
+const COMPANY_ACTION = /(\btargets?\b|\bleases?\b|\bwins?\b|\bbags?\b|\bsecures?\b|\bq[1-4]\b|\bresults?\b|earnings|\bipo\b|\bqip\b|\blists?\b|\bdebut\b|\bstake\b|acquir|\bmerg|demerg|\braises?\b|\bappoints?\b|board approv|order win|bond sale|buyback|\bdividend\b|\bexpansion\b|\bcapacity\b|\bplant\b|\bfunding\b|\bprofit\b|\bnet profit\b|\brevenue\b|\bshares?\b|\bstock\b)/i;
+
+// A genuine MACRO story is about the economy/markets AT LARGE — never a single named
+// company. These are the unambiguous macro anchors. If the keyword scorer lands a
+// story in 'macro' but the TITLE is plainly one company doing one company thing
+// (COMPANY_ACTION) and carries none of these economy-wide anchors, it's an equity
+// story that merely name-dropped a macro word (e.g. an NBFC headline mentioning
+// "rate"/"liquidity"/"borrowing"). This is the backstop that keeps Shriram Finance
+// and friends OUT of Macro when the AI editor-cut is unavailable.
+const CORE_MACRO = /(repo rate|reverse repo|rate cut|rate hike|interest rate|monetary policy|\bmpc\b|inflation|\bcpi\b|\bwpi\b|\bgdp\b|\bgva\b|fiscal deficit|current account|trade deficit|trade balance|bond yield|g-sec|forex reserves|foreign exchange reserves|industrial production|\biip\b|\bpmi\b|unemployment|jobs report|payroll|\bfed\b|fomc|federal reserve|\becb\b|central bank|\bopec\b|crude oil|\bbrent\b|\btariff|systemic liquidity|durable liquidity|money market|money-market|call money|rupee|dollar index|economy|economic growth)/i;
 
 function pad(text) {
   return ' ' + text.toLowerCase().replace(/\s+/g, ' ') + ' ';
@@ -87,6 +96,13 @@ export function routeItem(item) {
   // index / industry-wide move. Classify on the TITLE so a stray sector word in the
   // feed blurb can't drag a single company into Sector.
   if (topic === 'sector' && COMPANY_ACTION.test(item.title) && !SECTOR_INDEX.test(t)) {
+    topic = 'equity';
+  }
+
+  // Same guard for MACRO: a single company doing a company thing is an equity story,
+  // not macro, unless the title carries a genuine economy-wide anchor. Anchor on the
+  // TITLE so a stray "liquidity"/"rate" in the feed blurb can't drag one company in.
+  if (topic === 'macro' && COMPANY_ACTION.test(item.title) && !CORE_MACRO.test(item.title)) {
     topic = 'equity';
   }
 

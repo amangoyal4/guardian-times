@@ -290,15 +290,25 @@ export function buildHTML(data) {
     libraryPage('07', data.library),
   ].join('\n');
 
-  // Embed the spoken-briefing script as JSON. Neutralise '<' so a feed-supplied
-  // "</script>" inside a summary can't close the data block early.
-  const audioJson = JSON.stringify(buildAudioScript(data)).replace(/</g, '\\u003c');
+  // Spoken-briefing data. PREFERRED: a real MP3 (data.audioFile) voiced from the AI
+  // briefing script — the page plays it with a natural Indian anchor voice + real
+  // seek. FALLBACK (no MP3): the browser's Web Speech voice reads segments. We build
+  // those segments from the AI script when we have it (so even the fallback reads the
+  // good ~8-min script), else from the per-story readout. Neutralise '<' so a feed-
+  // supplied "</script>" inside text can't close the data block early.
+  const scriptText = (data.audioScript || '').trim();
+  const segments = scriptText
+    ? scriptText.split(/\n{1,}/).map((p) => p.trim()).filter(Boolean).map((p) => ({ label: 'Briefing', text: speechify(p) }))
+    : buildAudioScript(data);
+  const audioJson = JSON.stringify(segments).replace(/</g, '\\u003c');
+  const audioFile = data.audioFile ? esc(data.audioFile) : '';
 
   return tpl
     .replace('__LOGO__', LOGO)
     .replace('__TICKER__', ticker)
     .replace('__PAGES__', pages)
     .replace('__AUDIODATA__', audioJson)
+    .replace('__BRIEFINGAUDIO__', audioFile)
     .replace('__RUNTIME__', data.runTime || new Date().toUTCString());
 }
 
