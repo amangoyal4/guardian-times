@@ -1,5 +1,5 @@
 {
-  "ts": "2026-06-23T15:16:23.543Z",
+  "ts": "2026-06-23T15:32:56.062Z",
   "health": [
     {
       "id": "et-markets",
@@ -25,9 +25,9 @@
     {
       "id": "mc-business",
       "name": "Moneycontrol — Business",
-      "ok": false,
-      "count": 0,
-      "error": "Unexpected close tag\nLine: 17\nColumn: 10\nChar: >"
+      "ok": true,
+      "count": 15,
+      "error": null
     },
     {
       "id": "bl-markets",
@@ -40,7 +40,7 @@
       "id": "fe-markets",
       "name": "Financial Express — Market",
       "ok": true,
-      "count": 92,
+      "count": 90,
       "error": null
     },
     {
@@ -88,16 +88,16 @@
     {
       "id": "mc-markets",
       "name": "Moneycontrol — Markets",
-      "ok": false,
-      "count": 0,
-      "error": "Unexpected close tag\nLine: 17\nColumn: 10\nChar: >"
+      "ok": true,
+      "count": 4,
+      "error": null
     },
     {
       "id": "mc-economy",
       "name": "Moneycontrol — Economy",
-      "ok": false,
-      "count": 0,
-      "error": "Feed not recognized as RSS 1 or 2."
+      "ok": true,
+      "count": 4,
+      "error": null
     },
     {
       "id": "bl-economy",
@@ -138,7 +138,7 @@
       "id": "bs-economy",
       "name": "Business Standard — Economy",
       "ok": true,
-      "count": 17,
+      "count": 20,
       "error": null
     },
     {
