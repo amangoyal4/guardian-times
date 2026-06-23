@@ -68,7 +68,7 @@ jobs:
         if: steps.guard.outputs.skip != 'true'
         env:
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
-          GEMINI_MODEL: gemini-2.5-pro
+          GEMINI_MODEL: gemini-2.5-flash
         run: npm run build
 
       - name: Commit edition + dedup state
