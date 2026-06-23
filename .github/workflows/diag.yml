@@ -1,0 +1,35 @@
+name: Diag Gemini key
+
+# Throwaway diagnostic — manually run to see WHY the Gemini key is being
+# rejected. Prints Google's exact error body (which never contains the key) plus
+# the key's length so we can confirm a key is present without revealing it.
+# Delete this file once the key is confirmed working.
+on:
+  workflow_dispatch:
+
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Probe Gemini API
+        env:
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+        run: |
+          echo "key present: $([ -n "$GEMINI_API_KEY" ] && echo yes || echo NO)"
+          echo "key length : ${#GEMINI_API_KEY}"
+          echo "key prefix : ${GEMINI_API_KEY:0:6}…"
+          echo "----- Pro probe -----"
+          code=$(curl -s -o resp.json -w "%{http_code}" \
+            "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-pro:generateContent?key=${GEMINI_API_KEY}" \
+            -H "Content-Type: application/json" \
+            -d '{"contents":[{"parts":[{"text":"ping"}]}]}')
+          echo "HTTP $code"
+          cat resp.json
+          echo ""
+          echo "----- Flash probe -----"
+          code2=$(curl -s -o resp2.json -w "%{http_code}" \
+            "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${GEMINI_API_KEY}" \
+            -H "Content-Type: application/json" \
+            -d '{"contents":[{"parts":[{"text":"ping"}]}]}')
+          echo "HTTP $code2"
+          cat resp2.json
