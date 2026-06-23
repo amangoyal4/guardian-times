@@ -247,4 +247,11 @@ async function main() {
   console.log(`✅ Edition ${stamp} built — ${counts} — ${((Date.now() - t0) / 1000).toFixed(1)}s`);
 }
 
-main().catch((e) => { console.error('FATAL:', e); process.exit(1); });
+// Force a clean exit once the build's work is done. main() writes every file
+// synchronously before it resolves, so exiting here is safe — and it prevents the
+// process from hanging on a lingering open handle (e.g. an undici keep-alive
+// socket or a pending fetch timer), which previously left the CI step "running"
+// for ~27 min after the edition was already built, so commit/deploy never ran.
+main()
+  .then(() => process.exit(0))
+  .catch((e) => { console.error('FATAL:', e); process.exit(1); });
