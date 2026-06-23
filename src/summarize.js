@@ -181,7 +181,7 @@ SECTION DEFINITIONS — re-file every story by what it is ACTUALLY about, ignori
 - sector = a whole INDUSTRY or theme moving together (autos, pharma, banks, IT, realty, metals, defence, semiconductors). NOT a single company — one company's IPO/order/result is NOT a sector story.
 - india = a specific INDIAN company or Indian single-stock / IPO / listing / order win / earnings / M&A / market-index move.
 - global = "Global Markets": a NON-INDIAN company, market/index (Wall Street, Nasdaq, a US/EU/Asian stock) or a global MARKET/ECONOMIC development with real read-through to investors. A story about a global event whose angle is its impact ON India is usually macro or india, not global.
-- compliance = a REGULATOR acting: SEBI/RBI orders, penalties, bans, new rules/norms, circulars, enforcement, probes. NOT a company simply doing an IPO or reporting earnings.
+- compliance = a STATUTORY / REGULATORY BODY acting in its rule-making or enforcement capacity — and NOTHING ELSE. Qualifying bodies: SEBI, RBI, IRDAI, PFRDA, AMFI, MCA / IBBI / NFRA, the CCI, GST Council / CBDT / CBIC, or a stock exchange issuing a regulatory circular. Qualifying actions: circulars, master directions, consultation papers, new or changed norms/rules/frameworks, penalties, fines, bans, debarments, settlement/adjudication orders, enforcement. The story is about the RULE-MAKER or ENFORCER acting. EXCLUDE absolutely: a company simply doing an IPO or reporting earnings (→ india); AND all ordinary crime / law-enforcement news — arrests, police FIRs, ED/CBI raids, money-laundering cases, individual court verdicts, fraud-by-a-person stories. Those are NOT compliance even when finance-flavoured. If a crime item genuinely moves a listed stock, file it under india/global; otherwise DROP it. If nothing in the pool is a genuine regulator action, leave compliance EMPTY — never pad it.
 
 Examples of correct re-filing: "Banking liquidity falls, money-market rates rise" → macro (not india). "Turtlemint IPO opens" → india (not sector). "Asian equities hit record highs" → global (not macro). "NSE FY26 earnings ahead of IPO" → india (not compliance). "SEBI reworks margin-trading rules" → compliance.
 
@@ -189,6 +189,7 @@ RUTHLESSLY DROP procedural noise:
 - routine auction notices and results (RBI VRR/repo/reverse-repo auctions, T-bill / G-Sec / SDL auction announcements or cut-offs, "full auction result")
 - "Ahead of Market: N things", "things to know before", "quick wrap", "market wrap", generic daily roundups, "stocks to watch" lists
 - horoscope-style technical calls ("5 stocks to buy", "trading guide") with no real news
+- ordinary CRIME / police-blotter news — arrests, FIRs, ED/CBI raids, court verdicts on individuals, money-laundering cases. These are NOT compliance and usually not worth a slot at all; drop them unless one genuinely moves a listed stock (then file under india/global, never compliance)
 - pre-market index "previews" ("GIFT Nifty signals a flat/gap-down open", "Sensex to open higher") — daily filler, drop them all
 - WAR / GEOPOLITICS / DIPLOMACY as general news — DROP unless the PRIMARY context of the headline is a concrete FINANCIAL or MARKET impact. DROP pure political/military/diplomatic items (e.g. "VP pulls out of Iran meeting", "Pentagon needs $80bn for the war", "Macron releases Hindi message for Modi", troop movements, summits, election politics). KEEP only when the money angle leads (e.g. "Brent jumps 8% as Iran conflict threatens Hormuz oil flows", "rupee slides on war-driven dollar surge", "defence stocks rally on fresh orders"). If you would not trade or reallocate on it, drop it.
 - near-duplicates: keep the single best version of the same story. This applies ACROSS THE WHOLE EDITION, not just within one section — if the SAME underlying event appears in more than one section (e.g. an IPO in both 'india' and 'sector', or a pre-market preview in both 'macro' and 'india'), keep it ONCE in the single most relevant section and drop the rest. Two stories about the same company/IPO/event on the same day are duplicates even if the headlines are worded differently.
@@ -318,20 +319,20 @@ export async function generateBriefingScript(items, { weekday = '' } = {}) {
 
 Write the script for today's spoken MORNING AUDIO BRIEFING — a polished broadcast a busy Indian investment professional listens to over their morning coffee. This is for the EAR, not the page.
 
-WHAT TO COVER: only the stories that genuinely matter — judge and SELECT the 10 to 13 most important from the list below, lead with the most consequential, and weave them into ONE flowing narrative. Do NOT mechanically read every item. Group naturally: the big macro and market picture first, then the standout Indian corporate and sector moves, then the key global and regulatory items. Add one crisp line of "why it matters" only where it earns it.
+WHAT TO COVER: only the stories that genuinely matter — judge and SELECT the 12 to 15 most important from the list below, lead with the most consequential, and weave them into ONE flowing narrative. Do NOT mechanically read every item. Group naturally: the big macro and market picture first, then the standout Indian corporate and sector moves, then the key global and regulatory items. For each story give two to four spoken sentences — the news, the key figure, and a crisp line of "why it matters" where it earns it. Enough depth that a listener feels properly briefed, never a rushed list.
 
 HOW TO WRITE IT (spoken English for a warm Indian news anchor):
 - Short, clear sentences. Natural connective tissue ("Meanwhile,", "Turning to the corporate desk,", "On the global front,", "And finally,").
 - Spell EVERYTHING the way it is SPOKEN. Numbers, currency and symbols become words: write "five hundred crore rupees" not "₹500 cr"; "up three point two per cent" not "+3.2%"; "the first quarter of financial year twenty-six" not "Q1FY26". Never emit the characters ₹, $, %, &, or shorthand like "bps", "YoY", "Q1FY26".
 - Open with a warm greeting ("Good morning. This is your Guardian Times briefing for ${weekday || 'today'}.") and close with a short, gracious sign-off.
-- Target 1150 to 1350 words (about eight minutes spoken). Plain paragraphs only — NO headings, NO bullet points, NO stage directions, NO speaker labels. Just the words to be read aloud.
+- Target 1550 to 1900 words (about eight to nine minutes spoken). This length is important — do not come in short. Plain paragraphs only — NO headings, NO bullet points, NO stage directions, NO speaker labels. Just the words to be read aloud.
 
 Return ONLY the script text, nothing else.
 
 TODAY'S STORIES (most important first):
 ${lines}`;
   try {
-    const text = await callGemini(prompt, { maxTokens: 3200, thinking: 1600, temperature: 0.6 });
+    const text = await callGemini(prompt, { maxTokens: 4200, thinking: 1600, temperature: 0.6 });
     return (text || '').replace(/```/g, '').trim();
   } catch (err) {
     console.log(`  ⚠ briefing script generation failed (${err.message}); audio falls back to per-story readout.`);

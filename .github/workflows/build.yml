@@ -2,14 +2,21 @@ name: Build Guardian Times
 
 on:
   schedule:
-    # The edition publishes at 07:00 AM IST. That is the only run that matters.
-    # The two later times are SILENT FALLBACKS: GitHub's free scheduler sometimes
-    # drops a cron entirely, so if the 7am slot is skipped, the next one catches
-    # it. The guard step below makes this safe — once today's edition exists, the
-    # fallbacks detect it and do nothing, so the Gemini quota is spent only ONCE.
+    # The edition publishes at ~07:30 AM IST — that first slot is the one that matters.
+    # GitHub's FREE scheduler is best-effort: it often runs crons late, and on a quiet
+    # day can drop one entirely (it skipped 22 Jun once). So every later slot is a
+    # SILENT FALLBACK spread across the morning — if an earlier one is late or dropped,
+    # a later one still lands today's edition. The guard step below makes this safe:
+    # once today's edition exists, every remaining trigger detects it and does nothing,
+    # so the Gemini quota is spent exactly ONCE per day no matter how many slots fire.
+    # (For punctual 07:30 delivery, an external cron-job.org → repository_dispatch is
+    # the reliable trigger; these crons are the zero-setup backup.)
     - cron: '0 2 * * *'     # 07:30 IST  (the daily edition)
-    - cron: '45 2 * * *'    # 08:15 IST  (silent fallback, only if 7:30 was late/dropped)
-    - cron: '45 3 * * *'    # 09:15 IST  (silent fallback, only if both above missed)
+    - cron: '45 2 * * *'    # 08:15 IST  (fallback)
+    - cron: '45 3 * * *'    # 09:15 IST  (fallback)
+    - cron: '0 5 * * *'     # 10:30 IST  (fallback)
+    - cron: '30 6 * * *'    # 12:00 IST  (fallback)
+    - cron: '0 8 * * *'     # 13:30 IST  (last-chance fallback)
   # PRIMARY reliable trigger: an external cron service (e.g. cron-job.org) hits the
   # GitHub API at 07:30 IST sharp and fires this. GitHub's own scheduler is best-
   # effort and runs cron HOURS LATE (or skips it), so the crons above are just free

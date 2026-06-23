@@ -238,7 +238,7 @@ async function main() {
   // few per section (the editor's most important picks) and let the script writer
   // curate down to the ~10-13 that truly matter.
   const BRIEF_ORDER = ['macro', 'india', 'sector', 'global', 'compliance'];
-  const briefingInput = BRIEF_ORDER.flatMap((s) => (buckets[s] || []).slice(0, 3));
+  const briefingInput = BRIEF_ORDER.flatMap((s) => (buckets[s] || []).slice(0, 4));
   const weekday = new Date().toLocaleDateString('en-GB', { weekday: 'long', timeZone: 'Asia/Kolkata' });
   const audioScript = await generateBriefingScript(briefingInput, { weekday });
   let audioFile = '';

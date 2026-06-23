@@ -30,7 +30,7 @@ const GLOBAL_TOKENS = [
 
 // ---- topic keyword sets (weighted; regulatory/macro/sector beat generic equity) ----
 const TOPICS = [
-  { name: 'compliance', weight: 3, kws: ['circular', 'master circular', 'penalt', ' fine', ' ban ', 'banned', 'insider trading', 'fraud', 'enforcement', 'show-cause', 'show cause', 'settlement order', 'adjudicat', 'lending norms', 'disclosure norms', 'listing norms', 'margin norms', 'prudential norms', 'f&o norms', 'aif norms', 'investment norms', 'exposure norms', 'delisting norms', 'guidelines', 'regulation', 'regulator', 'disclosure requirement', 'regulatory framework', 'disclosure framework', 'winding-up', 'winding up', ' kyc', ' sebi ', ' probe', 'investigat', 'crackdown', 'sanction'] },
+  { name: 'compliance', weight: 3, kws: ['circular', 'master circular', 'master direction', 'consultation paper', 'penalt', ' fine', ' ban ', 'banned', 'debar', 'insider trading', 'enforcement', 'show-cause', 'show cause', 'settlement order', 'adjudicat', 'disgorge', 'lending norms', 'disclosure norms', 'listing norms', 'margin norms', 'prudential norms', 'f&o norms', 'aif norms', 'investment norms', 'exposure norms', 'delisting norms', 'guidelines', 'regulation', 'regulator', 'disclosure requirement', 'regulatory framework', 'disclosure framework', 'winding-up', 'winding up', ' kyc', ' sebi', ' irdai', ' pfrda', ' amfi', ' ibbi', ' nfra', 'sanction'] },
   { name: 'macro', weight: 3, kws: ['repo rate', 'rate cut', 'rate hike', 'interest rate', 'monetary policy', ' mpc', 'inflation', ' cpi', ' wpi', 'retail inflation', ' gdp', ' gva', 'fiscal deficit', 'current account', 'trade deficit', 'trade balance', 'bond yield', 'g-sec', ' gilt', 'forex reserves', 'industrial production', ' iip', ' pmi', 'unemployment', 'jobs report', 'payroll', ' fed ', 'fomc', 'federal reserve', ' ecb', 'central bank', ' opec', 'crude oil', ' brent', 'tariff', 'liquidity', 'money market', 'money-market', 'call money', 'durable liquidity', 'systemic liquidity', 'ways and means'] },
   { name: 'sector', weight: 2, kws: ['sectoral', 'auto stocks', 'auto sales', 'two-wheeler', 'passenger vehicle', ' pharma', ' fmcg', ' realty', 'real estate', 'metal stocks', 'banking stocks', 'bank stocks', 'it stocks', ' telecom', 'energy stocks', 'power stocks', ' cement', 'capital goods', ' defence', 'infra stocks', 'infrastructure sector', 'sector rotation', 'semiconductor', 'chipmaker', 'sector index', 'industry-wide', 'across the sector',
     // sectoral indices are unambiguous sector stories
@@ -56,6 +56,17 @@ const COMPANY_ACTION = /(\btargets?\b|\bleases?\b|\bwins?\b|\bbags?\b|\bsecures?
 // "rate"/"liquidity"/"borrowing"). This is the backstop that keeps Shriram Finance
 // and friends OUT of Macro when the AI editor-cut is unavailable.
 const CORE_MACRO = /(repo rate|reverse repo|rate cut|rate hike|interest rate|monetary policy|\bmpc\b|inflation|\bcpi\b|\bwpi\b|\bgdp\b|\bgva\b|fiscal deficit|current account|trade deficit|trade balance|bond yield|g-sec|forex reserves|foreign exchange reserves|industrial production|\biip\b|\bpmi\b|unemployment|jobs report|payroll|\bfed\b|fomc|federal reserve|\becb\b|central bank|\bopec\b|crude oil|\bbrent\b|\btariff|systemic liquidity|durable liquidity|money market|money-market|call money|rupee|dollar index|economy|economic growth)/i;
+
+// The Compliance desk is ONLY a statutory/regulatory body acting in its rule-making
+// or enforcement capacity — never ordinary crime. Three tests:
+//   STAT_BODY  — the actor is a regulator/statutory body (SEBI, RBI, IRDAI, AMFI…)
+//   REG_ACTION — it is a regulatory act (circular, norms, penalty, ban, order…)
+//   CRIME      — law-enforcement/criminal news (arrest, FIR, ED/CBI raid, court
+//                verdict) which is NOT market compliance even when finance-flavoured
+// A story is compliance only if STAT_BODY && REG_ACTION && not a pure CRIME item.
+const STAT_BODY = /(\bsebi\b|securities and exchange board|reserve bank of india|\brbi\b|\birdai\b|insurance regulat|\bpfrda\b|pension fund regulat|\bamfi\b|association of mutual funds|\bnfra\b|\bibbi\b|insolvency and bankruptcy board|\bmca\b|ministry of corporate affairs|competition commission|\bcci\b|\bnclt\b|\bnclat\b|\bsat\b|securities appellate|stock exchange|\bnse\b|\bbse\b|\bcbdt\b|\bcbic\b|gst council|\bfiu-?ind\b)/i;
+const REG_ACTION = /(circular|master (?:circular|direction)|consultation paper|\bnorms?\b|guidelines?|\bframework\b|regulation|directive|penalt|\bfine[ds]?\b|\bbans?\b|\bbanned\b|\bbars?\b|debar|enforcement|adjudicat|settlement order|show[- ]cause|disgorge|cease and desist|tighten|eases?\b|relax|mandate|\bdirects?\b|approv|notif|amend|new rules?|\brules?\b|rule change|revis|rework|overhaul|\bcurb|standards?)/i;
+const CRIME = /(\barrest|\bfir\b|\bpolice\b|custody|charge ?sheet|convict|\bjail|\bbail\b|sentenc|\bcbi\b|enforcement directorate|\bed\b raids?|\braid(?:s|ed)?\b|money laundering|\bpmla\b|lookout notice|extradit|\bsummons?\b|booked for|held for)/i;
 
 function pad(text) {
   return ' ' + text.toLowerCase().replace(/\s+/g, ' ') + ' ';
@@ -104,6 +115,16 @@ export function routeItem(item) {
   // TITLE so a stray "liquidity"/"rate" in the feed blurb can't drag one company in.
   if (topic === 'macro' && COMPANY_ACTION.test(item.title) && !CORE_MACRO.test(item.title)) {
     topic = 'equity';
+  }
+
+  // COMPLIANCE must be a statutory body taking a regulatory action — and must NOT be
+  // a law-enforcement / crime item (arrest, FIR, ED/CBI raid, court verdict). This is
+  // what keeps the Compliance desk PURE: only rule-makers and enforcers acting, never
+  // crime-blotter news. If it doesn't qualify, it's an ordinary market story.
+  if (topic === 'compliance') {
+    const isRegulatoryAction = STAT_BODY.test(t) && REG_ACTION.test(t);
+    const isCrime = CRIME.test(t) && !STAT_BODY.test(item.title);
+    if (!isRegulatoryAction || isCrime) topic = 'equity'; // -> india/global by region
   }
 
   let section;
