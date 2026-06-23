@@ -11,10 +11,10 @@ on:
     # so the Gemini quota is spent exactly ONCE per day no matter how many slots fire.
     # (For punctual 07:30 delivery, an external cron-job.org → repository_dispatch is
     # the reliable trigger; these crons are the zero-setup backup.)
-    - cron: '0 2 * * *'     # 07:30 IST  (the daily edition)
-    - cron: '45 2 * * *'    # 08:15 IST  (fallback)
-    - cron: '45 3 * * *'    # 09:15 IST  (fallback)
-    - cron: '0 5 * * *'     # 10:30 IST  (fallback)
+    - cron: '30 1 * * *'    # 07:00 IST  (the daily edition)
+    - cron: '50 1 * * *'    # 07:20 IST  (fallback, if 7:00 was late/dropped)
+    - cron: '20 2 * * *'    # 07:50 IST  (fallback)
+    - cron: '0 4 * * *'     # 09:30 IST  (fallback)
     - cron: '30 6 * * *'    # 12:00 IST  (fallback)
     - cron: '0 8 * * *'     # 13:30 IST  (last-chance fallback)
   # PRIMARY reliable trigger: an external cron service (e.g. cron-job.org) hits the
