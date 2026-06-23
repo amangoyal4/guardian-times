@@ -1,0 +1,39 @@
+name: Diag TTS
+
+# Throwaway — checks whether the current key can call Google Cloud Text-to-Speech
+# (dedicated en-IN Indian voices) and Gemini TTS. Prints HTTP status + error body
+# (never the key). Delete once the voice path is chosen.
+on:
+  workflow_dispatch:
+
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Probe TTS endpoints
+        env:
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+        run: |
+          echo "===== Cloud TTS (en-IN Neural2) ====="
+          c1=$(curl -s -o r1.json -w "%{http_code}" \
+            "https://texttospeech.googleapis.com/v1/text:synthesize?key=${GEMINI_API_KEY}" \
+            -H "Content-Type: application/json" \
+            -d '{"input":{"text":"Good morning."},"voice":{"languageCode":"en-IN","name":"en-IN-Neural2-A"},"audioConfig":{"audioEncoding":"MP3"}}')
+          echo "HTTP $c1"
+          head -c 400 r1.json; echo ""
+          echo "===== Cloud TTS (en-IN Chirp3-HD) ====="
+          c2=$(curl -s -o r2.json -w "%{http_code}" \
+            "https://texttospeech.googleapis.com/v1/text:synthesize?key=${GEMINI_API_KEY}" \
+            -H "Content-Type: application/json" \
+            -d '{"input":{"text":"Good morning."},"voice":{"languageCode":"en-IN","name":"en-IN-Chirp3-HD-Achernar"},"audioConfig":{"audioEncoding":"MP3"}}')
+          echo "HTTP $c2"
+          head -c 400 r2.json; echo ""
+          echo "===== Gemini TTS (flash preview) ====="
+          c3=$(curl -s -o r3.json -w "%{http_code}" \
+            "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-tts:generateContent?key=${GEMINI_API_KEY}" \
+            -H "Content-Type: application/json" \
+            -d '{"contents":[{"parts":[{"text":"Good morning."}]}],"generationConfig":{"responseModalities":["AUDIO"],"speechConfig":{"voiceConfig":{"prebuiltVoiceConfig":{"voiceName":"Charon"}}}}}')
+          echo "HTTP $c3"
+          head -c 300 r3.json; echo ""
+          echo "===== ffmpeg present on runner? ====="
+          which ffmpeg && ffmpeg -version | head -1 || echo "no ffmpeg"
