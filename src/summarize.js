@@ -317,15 +317,22 @@ export async function generateBriefingScript(items, { weekday = '' } = {}) {
     .join('\n');
   const prompt = `${HOUSE}
 
-Write the script for today's spoken MORNING AUDIO BRIEFING — a polished broadcast a busy Indian investment professional listens to over their morning coffee. This is for the EAR, not the page.
+Write the script for today's spoken MORNING AUDIO BRIEFING — read aloud by a clear female Indian news anchor to a busy investment professional. This is for the EAR, not the page.
 
-WHAT TO COVER: only the stories that genuinely matter — judge and SELECT the 12 to 15 most important from the list below, lead with the most consequential, and weave them into ONE flowing narrative. Do NOT mechanically read every item. Group naturally: the big macro and market picture first, then the standout Indian corporate and sector moves, then the key global and regulatory items. For each story give two to four spoken sentences — the news, the key figure, and a crisp line of "why it matters" where it earns it. Enough depth that a listener feels properly briefed, never a rushed list.
+SELECT the 10 most important stories from the list below — the ones that genuinely move money — ordered most-consequential first.
 
-HOW TO WRITE IT (spoken English for a warm Indian news anchor):
-- Short, clear sentences. Natural connective tissue ("Meanwhile,", "Turning to the corporate desk,", "On the global front,", "And finally,").
-- Spell EVERYTHING the way it is SPOKEN. Numbers, currency and symbols become words: write "five hundred crore rupees" not "₹500 cr"; "up three point two per cent" not "+3.2%"; "the first quarter of financial year twenty-six" not "Q1FY26". Never emit the characters ₹, $, %, &, or shorthand like "bps", "YoY", "Q1FY26".
-- Open with a warm greeting ("Good morning. This is your Guardian Times briefing for ${weekday || 'today'}.") and close with a short, gracious sign-off.
-- Target 1550 to 1900 words (about eight to nine minutes spoken). This length is important — do not come in short. Plain paragraphs only — NO headings, NO bullet points, NO stage directions, NO speaker labels. Just the words to be read aloud.
+STRUCTURE the script EXACTLY like this:
+1. A short greeting that ANNOUNCES THE COUNT — for example: "Good morning. This is your Guardian Times briefing for ${weekday || 'today'}. Here are the ten key highlights for the day."
+2. Then go through all ten IN ORDER. For EACH one:
+   a. Announce it by number, spelled as a word: "Highlight one." … "Highlight two." … through "Highlight ten." (each as its own short sentence).
+   b. State the HEADLINE as one clear spoken sentence.
+   c. Then SUMMARISE the story in two to three spoken sentences — the key facts, the main figure, and a crisp line on why it matters.
+3. A short, gracious sign-off at the very end.
+
+HOW TO WRITE IT (spoken English):
+- Clear, natural sentences a news anchor would actually say.
+- Spell EVERYTHING the way it is SPOKEN. Numbers, currency and symbols become words: "five hundred crore rupees" not "₹500 cr"; "up three point two per cent" not "+3.2%"; "the first quarter of financial year twenty-six" not "Q1FY26". Never emit the characters ₹, $, %, &, or shorthand like "bps", "YoY", "Q1FY26".
+- Target 1500 to 1900 words (about eight to nine minutes spoken). Plain text only — NO markdown, NO bullet points, NO numerals like "1." — the ONLY labels allowed are the spoken "Highlight one/two/… ten". Just the words to be read aloud.
 
 Return ONLY the script text, nothing else.
 
