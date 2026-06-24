@@ -12,6 +12,7 @@ import { fetchMarket } from './market.js';
 import { fetchLibrary } from './library.js';
 import { attachFullText } from './article.js';
 import { synthesizeBriefing } from './tts.js';
+import { fetchManagerInterviews } from './fund-managers.js';
 import { buildHTML, writeEdition } from './build.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -28,6 +29,8 @@ const LIB_STATE = path.join(__dirname, '..', 'archive', 'seen-library.json');
 // picks day to day. The cache can also be SEEDED locally (where YouTube isn't
 // blocked) and committed — see scripts/seed-library.js.
 const LIB_POOL = path.join(__dirname, '..', 'archive', 'library-pool.json');
+// Last-good Fund Manager interviews — reused if the YouTube Data API fails a run.
+const MGR_POOL = path.join(__dirname, '..', 'archive', 'managers-pool.json');
 
 // How many stories to carry per section after the editorial cut (~24 total,
 // India-first). Now that the build runs ONCE a day it gets the full free-tier daily
@@ -203,6 +206,8 @@ async function main() {
   // Kick off the Library RSS fetch now (network-only) so it overlaps with the AI
   // calls below; we await it just before curating.
   const libraryPromise = fetchLibrary();
+  // Fund-manager interviews fetch (YouTube Data API) — network-only, runs in parallel.
+  const managersPromise = fetchManagerInterviews();
   const mechanism = await generateMechanism(topAll);
   const explainers = await generateExplainers(topAll);
   const myths = await generateMyths(topAll);
@@ -225,6 +230,18 @@ async function main() {
     } catch {}
   }
   const library = await curateLibrary(preferUnseen(libPool, seenLib));
+
+  // Fund Manager Interviews — resilient like the Library: cache the last-good set and
+  // reuse it if the YouTube Data API returns nothing (or the key is missing) this run.
+  let managers = await managersPromise;
+  if (managers.length) {
+    try { fs.writeFileSync(MGR_POOL, JSON.stringify(managers)); } catch {}
+  } else {
+    try {
+      const cached = JSON.parse(fs.readFileSync(MGR_POOL, 'utf8'));
+      if (cached.length) { managers = cached; console.log(`   ↻ Fund-manager feed empty — reusing last-good (${cached.length} interviews)`); }
+    } catch {}
+  }
 
   // 6) SUMMARISE selected stories, and fetch market data in parallel.
   // Lead stories first get their FULL article text fetched (best-effort) so the
@@ -273,7 +290,7 @@ async function main() {
 
   // 7) BUILD + WRITE
   const html = buildHTML({
-    ...buckets, market, mechanism, explainers, myths, library,
+    ...buckets, market, mechanism, explainers, myths, library, managers,
     audioScript, audioFile,
     runTime: new Date().toUTCString(),
   });

@@ -137,6 +137,35 @@ function fmtDur(d = '') {
   return '';
 }
 
+// Fund Manager Interviews — latest YouTube interviews of the tracked PMS/MF managers,
+// priority names first. Reuses the Library card styling.
+function managersPage(num, managers) {
+  const head = `<div class="section-head"><span class="pgnum">${num}</span><h2>Fund Manager Interviews</h2><span class="kicker">From the people who run the money</span></div>
+      <p class="lede">The latest interviews of India&rsquo;s most-watched PMS and mutual-fund managers &mdash; refreshed only when a new conversation appears, priority names first.</p>`;
+  if (!managers || !managers.length) {
+    return `<section class="page" id="page-managers">
+      ${head}
+      <p class="watch-empty">No new manager interviews in the last 30 days &mdash; this updates the moment a fresh one lands.</p></section>`;
+  }
+  const cards = managers.map((v) => `
+      <article class="lib-card">
+        <a class="lib-thumb" href="${esc(v.link)}" target="_blank" rel="noopener">
+          ${v.thumb ? `<img loading="lazy" src="${esc(v.thumb)}" alt="">` : ''}
+          <span class="lib-play">&#9658;</span>
+        </a>
+        <div class="lib-body">
+          <div class="eyebrow"><span class="src">${esc(v.manager)}</span><span class="dot"></span><span class="chip">${esc(v.firm)}</span></div>
+          <h3 class="hl"><a href="${esc(v.link)}" target="_blank" rel="noopener">${esc(v.title)}</a></h3>
+          <div class="eyebrow"><span class="src">${esc(v.channel)}</span><span class="dot"></span><span class="time">${timeAgo(v.published)}</span></div>
+          <a class="readmore" href="${esc(v.link)}" target="_blank" rel="noopener">Watch on YouTube <span class="arr">&rarr;</span></a>
+        </div>
+      </article>`).join('');
+  return `<section class="page" id="page-managers">
+      ${head}
+      <div class="lib-grid">${cards}</div>
+    </section>`;
+}
+
 // The Library desk — curated finance videos to watch + a podcast to hear.
 function libraryPage(num, library) {
   const videos = library?.videos || [];
@@ -287,7 +316,8 @@ export function buildHTML(data) {
     sectionPage('global', '04', 'Global Markets', 'Forces that move world sentiment', 'The US tape and global developments with real market read-through to Indian IT, the rupee and commodities.', data.global),
     knowledgePage('05', data.mechanism, data.explainers, data.myths),
     sectionPage('compliance', '06', 'Compliance &amp; Regulation', 'SEBI · RBI · AMC moves', 'The regulatory changes that reshape how products are built, sold and reported.', data.compliance),
-    libraryPage('07', data.library),
+    managersPage('07', data.managers),
+    libraryPage('08', data.library),
   ].join('\n');
 
   // Spoken-briefing data. PREFERRED: a real MP3 (data.audioFile) voiced from the AI

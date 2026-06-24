@@ -82,8 +82,13 @@ const library = {
   },
 };
 
+const managers = [
+  { manager: 'Saurabh Mukherjea', firm: 'Marcellus Investment Managers', tier: 1, title: 'Why quality compounders still win in this market', channel: 'ET Now', published: new Date(now - 2 * 3.6e6 * 24).toISOString(), thumb: 'https://i.ytimg.com/vi/dQw4w9WgXcQ/mqdefault.jpg', link: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ' },
+  { manager: 'Kenneth Andrade', firm: 'Old Bridge Capital', tier: 1, title: 'Where the next cycle of value is hiding', channel: 'CNBC-TV18', published: new Date(now - 5 * 3.6e6 * 24).toISOString(), thumb: 'https://i.ytimg.com/vi/dQw4w9WgXcQ/mqdefault.jpg', link: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ' },
+];
+
 const market = await fetchMarket();
-const html = buildHTML({ macro, sector, india, global, compliance, market, mechanism, explainers, myths, library, runTime: new Date().toUTCString() });
+const html = buildHTML({ macro, sector, india, global, compliance, market, mechanism, explainers, myths, library, managers, runTime: new Date().toUTCString() });
 fs.mkdirSync(PREVIEW_DIR, { recursive: true });
 fs.writeFileSync(path.join(PREVIEW_DIR, 'index.html'), html);
 console.log('\n✅ render-test wrote preview/index.html');
