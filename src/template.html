@@ -49,6 +49,7 @@
   .audio-wave:focus-visible{outline:1px solid #16161a;outline-offset:3px;border-radius:2px}
   .wave-bars{position:absolute;inset:0;display:flex;align-items:center;gap:2px;pointer-events:none}
   .wave-bars span{flex:1 1 0;min-width:0;height:30%;background:rgba(28,20,4,.26);border-radius:1px}
+  #waveBase{opacity:.4}            /* unplayed bars muted; the played (coloured) layer pops over them */
   .wave-played{clip-path:inset(0 calc(100% - var(--p,0%)) 0 0)}
   .wave-played span{background:#16161a}
   .wave-thumb{position:absolute;top:-2px;bottom:-2px;left:var(--p,0%);width:2px;margin-left:-1px;background:#16161a;border-radius:2px;pointer-events:none;box-shadow:0 0 0 1px rgba(255,255,255,.45)}
@@ -79,8 +80,11 @@
   .nav-spacer{flex:1 1 auto;min-width:8px}
 
   main{max-width:var(--maxw);margin:0 auto;padding:0 28px}
-  .page{display:none;animation:fade .4s ease}
-  .page.active{display:block}
+  /* Endless single-scroll: every section stacks in one continuous page. The sticky
+     nav (.nav-wrap) scroll-spies the section in view; scroll-margin-top keeps a
+     scrolled-to heading clear of the sticky bar. */
+  .page{display:block;scroll-margin-top:60px;padding-bottom:14px;border-bottom:1px solid var(--line)}
+  .page:last-child{border-bottom:none}
   @keyframes fade{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
 
   .section-head{display:flex;align-items:baseline;gap:16px;border-bottom:2px solid var(--line-strong);padding:26px 0 10px;margin-bottom:8px}
@@ -326,23 +330,21 @@ __PAGES__
 <script>
   const navBtns=document.querySelectorAll('.nav-btn');
   const pages=document.querySelectorAll('.page');
-  navBtns.forEach(btn=>btn.addEventListener('click',()=>{
-    const t=btn.dataset.page;
-    navBtns.forEach(b=>b.classList.remove('active'));
-    btn.classList.add('active');
-    pages.forEach(p=>p.classList.toggle('active',p.id==='page-'+t));
-    window.scrollTo({top:0,behavior:'smooth'});
-  }));
+  // Single continuous scroll: a nav click smooth-scrolls to that section.
+  function goTo(id){ const el=document.getElementById('page-'+id); if(el) el.scrollIntoView({behavior:'smooth',block:'start'}); }
+  navBtns.forEach(btn=>btn.addEventListener('click',()=>goTo(btn.dataset.page)));
+  // Scroll-spy: highlight the nav button for whichever section is currently at the top.
+  if('IntersectionObserver' in window){
+    const spy=new IntersectionObserver((entries)=>{
+      entries.forEach(e=>{ if(e.isIntersecting){ const id=e.target.id.replace('page-',''); navBtns.forEach(b=>b.classList.toggle('active', b.dataset.page===id)); } });
+    },{rootMargin:'-58px 0px -72% 0px',threshold:0});
+    pages.forEach(p=>spy.observe(p));
+  }
   const d=new Date();
   document.getElementById('dateline').textContent=d.toLocaleDateString('en-GB',{weekday:'long',day:'numeric',month:'long',year:'numeric'});
 
   // concept chips -> jump to knowledge desk
-  document.querySelectorAll('.chip').forEach(c=>c.addEventListener('click',()=>{
-    navBtns.forEach(b=>b.classList.remove('active'));
-    document.querySelector('.nav-btn[data-page=knowledge]').classList.add('active');
-    pages.forEach(p=>p.classList.toggle('active',p.id==='page-knowledge'));
-    window.scrollTo({top:0,behavior:'smooth'});
-  }));
+  document.querySelectorAll('.chip').forEach(c=>c.addEventListener('click',()=>goTo('knowledge')));
 
   /* ----- Audio briefing: in-browser AI voice (Web Speech API) -----
      Note on the scrubber: the Web Speech API exposes no audio buffer and no real
@@ -580,12 +582,14 @@ __PAGES__
       var dragging = false;
 
       (function buildWave(){
+        // Multi-colour equaliser bars (cycle a palette that pops on the gold bar).
+        var palette = ['#16161a','#1d4e5f','#9a2a2a','#1a6e4b','#3b2c6e','#a85d12'];
         var base = document.getElementById('waveBase'), n = 132, html = '', seed = 7;
         for(var i=0;i<n;i++){
           seed = (seed*1103515245 + 12345) & 0x7fffffff;
           var r = (seed % 1000) / 1000;
           var h = 16 + Math.round(Math.abs(Math.sin(i*0.5)) * 60 + r * 24);
-          html += '<span style="height:' + Math.min(100,h) + '%"></span>';
+          html += '<span style="height:' + Math.min(100,h) + '%;background:' + palette[i % palette.length] + '"></span>';
         }
         base.innerHTML = html; wavePlayed.innerHTML = html;
       })();
