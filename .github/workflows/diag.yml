@@ -1,0 +1,21 @@
+name: Diag YouTube
+
+# Throwaway — confirms YOUTUBE_API_KEY works (a single search). Prints HTTP status +
+# a snippet of the response (never the key). Delete once confirmed.
+on:
+  workflow_dispatch:
+
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Probe YouTube Data API
+        env:
+          YOUTUBE_API_KEY: ${{ secrets.YOUTUBE_API_KEY }}
+        run: |
+          echo "key present: $([ -n "$YOUTUBE_API_KEY" ] && echo yes || echo NO)  (length ${#YOUTUBE_API_KEY})"
+          code=$(curl -s -o r.json -w "%{http_code}" \
+            "https://www.googleapis.com/youtube/v3/search?part=snippet&type=video&order=date&maxResults=3&regionCode=IN&q=Saurabh%20Mukherjea%20interview&key=${YOUTUBE_API_KEY}")
+          echo "HTTP $code"
+          echo "--- first results / error ---"
+          node -e "const d=require('./r.json'); if(d.error){console.log('ERROR', d.error.code, d.error.message);} else {console.log('items:', (d.items||[]).length); (d.items||[]).slice(0,3).forEach(i=>console.log('•', i.snippet.publishedAt.slice(0,10), '|', i.snippet.channelTitle, '|', i.snippet.title.slice(0,70)));}" 2>&1 || head -c 500 r.json
