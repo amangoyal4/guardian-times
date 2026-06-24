@@ -67,17 +67,18 @@ function saveSeenLib(prev, library) {
   const merged = [...prev, ...fresh];
   fs.writeFileSync(LIB_STATE, JSON.stringify(merged.slice(-150)));
 }
-// Reorder the candidate pool so items NOT shown recently come first, preserving
-// recency order within each partition. The curator (and its fallback) then
-// naturally favour fresh content, while still being able to reach back to a
-// recently-shown item if the unseen pool is thin.
+// Force the Library to ROTATE day to day. Reordering alone wasn't enough — the AI
+// curator kept re-picking its same favourites — so we now HARD-EXCLUDE recently-shown
+// items whenever a healthy unseen pool remains, only falling back to shown items when
+// the unseen pool is too thin to fill the desk. With ~40 videos in the window and 6
+// shown per day, this yields ~a week of fresh libraries before anything recurs.
 function preferUnseen({ videos = [], podcasts = [] } = {}, seen) {
-  const split = (arr) => {
+  const split = (arr, keepMin) => {
     const unseen = [], shown = [];
     for (const x of arr) (seen.has(libKey(x)) ? shown : unseen).push(x);
-    return [...unseen, ...shown];
+    return unseen.length >= keepMin ? unseen : [...unseen, ...shown];
   };
-  return { videos: split(videos), podcasts: split(podcasts) };
+  return { videos: split(videos, 10), podcasts: split(podcasts, 2) };
 }
 
 // Procedural noise with no decision value — auction notices/results and daily
