@@ -122,7 +122,7 @@ async function searchLatest(m, publishedAfter) {
  * Latest interviews for the watch-list. Tier-priority, one per manager, last `days`,
  * top `want`. Returns [] (caller falls back to cache) if the key is missing / API fails.
  */
-export async function fetchManagerInterviews({ days = 30, want = 10, gapMs = 120 } = {}) {
+export async function fetchManagerInterviews({ days = 30, want = 8, gapMs = 120 } = {}) {
   if (!API_KEY) { console.log('  ⚠ YOUTUBE_API_KEY not set — Fund Manager Interviews skipped.'); return []; }
   const publishedAfter = new Date(Date.now() - days * 86400000).toISOString();
   const found = [];
