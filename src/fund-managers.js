@@ -64,36 +64,46 @@ function isoToSec(d = '') {
   return (+m[1] || 0) * 3600 + (+m[2] || 0) * 60 + (+m[3] || 0);
 }
 
-// One videos.list call (1 quota unit) returns durations for a batch of ids.
-async function fetchDurations(ids) {
+// videos.list for a batch of ids -> { id: { sec, lang } } (duration + audio language).
+async function fetchVideoMeta(ids) {
+  const out = {};
   try {
-    const p = new URLSearchParams({ part: 'contentDetails', id: ids.join(','), key: API_KEY });
+    const p = new URLSearchParams({ part: 'contentDetails,snippet', id: ids.join(','), key: API_KEY });
     const res = await fetch(`${VIDEOS}?${p}`, { signal: AbortSignal.timeout(15000) });
-    if (!res.ok) return {};
+    if (!res.ok) return out;
     const data = await res.json();
-    const map = {};
-    for (const it of data.items || []) map[it.id] = isoToSec(it.contentDetails?.duration);
-    return map;
-  } catch { return {}; }
+    for (const it of data.items || []) {
+      out[it.id] = {
+        sec: isoToSec(it.contentDetails?.duration),
+        lang: (it.snippet?.defaultAudioLanguage || it.snippet?.defaultLanguage || '').toLowerCase(),
+      };
+    }
+  } catch { /* leave empty */ }
+  return out;
 }
+
+// Any Indian-script (Devanagari etc.) in the title ⇒ a Hindi/regional video.
+const INDIC = /[ऀ-෿]/;
 
 async function searchLatest(m, publishedAfter) {
   const params = new URLSearchParams({
-    part: 'snippet', type: 'video', order: 'date', maxResults: '8',
-    regionCode: 'IN', publishedAfter, // NO relevanceLanguage — include Hindi/regional interviews
+    part: 'snippet', type: 'video', order: 'date', maxResults: '10',
+    regionCode: 'IN', relevanceLanguage: 'en', publishedAfter, // ENGLISH interviews
     q: `${m.name} interview`, key: API_KEY,
   });
   const res = await fetch(`${SEARCH}?${params}`, { signal: AbortSignal.timeout(15000) });
   if (!res.ok) throw new Error(`YT ${res.status}: ${(await res.text()).slice(0, 120)}`);
   const data = await res.json();
-  // Keep results that plausibly feature this manager (surname in the title — works for
-  // Hindi-audio videos too, which are almost always titled with the English name).
   const surname = m.name.replace(/^[A-Z]\.\s*/, '').split(' ').pop().toLowerCase();
-  const cands = (data.items || []).filter((it) => it.id?.videoId && (it.snippet?.title || '').toLowerCase().includes(surname));
+  // Plausibly features this manager (surname in title) AND not a Hindi/regional video
+  // (no Indic script anywhere in the title).
+  const cands = (data.items || []).filter((it) => it.id?.videoId
+    && (it.snippet?.title || '').toLowerCase().includes(surname)
+    && !INDIC.test(it.snippet?.title || ''));
   if (!cands.length) return null;
-  // Drop Shorts / sub-3-min clips. cands are already most-recent-first; take the first long enough.
-  const durMap = await fetchDurations(cands.map((c) => c.id.videoId));
-  const hit = cands.find((c) => (durMap[c.id.videoId] || 0) >= MIN_SECONDS);
+  const meta = await fetchVideoMeta(cands.map((c) => c.id.videoId));
+  // Most-recent candidate that's long enough AND English audio (unknown audio lang is allowed).
+  const hit = cands.find((c) => { const x = meta[c.id.videoId]; return x && x.sec >= MIN_SECONDS && (!x.lang || x.lang.startsWith('en')); });
   if (!hit) return null;
   const s = hit.snippet;
   return {
@@ -104,7 +114,7 @@ async function searchLatest(m, publishedAfter) {
     published: s.publishedAt,
     thumb: s.thumbnails?.medium?.url || s.thumbnails?.default?.url || '',
     link: `https://www.youtube.com/watch?v=${hit.id.videoId}`,
-    durationSec: durMap[hit.id.videoId] || 0,
+    durationSec: meta[hit.id.videoId]?.sec || 0,
   };
 }
 
