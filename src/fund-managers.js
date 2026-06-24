@@ -53,21 +53,48 @@ export const MANAGERS = [
   { name: 'Pawan Bharaddia', firm: 'Equitree Capital', tier: 3 },
 ];
 
+const VIDEOS = 'https://www.googleapis.com/youtube/v3/videos';
+// Minimum length for a "real" interview — drops Shorts and sub-clips. 3 minutes keeps
+// substantive conversations while excluding the 30–60s reels the user doesn't want.
+const MIN_SECONDS = 180;
+
+// ISO-8601 duration ("PT12M34S") -> seconds.
+function isoToSec(d = '') {
+  const m = /PT(?:(\d+)H)?(?:(\d+)M)?(?:(\d+)S)?/.exec(d) || [];
+  return (+m[1] || 0) * 3600 + (+m[2] || 0) * 60 + (+m[3] || 0);
+}
+
+// One videos.list call (1 quota unit) returns durations for a batch of ids.
+async function fetchDurations(ids) {
+  try {
+    const p = new URLSearchParams({ part: 'contentDetails', id: ids.join(','), key: API_KEY });
+    const res = await fetch(`${VIDEOS}?${p}`, { signal: AbortSignal.timeout(15000) });
+    if (!res.ok) return {};
+    const data = await res.json();
+    const map = {};
+    for (const it of data.items || []) map[it.id] = isoToSec(it.contentDetails?.duration);
+    return map;
+  } catch { return {}; }
+}
+
 async function searchLatest(m, publishedAfter) {
   const params = new URLSearchParams({
-    part: 'snippet', type: 'video', order: 'date', maxResults: '4',
-    regionCode: 'IN', relevanceLanguage: 'en', publishedAfter,
+    part: 'snippet', type: 'video', order: 'date', maxResults: '8',
+    regionCode: 'IN', publishedAfter, // NO relevanceLanguage — include Hindi/regional interviews
     q: `${m.name} interview`, key: API_KEY,
   });
   const res = await fetch(`${SEARCH}?${params}`, { signal: AbortSignal.timeout(15000) });
   if (!res.ok) throw new Error(`YT ${res.status}: ${(await res.text()).slice(0, 120)}`);
   const data = await res.json();
-  const items = data.items || [];
-  // Keep only results that plausibly feature this manager (surname in the title),
-  // then take the most recent (results are already date-ordered).
+  // Keep results that plausibly feature this manager (surname in the title — works for
+  // Hindi-audio videos too, which are almost always titled with the English name).
   const surname = m.name.replace(/^[A-Z]\.\s*/, '').split(' ').pop().toLowerCase();
-  const hit = items.find((it) => (it.snippet?.title || '').toLowerCase().includes(surname));
-  if (!hit?.id?.videoId) return null;
+  const cands = (data.items || []).filter((it) => it.id?.videoId && (it.snippet?.title || '').toLowerCase().includes(surname));
+  if (!cands.length) return null;
+  // Drop Shorts / sub-3-min clips. cands are already most-recent-first; take the first long enough.
+  const durMap = await fetchDurations(cands.map((c) => c.id.videoId));
+  const hit = cands.find((c) => (durMap[c.id.videoId] || 0) >= MIN_SECONDS);
+  if (!hit) return null;
   const s = hit.snippet;
   return {
     manager: m.name, firm: m.firm, tier: m.tier,
@@ -77,6 +104,7 @@ async function searchLatest(m, publishedAfter) {
     published: s.publishedAt,
     thumb: s.thumbnails?.medium?.url || s.thumbnails?.default?.url || '',
     link: `https://www.youtube.com/watch?v=${hit.id.videoId}`,
+    durationSec: durMap[hit.id.videoId] || 0,
   };
 }
 

@@ -156,7 +156,7 @@ function managersPage(num, managers) {
         <div class="lib-body">
           <div class="eyebrow"><span class="src">${esc(v.manager)}</span><span class="dot"></span><span class="chip">${esc(v.firm)}</span></div>
           <h3 class="hl"><a href="${esc(v.link)}" target="_blank" rel="noopener">${esc(v.title)}</a></h3>
-          <div class="eyebrow"><span class="src">${esc(v.channel)}</span><span class="dot"></span><span class="time">${timeAgo(v.published)}</span></div>
+          <div class="eyebrow"><span class="src">${esc(v.channel)}</span><span class="dot"></span><span class="time">${timeAgo(v.published)}</span>${v.durationSec ? `<span class="dot"></span><span class="time">${fmtDur(String(v.durationSec))}</span>` : ''}</div>
           <a class="readmore" href="${esc(v.link)}" target="_blank" rel="noopener">Watch on YouTube <span class="arr">&rarr;</span></a>
         </div>
       </article>`).join('');
