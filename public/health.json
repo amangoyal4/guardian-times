@@ -1,5 +1,5 @@
 {
-  "ts": "2026-06-24T05:34:16.626Z",
+  "ts": "2026-06-24T06:38:04.602Z",
   "health": [
     {
       "id": "et-markets",
@@ -40,7 +40,7 @@
       "id": "fe-markets",
       "name": "Financial Express — Market",
       "ok": true,
-      "count": 57,
+      "count": 52,
       "error": null
     },
     {
@@ -138,7 +138,7 @@
       "id": "bs-economy",
       "name": "Business Standard — Economy",
       "ok": true,
-      "count": 14,
+      "count": 12,
       "error": null
     },
     {
