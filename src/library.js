@@ -120,7 +120,72 @@ async function isShort(id) {
   }
 }
 
+// ---- YouTube Data API (key-based) ----
+// The Atom feeds above are keyless but get BLOCKED from CI datacenter IPs, which
+// froze the Library on a stale cache ("never updates"). The Data API uses the key
+// and works fine from CI, and—unlike Atom—returns real durations, so we can drop
+// Shorts/clips precisely. We use it when YOUTUBE_API_KEY is set, falling back to the
+// Atom path otherwise (e.g. local runs without a key).
+const YT_API_KEY = process.env.YOUTUBE_API_KEY;
+const YT_API = 'https://www.googleapis.com/youtube/v3';
+const isoToSec = (d = '') => { const m = /PT(?:(\d+)H)?(?:(\d+)M)?(?:(\d+)S)?/.exec(d) || []; return (+m[1] || 0) * 3600 + (+m[2] || 0) * 60 + (+m[3] || 0); };
+// Parse an iTunes duration: "1234" (secs), "12:34" (m:s) or "1:02:33" (h:m:s) -> seconds.
+const durToSec = (d = '') => { d = String(d).trim(); if (!d) return 0; if (/^\d+$/.test(d)) return +d; const p = d.split(':').map(Number); if (p.some(Number.isNaN)) return 0; return p.length === 3 ? p[0] * 3600 + p[1] * 60 + p[2] : p.length === 2 ? p[0] * 60 + p[1] : 0; };
+
+// Durations for a batch of video ids (videos.list, 1 quota unit / 50 ids).
+async function apiDurations(ids) {
+  const out = {};
+  for (let i = 0; i < ids.length; i += 50) {
+    try {
+      const p = new URLSearchParams({ part: 'contentDetails', id: ids.slice(i, i + 50).join(','), key: YT_API_KEY });
+      const res = await fetch(`${YT_API}/videos?${p}`, { signal: AbortSignal.timeout(15000) });
+      if (!res.ok) continue;
+      const data = await res.json();
+      for (const it of data.items || []) out[it.id] = isoToSec(it.contentDetails?.duration);
+    } catch { /* skip batch */ }
+  }
+  return out;
+}
+
+// Recent uploads of a channel via the uploads playlist (UC… → UU…). Drops Shorts and
+// anything under `minSec`, keeps items within `days`, newest first, up to `max`.
+async function apiChannelVideos(channelId, { days, minSec, max }) {
+  const uploads = 'UU' + channelId.slice(2);
+  const cutoff = Date.now() - days * 24 * 3600 * 1000;
+  const p = new URLSearchParams({ part: 'snippet', playlistId: uploads, maxResults: '15', key: YT_API_KEY });
+  const res = await fetch(`${YT_API}/playlistItems?${p}`, { signal: AbortSignal.timeout(15000) });
+  if (!res.ok) throw new Error(`playlistItems ${res.status}`);
+  const data = await res.json();
+  let items = (data.items || [])
+    .map((it) => { const s = it.snippet || {}; return {
+      videoId: s.resourceId?.videoId,
+      title: stripHtml(s.title || ''),
+      published: s.publishedAt || null,
+      rawDesc: cleanDesc(s.description || ''),
+    }; })
+    .filter((v) => v.videoId && v.title && v.title !== 'Private video' && v.title !== 'Deleted video' && !/#?\bshorts?\b/i.test(v.title))
+    .filter((v) => { const t = v.published ? new Date(v.published).getTime() : 0; return t === 0 || t >= cutoff; });
+  if (!items.length) return [];
+  const durMap = await apiDurations(items.map((v) => v.videoId));
+  items = items.filter((v) => (durMap[v.videoId] || 0) >= minSec);
+  return items.slice(0, max).map((v) => ({ ...v, durationSec: durMap[v.videoId] || 0 }));
+}
+
 async function fetchChannel(ch) {
+  // Preferred: Data API (reliable from CI + real durations).
+  if (YT_API_KEY) {
+    try {
+      const vids = await apiChannelVideos(ch.channelId, { days: 45, minSec: 180, max: 4 });
+      return vids.map((v) => ({
+        channel: ch.name, title: v.title,
+        link: `https://www.youtube.com/watch?v=${v.videoId}`,
+        videoId: v.videoId, thumb: `https://i.ytimg.com/vi/${v.videoId}/hqdefault.jpg`,
+        published: v.published, rawDesc: v.rawDesc,
+      }));
+    } catch (err) {
+      console.log(`    ⚠ YouTube API channel failed: ${ch.name} (${err.message}) — trying Atom`);
+    }
+  }
   try {
     const data = await parser.parseURL(YT_FEED(ch.channelId));
     // Take a wider window than we need, drop Shorts, then keep the freshest few —
@@ -162,6 +227,9 @@ async function fetchPodcast(p, days) {
         source: 'podcast',
       }))
       .filter((e) => e.title && e.link)
+      // Drop trailers / promo clips (e.g. a 35-second "coming soon"); a podcast of the
+      // day should be a full episode. Keep episodes of unknown length (many feeds omit it).
+      .filter((e) => { const s = durToSec(e.duration); return s === 0 || s >= 600; })
       .filter((e) => { const t = e.published ? new Date(e.published).getTime() : 0; return t === 0 || t >= cutoff; })
       .slice(0, 2);
   } catch (err) {
@@ -175,6 +243,22 @@ async function fetchPodcast(p, days) {
 // items inside the window survive.
 async function fetchYtPodcast(ch, days) {
   const cutoff = Date.now() - days * 24 * 3600 * 1000;
+  // Preferred: Data API — only FULL episodes (≥ 15 min), never a clip/Short.
+  if (YT_API_KEY) {
+    try {
+      const vids = await apiChannelVideos(ch.channelId, { days, minSec: 900, max: 2 });
+      return vids.map((v) => ({
+        show: ch.name, title: v.title,
+        link: `https://www.youtube.com/watch?v=${v.videoId}`,
+        videoId: v.videoId, published: v.published,
+        duration: String(v.durationSec || ''),
+        image: `https://i.ytimg.com/vi/${v.videoId}/hqdefault.jpg`,
+        rawDesc: cleanDesc(v.rawDesc, 480), source: 'youtube',
+      }));
+    } catch (err) {
+      console.log(`    ⚠ YouTube API podcast failed: ${ch.name} (${err.message}) — trying Atom`);
+    }
+  }
   try {
     const data = await parser.parseURL(YT_FEED(ch.channelId));
     const cand = (data.items || [])
