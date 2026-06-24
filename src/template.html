@@ -35,37 +35,36 @@
 
   /* Audio briefing player */
   .audiobar{max-width:var(--maxw);margin:14px auto 0;padding:0 28px}
-  .audiobar-inner{display:flex;flex-direction:column;gap:11px;background:linear-gradient(135deg,#bd9550,#9c7b3f);color:#1c1404;border-radius:7px;padding:13px 18px 15px;box-shadow:0 3px 16px rgba(120,90,30,.32)}
+  .audiobar-inner{display:flex;flex-direction:column;gap:7px;background:#14161e;color:var(--paper);border-radius:7px;padding:9px 16px 11px;box-shadow:0 2px 14px rgba(0,0,0,.22)}
   .audio-head{display:flex;align-items:center;justify-content:space-between;gap:14px}
   .audio-meta{min-width:0;line-height:1.2}
-  .audio-title{display:block;font-family:'Fraunces',serif;font-weight:600;font-size:15px}
-  .audio-status{display:block;font-family:'IBM Plex Mono',monospace;font-size:10.5px;letter-spacing:.04em;text-transform:uppercase;color:rgba(28,20,4,.64);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:2px}
-  .audio-status .live-dot{display:inline-block;width:6px;height:6px;border-radius:50%;background:#16161a;margin-right:6px;vertical-align:middle;animation:apulse 1.2s ease-in-out infinite}
+  .audio-title{display:block;font-family:'Fraunces',serif;font-weight:600;font-size:14px}
+  .audio-status{display:block;font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:.04em;text-transform:uppercase;color:#9a9aa2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:2px}
+  .audio-status .live-dot{display:inline-block;width:6px;height:6px;border-radius:50%;background:var(--gold-bright);margin-right:6px;vertical-align:middle;animation:apulse 1.2s ease-in-out infinite}
   @keyframes apulse{0%,100%{opacity:1}50%{opacity:.3}}
-  .audio-time{flex:0 0 auto;font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:.04em;color:rgba(28,20,4,.64);font-variant-numeric:tabular-nums;white-space:nowrap}
+  .audio-time{flex:0 0 auto;font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:.04em;color:#9a9aa2;font-variant-numeric:tabular-nums;white-space:nowrap}
 
-  .audio-wave{position:relative;height:40px;cursor:pointer;touch-action:none;-webkit-user-select:none;user-select:none}
+  .audio-wave{position:relative;height:28px;cursor:pointer;touch-action:none;-webkit-user-select:none;user-select:none}
   .audio-wave:focus{outline:none}
-  .audio-wave:focus-visible{outline:1px solid #16161a;outline-offset:3px;border-radius:2px}
+  .audio-wave:focus-visible{outline:1px solid var(--gold-bright);outline-offset:3px;border-radius:2px}
   .wave-bars{position:absolute;inset:0;display:flex;align-items:center;gap:2px;pointer-events:none}
-  .wave-bars span{flex:1 1 0;min-width:0;height:30%;background:rgba(28,20,4,.26);border-radius:1px}
-  #waveBase{opacity:.4}            /* unplayed bars muted; the played (coloured) layer pops over them */
+  .wave-bars span{flex:1 1 0;min-width:0;height:30%;background:rgba(201,162,75,.42);border-radius:1px} /* gold, dim = not yet played */
   .wave-played{clip-path:inset(0 calc(100% - var(--p,0%)) 0 0)}
-  .wave-played span{background:#16161a}
-  .wave-thumb{position:absolute;top:-2px;bottom:-2px;left:var(--p,0%);width:2px;margin-left:-1px;background:#16161a;border-radius:2px;pointer-events:none;box-shadow:0 0 0 1px rgba(255,255,255,.45)}
+  .wave-played span{background:var(--gold-bright)}                                                   /* gold, bright = played */
+  .wave-thumb{position:absolute;top:-2px;bottom:-2px;left:var(--p,0%);width:2px;margin-left:-1px;background:#f4f2ec;border-radius:2px;pointer-events:none;box-shadow:0 0 0 1px rgba(0,0,0,.35)}
 
-  .audio-controls{display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:8px}
-  .audio-trio{grid-column:2;display:flex;align-items:center;gap:16px}
-  .audio-btn{width:48px;height:48px;border-radius:50%;border:none;background:#16161a;color:var(--gold-bright);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:16px;transition:transform .15s ease;padding:0}
+  .audio-controls{display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:6px}
+  .audio-trio{grid-column:2;display:flex;align-items:center;gap:13px}
+  .audio-btn{width:40px;height:40px;border-radius:50%;border:none;background:var(--gold-bright);color:#0a0a0a;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:14px;transition:transform .15s ease;padding:0}
   .audio-btn:hover{transform:scale(1.06)}
   .audio-btn .ico-pause{display:none;letter-spacing:1px}
   .audio-btn.playing .ico-play{display:none}
   .audio-btn.playing .ico-pause{display:inline}
-  .audio-skip{width:40px;height:40px;border-radius:50%;border:1px solid rgba(28,20,4,.42);background:none;color:#1c1404;cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0;transition:all .15s ease}
-  .audio-skip:hover{background:rgba(28,20,4,.12);border-color:rgba(28,20,4,.62)}
-  .audio-skip svg{width:25px;height:25px}
-  .audio-speed{grid-column:3;justify-self:end;background:none;border:1px solid rgba(28,20,4,.42);color:#1c1404;cursor:pointer;font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:.04em;padding:7px 10px;border-radius:4px;transition:all .15s ease}
-  .audio-speed:hover{background:rgba(28,20,4,.12);border-color:rgba(28,20,4,.62)}
+  .audio-skip{width:34px;height:34px;border-radius:50%;border:1px solid #3a3a42;background:none;color:var(--paper);cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0;transition:all .15s ease}
+  .audio-skip:hover{background:#26262c;border-color:#5a5a64}
+  .audio-skip svg{width:21px;height:21px}
+  .audio-speed{grid-column:3;justify-self:end;background:none;border:1px solid #3a3a42;color:var(--paper);cursor:pointer;font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:.04em;padding:6px 9px;border-radius:4px;transition:all .15s ease}
+  .audio-speed:hover{background:#26262c;border-color:#5a5a64}
   @media(max-width:560px){.audio-title{font-size:14px}.audio-status{font-size:9.5px}.audio-trio{gap:12px}}
 
   /* Nav */
@@ -569,6 +568,7 @@ __PAGES__
     function initFilePlayer(url){
       var audio = new Audio();
       audio.preload = 'metadata';
+      audio.preservesPitch = true; audio.mozPreservesPitch = true; audio.webkitPreservesPitch = true; // slow down WITHOUT deepening the voice
       var toggle   = document.getElementById('audioToggle');
       var backBtn  = document.getElementById('audioBack');
       var fwdBtn   = document.getElementById('audioFwd');
@@ -582,19 +582,17 @@ __PAGES__
       var dragging = false;
 
       (function buildWave(){
-        // Multi-colour equaliser bars (cycle a palette that pops on the gold bar).
-        var palette = ['#16161a','#1d4e5f','#9a2a2a','#1a6e4b','#3b2c6e','#a85d12'];
         var base = document.getElementById('waveBase'), n = 132, html = '', seed = 7;
         for(var i=0;i<n;i++){
           seed = (seed*1103515245 + 12345) & 0x7fffffff;
           var r = (seed % 1000) / 1000;
           var h = 16 + Math.round(Math.abs(Math.sin(i*0.5)) * 60 + r * 24);
-          html += '<span style="height:' + Math.min(100,h) + '%;background:' + palette[i % palette.length] + '"></span>';
+          html += '<span style="height:' + Math.min(100,h) + '%"></span>';
         }
         base.innerHTML = html; wavePlayed.innerHTML = html;
       })();
 
-      var rates = [1, 1.25, 1.5, 0.85], ri = 0;
+      var rates = [0.9, 1, 1.25, 1.5], ri = 0;   // default 0.9× — a touch slower
       function fmt(t){ t = Math.max(0, Math.round(t || 0)); var m = Math.floor(t/60), s = t%60; return m + ':' + (s<10?'0':'') + s; }
       function dur(){ return (audio.duration && isFinite(audio.duration)) ? audio.duration : 0; }
       function paint(t){
@@ -629,6 +627,7 @@ __PAGES__
       });
       window.addEventListener('beforeunload', function(){ try{ audio.pause(); }catch(_){} });
 
+      audio.playbackRate = rates[ri]; speedBtn.textContent = rates[ri] + '×'; // start at the slower default
       audio.src = url;       // kick off metadata load
       paint(0);
       bar.hidden = false;    // reveal the player
