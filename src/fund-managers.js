@@ -64,7 +64,8 @@ function isoToSec(d = '') {
   return (+m[1] || 0) * 3600 + (+m[2] || 0) * 60 + (+m[3] || 0);
 }
 
-// videos.list for a batch of ids -> { id: { sec, lang } } (duration + audio language).
+// videos.list for a batch -> { id: { sec, lang, channel } } (duration, audio language,
+// channel). NO view count — that would reward old videos and bury the fresh ones.
 async function fetchVideoMeta(ids) {
   const out = {};
   try {
@@ -76,6 +77,7 @@ async function fetchVideoMeta(ids) {
       out[it.id] = {
         sec: isoToSec(it.contentDetails?.duration),
         lang: (it.snippet?.defaultAudioLanguage || it.snippet?.defaultLanguage || '').toLowerCase(),
+        channel: it.snippet?.channelTitle || '',
       };
     }
   } catch { /* leave empty */ }
@@ -84,6 +86,8 @@ async function fetchVideoMeta(ids) {
 
 // Any Indian-script (Devanagari etc.) in the title ⇒ a Hindi/regional video.
 const INDIC = /[ऀ-෿]/;
+// Credible finance channels — quality comes from the SOURCE, not view count.
+const REPUTABLE = /\bet now\b|et markets|cnbc|moneycontrol|livemint|\bmint\b|zerodha|\bgroww\b|ndtv profit|bloomberg|economic times|business standard|\bbq\b|value research|outlook|forbes|the core|finshots|capitalmind|\bnse\b|\bbse\b|et alpha/i;
 
 async function searchLatest(m, publishedAfter) {
   const params = new URLSearchParams({
@@ -102,9 +106,13 @@ async function searchLatest(m, publishedAfter) {
     && !INDIC.test(it.snippet?.title || ''));
   if (!cands.length) return null;
   const meta = await fetchVideoMeta(cands.map((c) => c.id.videoId));
-  // Most-recent candidate that's long enough AND English audio (unknown audio lang is allowed).
-  const hit = cands.find((c) => { const x = meta[c.id.videoId]; return x && x.sec >= MIN_SECONDS && (!x.lang || x.lang.startsWith('en')); });
-  if (!hit) return null;
+  // Eligible = long enough + English audio (unknown audio allowed). `cands` are already
+  // most-recent-first, so `eligible` stays recency-ordered.
+  const eligible = cands.filter((c) => { const x = meta[c.id.videoId]; return x && x.sec >= MIN_SECONDS && (!x.lang || x.lang.startsWith('en')); });
+  if (!eligible.length) return null;
+  // Quality WITHOUT sacrificing freshness: take the NEWEST interview from a credible
+  // channel; only if none qualifies, fall back to the newest eligible.
+  const hit = eligible.find((c) => REPUTABLE.test(meta[c.id.videoId]?.channel || '')) || eligible[0];
   const s = hit.snippet;
   return {
     manager: m.name, firm: m.firm, tier: m.tier,
