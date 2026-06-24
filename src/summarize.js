@@ -317,7 +317,7 @@ export async function generateBriefingScript(items, { weekday = '' } = {}) {
     .join('\n');
   const prompt = `${HOUSE}
 
-Write the script for today's spoken MORNING AUDIO BRIEFING — read aloud by a clear female Indian news anchor to a busy investment professional. This is for the EAR, not the page.
+Write the script for today's spoken MORNING AUDIO BRIEFING — read aloud by a clear, measured Indian news anchor to a busy investment professional. This is for the EAR, not the page.
 
 SELECT the 10 most important stories from the list below — the ones that genuinely move money — ordered most-consequential first.
 
