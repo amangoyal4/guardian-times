@@ -35,44 +35,37 @@
 
   /* Audio briefing player */
   .audiobar{max-width:var(--maxw);margin:14px auto 0;padding:0 28px}
-  .audiobar-inner{display:flex;flex-direction:column;gap:11px;background:var(--ink);color:var(--paper);border-radius:7px;padding:13px 18px 15px;box-shadow:0 2px 14px rgba(0,0,0,.16)}
+  .audiobar-inner{display:flex;flex-direction:column;gap:11px;background:linear-gradient(135deg,#bd9550,#9c7b3f);color:#1c1404;border-radius:7px;padding:13px 18px 15px;box-shadow:0 3px 16px rgba(120,90,30,.32)}
   .audio-head{display:flex;align-items:center;justify-content:space-between;gap:14px}
   .audio-meta{min-width:0;line-height:1.2}
   .audio-title{display:block;font-family:'Fraunces',serif;font-weight:600;font-size:15px}
-  .audio-status{display:block;font-family:'IBM Plex Mono',monospace;font-size:10.5px;letter-spacing:.04em;text-transform:uppercase;color:#9a9aa2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:2px}
-  .audio-status .live-dot{display:inline-block;width:6px;height:6px;border-radius:50%;background:var(--gold-bright);margin-right:6px;vertical-align:middle;animation:apulse 1.2s ease-in-out infinite}
+  .audio-status{display:block;font-family:'IBM Plex Mono',monospace;font-size:10.5px;letter-spacing:.04em;text-transform:uppercase;color:rgba(28,20,4,.64);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:2px}
+  .audio-status .live-dot{display:inline-block;width:6px;height:6px;border-radius:50%;background:#16161a;margin-right:6px;vertical-align:middle;animation:apulse 1.2s ease-in-out infinite}
   @keyframes apulse{0%,100%{opacity:1}50%{opacity:.3}}
-  .audio-time{flex:0 0 auto;font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:.04em;color:#9a9aa2;font-variant-numeric:tabular-nums;white-space:nowrap}
+  .audio-time{flex:0 0 auto;font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:.04em;color:rgba(28,20,4,.64);font-variant-numeric:tabular-nums;white-space:nowrap}
 
   .audio-wave{position:relative;height:40px;cursor:pointer;touch-action:none;-webkit-user-select:none;user-select:none}
   .audio-wave:focus{outline:none}
-  .audio-wave:focus-visible{outline:1px solid var(--gold-bright);outline-offset:3px;border-radius:2px}
+  .audio-wave:focus-visible{outline:1px solid #16161a;outline-offset:3px;border-radius:2px}
   .wave-bars{position:absolute;inset:0;display:flex;align-items:center;gap:2px;pointer-events:none}
-  .wave-bars span{flex:1 1 0;min-width:0;height:30%;background:#3a3a42;border-radius:1px}
+  .wave-bars span{flex:1 1 0;min-width:0;height:30%;background:rgba(28,20,4,.26);border-radius:1px}
   .wave-played{clip-path:inset(0 calc(100% - var(--p,0%)) 0 0)}
-  .wave-played span{background:var(--gold-bright)}
-  .wave-thumb{position:absolute;top:-2px;bottom:-2px;left:var(--p,0%);width:2px;margin-left:-1px;background:#fff;border-radius:2px;pointer-events:none;box-shadow:0 0 0 1px rgba(0,0,0,.35)}
+  .wave-played span{background:#16161a}
+  .wave-thumb{position:absolute;top:-2px;bottom:-2px;left:var(--p,0%);width:2px;margin-left:-1px;background:#16161a;border-radius:2px;pointer-events:none;box-shadow:0 0 0 1px rgba(255,255,255,.45)}
 
   .audio-controls{display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:8px}
   .audio-trio{grid-column:2;display:flex;align-items:center;gap:16px}
-  .audio-btn{width:48px;height:48px;border-radius:50%;border:none;background:var(--gold-bright);color:#0a0a0a;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:16px;transition:transform .15s ease;padding:0}
+  .audio-btn{width:48px;height:48px;border-radius:50%;border:none;background:#16161a;color:var(--gold-bright);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:16px;transition:transform .15s ease;padding:0}
   .audio-btn:hover{transform:scale(1.06)}
   .audio-btn .ico-pause{display:none;letter-spacing:1px}
   .audio-btn.playing .ico-play{display:none}
   .audio-btn.playing .ico-pause{display:inline}
-  .audio-skip{width:40px;height:40px;border-radius:50%;border:1px solid #3a3a42;background:none;color:var(--paper);cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0;transition:all .15s ease}
-  .audio-skip:hover{background:#26262c;border-color:#5a5a64}
+  .audio-skip{width:40px;height:40px;border-radius:50%;border:1px solid rgba(28,20,4,.42);background:none;color:#1c1404;cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0;transition:all .15s ease}
+  .audio-skip:hover{background:rgba(28,20,4,.12);border-color:rgba(28,20,4,.62)}
   .audio-skip svg{width:25px;height:25px}
-  .audio-speed{grid-column:3;justify-self:end;background:none;border:1px solid #3a3a42;color:var(--paper);cursor:pointer;font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:.04em;padding:7px 10px;border-radius:4px;transition:all .15s ease}
-  .audio-speed:hover{background:#26262c;border-color:#5a5a64}
-  /* Live "read-along" transcript — the current sentence brightens as the voice reads it. */
-  .audio-transcript{margin-top:12px;max-height:104px;overflow-y:auto;padding-top:10px;border-top:1px solid rgba(255,255,255,.09);scrollbar-width:thin;scrollbar-color:#3a3a42 transparent}
-  .audio-transcript::-webkit-scrollbar{width:5px}
-  .audio-transcript::-webkit-scrollbar-thumb{background:#3a3a42;border-radius:3px}
-  .audio-transcript p{margin:0;padding:4px 2px;font-family:'Fraunces',serif;font-size:15px;line-height:1.5;color:#73737c;transition:color .25s ease}
-  .audio-transcript p.active{color:#f7f3ea}
-  .audio-transcript p.active::before{content:'';display:inline-block;width:3px;height:.95em;background:var(--gold-bright);border-radius:2px;margin-right:9px;vertical-align:-1px}
-  @media(max-width:560px){.audio-title{font-size:14px}.audio-status{font-size:9.5px}.audio-trio{gap:12px}.audio-transcript p{font-size:14px}}
+  .audio-speed{grid-column:3;justify-self:end;background:none;border:1px solid rgba(28,20,4,.42);color:#1c1404;cursor:pointer;font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:.04em;padding:7px 10px;border-radius:4px;transition:all .15s ease}
+  .audio-speed:hover{background:rgba(28,20,4,.12);border-color:rgba(28,20,4,.62)}
+  @media(max-width:560px){.audio-title{font-size:14px}.audio-status{font-size:9.5px}.audio-trio{gap:12px}}
 
   /* Nav */
   .nav-wrap{position:sticky;top:0;z-index:50;background:rgba(251,250,247,.94);backdrop-filter:blur(8px);border-bottom:1px solid var(--line)}
@@ -304,7 +297,6 @@
       </div>
       <button class="audio-speed" id="audioSpeed" aria-label="Playback speed">1&times;</button>
     </div>
-    <div class="audio-transcript" id="audioTranscript" hidden></div>
   </div>
 </div>
 
@@ -587,46 +579,6 @@ __PAGES__
       var idleStatus = statusEl.innerHTML;
       var dragging = false;
 
-      // --- Read-along transcript: shows the script and brightens the sentence being
-      // read. TTS gives no word timings, so each sentence's start is ESTIMATED as its
-      // share of total characters x the real audio duration — close enough to follow,
-      // and it re-syncs on every seek. Tapping a sentence jumps the audio to it.
-      var tEl = document.getElementById('audioTranscript');
-      var sentences = [], tStarts = [], activeIdx = -1;
-      (function buildTranscript(){
-        var segs = [];
-        try { segs = JSON.parse((document.getElementById('audio-script') || {}).textContent || '[]'); } catch(e){}
-        var joined = segs.map(function(s){ return s.text || ''; }).join(' ');
-        sentences = (joined.match(/[^.!?]+[.!?]*/g) || []).map(function(s){ return s.trim(); }).filter(Boolean);
-        if(!sentences.length || !tEl) return;
-        sentences.forEach(function(s, i){
-          var p = document.createElement('p'); p.textContent = s;
-          p.addEventListener('click', function(){ if(tStarts.length){ audio.currentTime = tStarts[i] + 0.05; highlightAt(audio.currentTime); } });
-          tEl.appendChild(p);
-        });
-        tEl.hidden = false;
-      })();
-      function computeTranscriptTimeline(){
-        if(!sentences.length) return;
-        var total = sentences.reduce(function(n, s){ return n + Math.max(8, s.length); }, 0) || 1;
-        var D = (audio.duration && isFinite(audio.duration)) ? audio.duration : 0, acc = 0; tStarts = [];
-        for(var i=0;i<sentences.length;i++){ tStarts[i] = (acc/total)*D; acc += Math.max(8, sentences[i].length); }
-      }
-      function highlightAt(t){
-        if(!sentences.length || !tStarts.length) return;
-        var i = 0; while(i < sentences.length-1 && tStarts[i+1] <= t) i++;
-        if(i === activeIdx) return;
-        var nodes = tEl.children;
-        if(activeIdx >= 0 && nodes[activeIdx]) nodes[activeIdx].classList.remove('active');
-        activeIdx = i;
-        var node = nodes[i];
-        if(node){
-          node.classList.add('active');
-          var cR = tEl.getBoundingClientRect(), nR = node.getBoundingClientRect();
-          tEl.scrollTop += (nR.top - cR.top) - (tEl.clientHeight/2 - nR.height/2);
-        }
-      }
-
       (function buildWave(){
         var base = document.getElementById('waveBase'), n = 132, html = '', seed = 7;
         for(var i=0;i<n;i++){
@@ -648,12 +600,11 @@ __PAGES__
         wave.setAttribute('aria-valuenow', Math.round(p));
         timeEl.textContent = fmt(t) + ' / ' + (D ? fmt(D) : '--:--');
       }
-      audio.addEventListener('loadedmetadata', function(){ paint(0); computeTranscriptTimeline(); });
-      audio.addEventListener('timeupdate', function(){ if(!dragging){ paint(audio.currentTime); highlightAt(audio.currentTime); } });
-      audio.addEventListener('seeked', function(){ highlightAt(audio.currentTime); });
+      audio.addEventListener('loadedmetadata', function(){ paint(0); });
+      audio.addEventListener('timeupdate', function(){ if(!dragging) paint(audio.currentTime); });
       audio.addEventListener('play',  function(){ toggle.classList.add('playing'); statusEl.innerHTML = '<span class="live-dot"></span>Playing &middot; your briefing'; });
       audio.addEventListener('pause', function(){ if(!audio.ended){ toggle.classList.remove('playing'); statusEl.textContent = 'Paused'; } });
-      audio.addEventListener('ended', function(){ toggle.classList.remove('playing'); statusEl.innerHTML = idleStatus; paint(0); if(activeIdx >= 0 && tEl.children[activeIdx]){ tEl.children[activeIdx].classList.remove('active'); } activeIdx = -1; });
+      audio.addEventListener('ended', function(){ toggle.classList.remove('playing'); statusEl.innerHTML = idleStatus; paint(0); });
       audio.addEventListener('error', function(){ bar.hidden = true; }); // file missing/blocked — hide rather than show a dead player
 
       toggle.addEventListener('click', function(){ if(audio.paused) audio.play(); else audio.pause(); });
