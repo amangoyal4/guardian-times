@@ -21,6 +21,13 @@ const STATE_FILE = path.join(__dirname, '..', 'archive', 'seen.json');
 // editions rotate OUT — without this the same evergreen videos resurface daily
 // (the feeds change slowly). Kept separate from the news seen.json.
 const LIB_STATE = path.join(__dirname, '..', 'archive', 'seen-library.json');
+// Last-good Library candidate pool. YouTube's Atom feeds are flaky from CI
+// datacenter IPs (intermittent 429/403 → 0 videos), which left the Library blank
+// some days. We cache the pool on every good fetch and reuse it when a fetch comes
+// back empty, so the desk always has content; the rotation logic still varies the
+// picks day to day. The cache can also be SEEDED locally (where YouTube isn't
+// blocked) and committed — see scripts/seed-library.js.
+const LIB_POOL = path.join(__dirname, '..', 'archive', 'library-pool.json');
 
 // How many stories to carry per section after the editorial cut (~24 total,
 // India-first). Now that the build runs ONCE a day it gets the full free-tier daily
@@ -205,7 +212,19 @@ async function main() {
   // items shown in recent editions sink to the back (anti-repetition), then record
   // today's picks after the build.
   const seenLib = loadSeenLib();
-  const library = await curateLibrary(preferUnseen(await libraryPromise, seenLib));
+  let libPool = await libraryPromise;
+  // Resilience: if YouTube's feeds were blocked this run (0 videos), reuse the
+  // last-good cached pool so the Library never goes blank; on a good fetch, refresh
+  // the cache. Rotation (preferUnseen) still gives daily variety from whatever pool.
+  if (libPool.videos?.length) {
+    try { fs.writeFileSync(LIB_POOL, JSON.stringify(libPool)); } catch {}
+  } else {
+    try {
+      const cached = JSON.parse(fs.readFileSync(LIB_POOL, 'utf8'));
+      if (cached.videos?.length) { libPool = cached; console.log(`   ↻ Library video feeds empty — reusing last-good pool (${cached.videos.length} videos)`); }
+    } catch {}
+  }
+  const library = await curateLibrary(preferUnseen(libPool, seenLib));
 
   // 6) SUMMARISE selected stories, and fetch market data in parallel.
   // Lead stories first get their FULL article text fetched (best-effort) so the
