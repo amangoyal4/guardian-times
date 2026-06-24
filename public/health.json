@@ -1,5 +1,5 @@
 {
-  "ts": "2026-06-24T07:38:50.492Z",
+  "ts": "2026-06-24T08:09:42.722Z",
   "health": [
     {
       "id": "et-markets",
@@ -40,7 +40,7 @@
       "id": "fe-markets",
       "name": "Financial Express — Market",
       "ok": true,
-      "count": 50,
+      "count": 49,
       "error": null
     },
     {
@@ -166,7 +166,7 @@
       "id": "guardian-biz",
       "name": "The Guardian — Business",
       "ok": true,
-      "count": 39,
+      "count": 40,
       "error": null
     },
     {
