@@ -1,0 +1,31 @@
+name: Voice samples
+
+# Generates a short MP3 of each candidate Gemini voice reading the same line, then
+# publishes them to a GitHub release so they can be auditioned by ear. Manual only.
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  samples:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - run: npm ci || npm install
+      - name: Generate voice samples
+        env:
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+        run: node scripts/voice-samples.js
+      - name: Publish samples to a release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release delete voice-samples --yes --cleanup-tag 2>/dev/null || true
+          gh release create voice-samples voice-samples/*.mp3 \
+            --title "Guardian Times — voice samples" \
+            --notes "Tap each to hear it read the same line. Tell Claude which voice you want."
