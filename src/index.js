@@ -38,7 +38,7 @@ const MGR_POOL = path.join(__dirname, '..', 'archive', 'managers-pool.json');
 // so if the quota throttles, only the tail-end story summaries degrade to raw
 // headlines — and even those keep clean titles + free links. Raise further only with
 // paid billing on the Gemini key.
-const PER_SECTION = { macro: 7, india: 10, sector: 6, global: 6, compliance: 5 };
+const PER_SECTION = { macro: 9, india: 10, sector: 8, global: 6, compliance: 5 };
 // larger pool handed to the AI editor so it has room to choose
 const POOL = 50;
 
@@ -168,7 +168,9 @@ async function main() {
   const seen = loadSeen();
 
   // 1) FETCH
-  const { items, health } = await fetchAll({ hours: 24, seenLinks: seen });
+  // Fetch a 48h window. Macro/Sector/Compliance (slow-moving) use the full window for
+  // depth; India single-stocks and Global are trimmed back to 24h below to stay fresh.
+  const { items, health } = await fetchAll({ hours: 48, seenLinks: seen });
 
   // 2) ROUTE + TAG, then drop hard procedural noise
   const routed = routeAll(items).filter(
@@ -177,7 +179,13 @@ async function main() {
 
   // 3) BUILD CANDIDATE POOLS (ranked, generous) per section
   const pools = { macro: [], sector: [], india: [], global: [], compliance: [] };
-  for (const it of routed) (pools[it.section] || pools.india).push(it);
+  const NOW = Date.now();
+  const FRESH_MS = 24 * 3600 * 1000; // India stocks + Global must stay last-24h fresh
+  for (const it of routed) {
+    const sec = pools[it.section] ? it.section : 'india';
+    if ((sec === 'india' || sec === 'global') && it.published && (NOW - it.published.getTime()) > FRESH_MS) continue;
+    pools[sec].push(it);
+  }
   for (const k of Object.keys(pools)) pools[k] = rank(pools[k]).slice(0, POOL);
 
   // 4) EDITORIAL CUT — AI picks the important stories; ranking is the fallback
