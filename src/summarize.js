@@ -81,7 +81,7 @@ function extractJson(text) {
   return JSON.parse(cleaned.slice(start, end + 1));
 }
 
-const HOUSE = `You are the editor of "Guardian Times", a sophisticated personalised financial newspaper read each morning by a demanding Indian investment professional (wealth/PMS/AIF advisory) who already knows the basics.
+const HOUSE = `You are the editor of "The Guardian Capital Brief", a sophisticated personalised financial newspaper read each morning by a demanding Indian investment professional (wealth/PMS/AIF advisory) who already knows the basics.
 Voice: precise, first-principles, analytical, confident, clean prose — the register of the FT or The Economist, never hype, never filler, never hedging. Lead with the most important fact. Every sentence must earn its place by adding new information. Prefer concrete figures and named entities over adjectives. Avoid clichés ("in a significant development", "it remains to be seen", "only time will tell", "sent shockwaves"). Indian-English spelling. Currency in ₹ where Indian, $ where global; write large numbers the Indian way (₹ crore/lakh) for Indian figures.`;
 
 // Summarise ONE story into headline + summary + "so what" (+ optional chart for leads).
@@ -112,7 +112,7 @@ Source: ${item.source}
 Text: ${item.rawSummary || '(no description in feed)'}`;
   const prompt = `${HOUSE}
 
-Rewrite this raw news item into Guardian Times editorial — substantive, specific, and tight. Reason about what actually matters before you write. Return ONLY JSON, no markdown:
+Rewrite this raw news item into Guardian Capital Brief editorial — substantive, specific, and tight. Reason about what actually matters before you write. Return ONLY JSON, no markdown:
 {
   "headline": "a sharp, specific headline that makes a professional want to read — not clickbait, carries the actual news (who + what + the key number), ${lead ? '14-22' : '8-16'} words",
   "summary": "${lead ? '4-5' : '3-4'} sentences, your own words. Open with the single most important fact. Then the key numbers/specifics, WHY it happened, and the read-through. Be concrete and information-dense — name the figures, the players, the cause, the magnitude. Where the feed text is thin, add the context a professional needs (but NEVER invent specific numbers). Never copy the source wording, never waffle, never hedge.",
@@ -322,7 +322,7 @@ Write the script for today's spoken MORNING AUDIO BRIEFING — read aloud by a c
 SELECT the 10 most important stories from the list below — the ones that genuinely move money — ordered most-consequential first.
 
 STRUCTURE the script EXACTLY like this:
-1. A short greeting that ANNOUNCES THE COUNT — for example: "Good morning. This is your Guardian Times briefing for ${weekday || 'today'}. Here are the ten key highlights for the day."
+1. A short greeting that ANNOUNCES THE COUNT — for example: "Good morning. This is The Guardian Capital Brief for ${weekday || 'today'}. Here are the ten key highlights for the day."
 2. Then go through all ten IN ORDER. For EACH one:
    a. Announce it by number, spelled as a word: "Highlight one." … "Highlight two." … through "Highlight ten." (each as its own short sentence).
    b. State the HEADLINE as one clear spoken sentence.

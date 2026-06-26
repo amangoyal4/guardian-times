@@ -279,7 +279,7 @@ function buildAudioScript(data) {
   const live = sections.filter(([, arr]) => arr && arr.length).length;
   segments.push({
     label: 'Briefing',
-    text: `Good morning, and welcome to your Guardian Times briefing. Here are today's ${total} ${total === 1 ? 'story' : 'stories'} across ${live} ${live === 1 ? 'section' : 'sections'}. Let's begin.`,
+    text: `Good morning, and welcome to The Guardian Capital Brief. Here are today's ${total} ${total === 1 ? 'story' : 'stories'} across ${live} ${live === 1 ? 'section' : 'sections'}. Let's begin.`,
   });
   let first = true;
   for (const [name, items] of sections) {
