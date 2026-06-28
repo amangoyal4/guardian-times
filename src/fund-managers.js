@@ -91,9 +91,12 @@ const REPUTABLE = /\bet now\b|et markets|cnbc|moneycontrol|livemint|\bmint\b|zer
 
 async function searchLatest(m, publishedAfter) {
   const params = new URLSearchParams({
-    part: 'snippet', type: 'video', order: 'date', maxResults: '10',
-    regionCode: 'IN', relevanceLanguage: 'en', publishedAfter, // ENGLISH interviews
-    q: `${m.name} interview`, key: API_KEY,
+    part: 'snippet', type: 'video', order: 'date', maxResults: '12',
+    regionCode: 'IN', relevanceLanguage: 'en', publishedAfter, // ENGLISH only
+    // Search the NAME alone (no forced "interview" keyword) so podcasts, "in
+    // conversation with…" and exclusive sit-downs all qualify; the surname-in-title +
+    // credible-channel + length filters below keep quality high.
+    q: m.name, key: API_KEY,
   });
   const res = await fetch(`${SEARCH}?${params}`, { signal: AbortSignal.timeout(15000) });
   if (!res.ok) throw new Error(`YT ${res.status}: ${(await res.text()).slice(0, 120)}`);
