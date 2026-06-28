@@ -171,11 +171,12 @@ async function apiChannelVideos(channelId, { days, minSec, max }) {
   return items.slice(0, max).map((v) => ({ ...v, durationSec: durMap[v.videoId] || 0 }));
 }
 
-async function fetchChannel(ch) {
+async function fetchChannel(ch, days = 5) {
+  const cutoff = Date.now() - days * 24 * 3600 * 1000;
   // Preferred: Data API (reliable from CI + real durations).
   if (YT_API_KEY) {
     try {
-      const vids = await apiChannelVideos(ch.channelId, { days: 45, minSec: 180, max: 4 });
+      const vids = await apiChannelVideos(ch.channelId, { days, minSec: 180, max: 4 });
       return vids.map((v) => ({
         channel: ch.name, title: v.title,
         link: `https://www.youtube.com/watch?v=${v.videoId}`,
@@ -198,7 +199,8 @@ async function fetchChannel(ch) {
       thumb: ytThumb(it),
       published: it.isoDate || it.pubDate || null,
       rawDesc: cleanDesc(ytDescription(it)),
-    })).filter((v) => v.title && v.link && !/#?\bshorts?\b/i.test(v.title));
+    })).filter((v) => v.title && v.link && !/#?\bshorts?\b/i.test(v.title)
+      && (v.published ? new Date(v.published).getTime() >= cutoff : false)); // last `days` only
     // Drop YouTube Shorts (≤ ~3 min vertical clips) — a learning library wants
     // long-form teaching, not Shorts. Probe in parallel; best-effort (see isShort).
     const shortFlags = await Promise.all(cand.map((v) => isShort(v.videoId)));
@@ -310,15 +312,15 @@ export function diverseVideos(videos, n) {
  * latest episode of each curated podcast. Pure RSS — no Gemini here.
  * @returns {Promise<{videos: object[], podcasts: object[]}>}
  */
-export async function fetchLibrary({ days = 45 } = {}) {
+export async function fetchLibrary({ days = 45, videoDays = 5 } = {}) {
   console.log('\n📚 Fetching Library (YouTube videos + podcasts incl. YouTube shows, keyless RSS)…');
   const [vidLists, rssPods, ytPods] = await Promise.all([
-    Promise.all(YT_CHANNELS.map(fetchChannel)),
-    Promise.all(PODCASTS.map((p) => fetchPodcast(p, days))),
+    Promise.all(YT_CHANNELS.map((ch) => fetchChannel(ch, videoDays))), // videos: last 5 days only
+    Promise.all(PODCASTS.map((p) => fetchPodcast(p, days))),           // podcasts: last month
     Promise.all(YT_PODCASTS.map((c) => fetchYtPodcast(c, days))),
   ]);
 
-  const cutoff = Date.now() - days * 24 * 3600 * 1000;
+  const cutoff = Date.now() - videoDays * 24 * 3600 * 1000; // video freshness gate
   const videos = vidLists.flat()
     .filter((v) => { const t = v.published ? new Date(v.published).getTime() : 0; return t === 0 || t >= cutoff; })
     .sort((a, b) => (new Date(b.published).getTime() || 0) - (new Date(a.published).getTime() || 0));
