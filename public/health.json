@@ -1,5 +1,5 @@
 {
-  "ts": "2026-06-28T01:40:34.086Z",
+  "ts": "2026-06-29T01:38:43.704Z",
   "health": [
     {
       "id": "et-markets",
@@ -12,7 +12,7 @@
       "id": "bs-markets",
       "name": "Business Standard — Markets",
       "ok": true,
-      "count": 0,
+      "count": 33,
       "error": null
     },
     {
@@ -25,9 +25,9 @@
     {
       "id": "mc-business",
       "name": "Moneycontrol — Business",
-      "ok": true,
-      "count": 15,
-      "error": null
+      "ok": false,
+      "count": 0,
+      "error": "Feed not recognized as RSS 1 or 2."
     },
     {
       "id": "bl-markets",
@@ -40,7 +40,7 @@
       "id": "fe-markets",
       "name": "Financial Express — Market",
       "ok": true,
-      "count": 0,
+      "count": 10,
       "error": null
     },
     {
@@ -88,16 +88,16 @@
     {
       "id": "mc-markets",
       "name": "Moneycontrol — Markets",
-      "ok": true,
-      "count": 4,
-      "error": null
+      "ok": false,
+      "count": 0,
+      "error": "Unexpected close tag\nLine: 17\nColumn: 10\nChar: >"
     },
     {
       "id": "mc-economy",
       "name": "Moneycontrol — Economy",
-      "ok": true,
-      "count": 4,
-      "error": null
+      "ok": false,
+      "count": 0,
+      "error": "Unexpected close tag\nLine: 17\nColumn: 10\nChar: >"
     },
     {
       "id": "bl-economy",
@@ -124,21 +124,21 @@
       "id": "cnbctv18-mkt",
       "name": "CNBC-TV18 — Market",
       "ok": true,
-      "count": 0,
+      "count": 53,
       "error": null
     },
     {
       "id": "ndtvprofit",
       "name": "NDTV Profit — Markets",
       "ok": true,
-      "count": 0,
+      "count": 100,
       "error": null
     },
     {
       "id": "bs-economy",
       "name": "Business Standard — Economy",
       "ok": true,
-      "count": 0,
+      "count": 7,
       "error": null
     },
     {
@@ -166,7 +166,7 @@
       "id": "guardian-biz",
       "name": "The Guardian — Business",
       "ok": true,
-      "count": 37,
+      "count": 40,
       "error": null
     },
     {
