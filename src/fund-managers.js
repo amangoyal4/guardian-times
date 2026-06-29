@@ -88,6 +88,13 @@ async function fetchVideoMeta(ids) {
 const INDIC = /[ऀ-෿]/;
 // Credible finance channels — quality comes from the SOURCE, not view count.
 const REPUTABLE = /\bet now\b|et markets|cnbc|moneycontrol|livemint|\bmint\b|zerodha|\bgroww\b|ndtv profit|bloomberg|economic times|business standard|\bbq\b|value research|outlook|forbes|the core|finshots|capitalmind|\bnse\b|\bbse\b|et alpha/i;
+// Finance/markets context — guards against same-name people (e.g. Dr Aditya Khemka vs
+// the InCred fund manager). A video qualifies only if it's on a credible finance
+// channel OR its title/description is clearly about markets/investing.
+const FINANCE = /\bmarket|\bstock|equit|\bshares?\b|portfolio|investing|investor|mutual fund|\bpms\b|\bnse\b|\bbse\b|sensex|nifty|valuation|small[- ]?cap|mid[- ]?cap|multibagger|\bipo\b|economy|\bamc\b|fund manager|asset manage|\bcapital\b|\bfii\b|\bdii\b|wealth|earnings|\bnbfc\b|smallcase|\bsip\b|sectors?\b/i;
+function isFinanceVideo(s) {
+  return REPUTABLE.test(s?.channelTitle || '') || FINANCE.test(`${s?.title || ''} ${s?.description || ''}`);
+}
 
 async function searchLatest(m, publishedAfter) {
   const params = new URLSearchParams({
@@ -106,7 +113,8 @@ async function searchLatest(m, publishedAfter) {
   // (no Indic script anywhere in the title).
   const cands = (data.items || []).filter((it) => it.id?.videoId
     && (it.snippet?.title || '').toLowerCase().includes(surname)
-    && !INDIC.test(it.snippet?.title || ''));
+    && !INDIC.test(it.snippet?.title || '')
+    && isFinanceVideo(it.snippet)); // must be a markets/investing video — blocks same-name people
   if (!cands.length) return null;
   const meta = await fetchVideoMeta(cands.map((c) => c.id.videoId));
   // Eligible = long enough + English audio (unknown audio allowed). `cands` are already
