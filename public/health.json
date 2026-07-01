@@ -1,5 +1,5 @@
 {
-  "ts": "2026-06-30T01:41:23.667Z",
+  "ts": "2026-07-01T01:40:25.737Z",
   "health": [
     {
       "id": "et-markets",
@@ -25,9 +25,9 @@
     {
       "id": "mc-business",
       "name": "Moneycontrol — Business",
-      "ok": false,
-      "count": 0,
-      "error": "Status code 502"
+      "ok": true,
+      "count": 15,
+      "error": null
     },
     {
       "id": "bl-markets",
@@ -40,7 +40,7 @@
       "id": "fe-markets",
       "name": "Financial Express — Market",
       "ok": true,
-      "count": 39,
+      "count": 50,
       "error": null
     },
     {
@@ -88,16 +88,16 @@
     {
       "id": "mc-markets",
       "name": "Moneycontrol — Markets",
-      "ok": false,
-      "count": 0,
-      "error": "Status code 502"
+      "ok": true,
+      "count": 4,
+      "error": null
     },
     {
       "id": "mc-economy",
       "name": "Moneycontrol — Economy",
-      "ok": false,
-      "count": 0,
-      "error": "Status code 502"
+      "ok": true,
+      "count": 4,
+      "error": null
     },
     {
       "id": "bl-economy",
@@ -138,7 +138,7 @@
       "id": "bs-economy",
       "name": "Business Standard — Economy",
       "ok": true,
-      "count": 11,
+      "count": 24,
       "error": null
     },
     {
@@ -159,7 +159,7 @@
       "id": "nse-circ",
       "name": "NSE — Circulars",
       "ok": true,
-      "count": 19,
+      "count": 32,
       "error": null
     },
     {
