@@ -1,5 +1,5 @@
 {
-  "ts": "2026-07-01T01:40:25.737Z",
+  "ts": "2026-07-02T01:46:30.885Z",
   "health": [
     {
       "id": "et-markets",
@@ -25,9 +25,9 @@
     {
       "id": "mc-business",
       "name": "Moneycontrol — Business",
-      "ok": true,
-      "count": 15,
-      "error": null
+      "ok": false,
+      "count": 0,
+      "error": "Unexpected close tag\nLine: 17\nColumn: 10\nChar: >"
     },
     {
       "id": "bl-markets",
@@ -40,7 +40,7 @@
       "id": "fe-markets",
       "name": "Financial Express — Market",
       "ok": true,
-      "count": 50,
+      "count": 34,
       "error": null
     },
     {
@@ -88,16 +88,16 @@
     {
       "id": "mc-markets",
       "name": "Moneycontrol — Markets",
-      "ok": true,
-      "count": 4,
-      "error": null
+      "ok": false,
+      "count": 0,
+      "error": "Unexpected close tag\nLine: 17\nColumn: 10\nChar: >"
     },
     {
       "id": "mc-economy",
       "name": "Moneycontrol — Economy",
-      "ok": true,
-      "count": 4,
-      "error": null
+      "ok": false,
+      "count": 0,
+      "error": "Feed not recognized as RSS 1 or 2."
     },
     {
       "id": "bl-economy",
@@ -159,7 +159,7 @@
       "id": "nse-circ",
       "name": "NSE — Circulars",
       "ok": true,
-      "count": 32,
+      "count": 23,
       "error": null
     },
     {
