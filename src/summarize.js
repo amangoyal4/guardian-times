@@ -323,7 +323,7 @@ Write the script for today's spoken MORNING AUDIO BRIEFING — read aloud by a c
 SELECT the 10 most important stories from the list below — the ones that genuinely move money — ordered most-consequential first.
 
 STRUCTURE the script EXACTLY like this:
-1. A short greeting that ANNOUNCES THE COUNT — for example: "Good morning. This is The Guardian Capital Brief for ${weekday || 'today'}. Here are the ten key highlights for the day."
+1. A short greeting that ANNOUNCES THE COUNT — for example: "Good morning, and welcome to The Guardian Capital Brief. Here are today's ten key highlights." Do NOT name a specific weekday or date anywhere in the script — say "today", never "Tuesday"/"the third of July" etc. (you cannot know the correct date, so naming one WILL be wrong).
 2. Then go through all ten IN ORDER. For EACH one:
    a. Announce it by number, spelled as a word: "Highlight one." … "Highlight two." … through "Highlight ten." (each as its own short sentence).
    b. State the HEADLINE as one clear spoken sentence.
