@@ -89,17 +89,22 @@ jobs:
           git commit -m "edition: $(date -u +'%Y-%m-%d %H:%M UTC')" || echo "no changes"
           git push || echo "nothing to push"
 
-      # Upload + deploy run on EVERY trigger (not just fresh builds). On a "skip" run
-      # the checkout already holds today's committed edition, so re-uploading + re-
-      # deploying it is a cheap, idempotent RETRY — if the morning deploy hit a
-      # transient GitHub Pages error, a later backup slot simply publishes it again.
+      # Upload + deploy ONLY on the fresh-build run. A "skip" backup run must NOT
+      # deploy: it would create a Pages deployment for the day's ALREADY-committed
+      # commit, and the next morning's build (which runs against that same commit,
+      # committing the new edition only afterwards) would then be unable to override
+      # it — GitHub Pages keeps serving the first content published for a given sha.
+      # That caused a stale edition to be served (fixed 6 Jul). One deploy per unique
+      # sha per day = correct.
       - name: Upload Pages artifact
+        if: steps.guard.outputs.skip != 'true'
         uses: actions/upload-pages-artifact@v3
         with:
           path: public
 
   deploy:
     needs: build
+    if: needs.build.outputs.skip != 'true'
     runs-on: ubuntu-latest
     environment:
       name: github-pages

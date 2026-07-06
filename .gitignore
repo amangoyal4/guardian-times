@@ -3,8 +3,7 @@ node_modules/
 .DS_Store
 preview/
 live.tmp.html
-# NOTE: public/briefing.mp3 is intentionally COMMITTED (not ignored) so that a
-# backup/"skip" run can re-deploy today's edition WITH its audio if the morning
-# deploy hit a transient GitHub Pages error. Costs ~3MB/day of history — the price
-# of a self-healing deploy.
+# Daily briefing audio: regenerated every build and deployed via the Pages artifact
+# from disk on the build run, so it never needs to be committed — keeps history slim.
+public/briefing.mp3
 voice-samples/
