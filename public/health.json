@@ -1,5 +1,5 @@
 {
-  "ts": "2026-07-06T01:38:33.105Z",
+  "ts": "2026-07-07T01:40:31.802Z",
   "health": [
     {
       "id": "et-markets",
@@ -12,7 +12,7 @@
       "id": "bs-markets",
       "name": "Business Standard — Markets",
       "ok": true,
-      "count": 60,
+      "count": 100,
       "error": null
     },
     {
@@ -40,7 +40,7 @@
       "id": "fe-markets",
       "name": "Financial Express — Market",
       "ok": true,
-      "count": 3,
+      "count": 31,
       "error": null
     },
     {
@@ -138,7 +138,7 @@
       "id": "bs-economy",
       "name": "Business Standard — Economy",
       "ok": true,
-      "count": 6,
+      "count": 16,
       "error": null
     },
     {
@@ -159,14 +159,14 @@
       "id": "nse-circ",
       "name": "NSE — Circulars",
       "ok": true,
-      "count": 27,
+      "count": 23,
       "error": null
     },
     {
       "id": "guardian-biz",
       "name": "The Guardian — Business",
       "ok": true,
-      "count": 36,
+      "count": 40,
       "error": null
     },
     {
