@@ -1,0 +1,22 @@
+name: Diag Gemini
+on:
+  workflow_dispatch:
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Probe Gemini key
+        env:
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+        run: |
+          echo "key present: $([ -n "$GEMINI_API_KEY" ] && echo yes || echo NO) (len ${#GEMINI_API_KEY}, prefix ${GEMINI_API_KEY:0:5}…)"
+          echo "----- Pro -----"
+          c=$(curl -s -o r.json -w "%{http_code}" \
+            "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-pro:generateContent?key=${GEMINI_API_KEY}" \
+            -H "Content-Type: application/json" -d '{"contents":[{"parts":[{"text":"ping"}]}]}')
+          echo "HTTP $c"; head -c 800 r.json; echo ""
+          echo "----- Flash -----"
+          c2=$(curl -s -o r2.json -w "%{http_code}" \
+            "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${GEMINI_API_KEY}" \
+            -H "Content-Type: application/json" -d '{"contents":[{"parts":[{"text":"ping"}]}]}')
+          echo "HTTP $c2"; head -c 500 r2.json
