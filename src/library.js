@@ -9,6 +9,44 @@
 // feed (skipped), it never crashes the run.
 
 import Parser from 'rss-parser';
+import fs from 'fs';
+import path from 'path';
+import { fileURLToPath } from 'url';
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+// The Library's videos are OUR OWN IP videos, listed in this manifest (edited via the
+// repo — see data/README.md). No YouTube auto-fetch. Each entry → one video card.
+const VIDEO_MANIFEST = path.join(__dirname, '..', 'data', 'library-videos.json');
+
+// Pull the 11-char YouTube id from any watch/share/embed URL (for the auto thumbnail).
+function ytIdFromUrl(url = '') {
+  const m = String(url).match(/(?:v=|youtu\.be\/|\/embed\/|\/shorts\/|\/live\/)([A-Za-z0-9_-]{11})/);
+  return m ? m[1] : '';
+}
+
+// Load our IP videos from the manifest, normalised to the card shape, newest first.
+export function loadLibraryVideos() {
+  let arr = [];
+  try { arr = JSON.parse(fs.readFileSync(VIDEO_MANIFEST, 'utf8')); }
+  catch (e) { console.log(`  ⚠ Library manifest not read (${e.message}) — video grid will be empty.`); }
+  if (!Array.isArray(arr)) return [];
+  return arr
+    .filter((v) => v && v.title && v.url)
+    .map((v) => {
+      const id = ytIdFromUrl(v.url);
+      return {
+        channel: v.source || 'Guardian Capital',
+        title: String(v.title),
+        link: v.url,
+        videoId: id,
+        thumb: v.thumb || (id ? `https://i.ytimg.com/vi/${id}/hqdefault.jpg` : ''),
+        blurb: v.blurb || '',
+        published: v.date || null,
+        duration: v.duration || '',
+      };
+    })
+    .sort((a, b) => (new Date(b.published || 0).getTime() || 0) - (new Date(a.published || 0).getTime() || 0));
+}
 
 const parser = new Parser({
   timeout: 20000,
@@ -312,26 +350,19 @@ export function diverseVideos(videos, n) {
  * latest episode of each curated podcast. Pure RSS — no Gemini here.
  * @returns {Promise<{videos: object[], podcasts: object[]}>}
  */
-export async function fetchLibrary({ days = 45, videoDays = 5 } = {}) {
-  console.log('\n📚 Fetching Library (YouTube videos + podcasts incl. YouTube shows, keyless RSS)…');
-  const [vidLists, rssPods, ytPods] = await Promise.all([
-    Promise.all(YT_CHANNELS.map((ch) => fetchChannel(ch, videoDays))), // videos: last 5 days only
-    Promise.all(PODCASTS.map((p) => fetchPodcast(p, days))),           // podcasts: last month
+export async function fetchLibrary({ days = 45 } = {}) {
+  console.log('\n📚 Building Library (our IP videos from manifest + podcast of the day)…');
+  // Videos = our own IP, from the manifest (no YouTube fetch). Podcast = auto-fetched.
+  const [rssPods, ytPods] = await Promise.all([
+    Promise.all(PODCASTS.map((p) => fetchPodcast(p, days))),
     Promise.all(YT_PODCASTS.map((c) => fetchYtPodcast(c, days))),
   ]);
 
-  const cutoff = Date.now() - videoDays * 24 * 3600 * 1000; // video freshness gate
-  const videos = vidLists.flat()
-    .filter((v) => { const t = v.published ? new Date(v.published).getTime() : 0; return t === 0 || t >= cutoff; })
-    .sort((a, b) => (new Date(b.published).getTime() || 0) - (new Date(a.published).getTime() || 0));
-
-  // RSS podcasts + YouTube podcast shows share one pool; the curator picks the best.
+  const videos = loadLibraryVideos();
   const podcasts = [...rssPods.flat(), ...ytPods.flat()]
     .filter(Boolean)
     .sort((a, b) => (new Date(b.published).getTime() || 0) - (new Date(a.published).getTime() || 0));
 
-  const liveChannels = vidLists.filter((l) => l.length).length;
-  const ytPodLive = ytPods.filter((l) => l.length).length;
-  console.log(`   ${videos.length} recent videos from ${liveChannels}/${YT_CHANNELS.length} channels · ${podcasts.length} podcast episodes (${ytPodLive}/${YT_PODCASTS.length} YouTube shows + RSS) live`);
+  console.log(`   ${videos.length} IP video(s) from manifest · ${podcasts.length} podcast episodes live`);
   return { videos, podcasts };
 }

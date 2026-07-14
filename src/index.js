@@ -224,20 +224,15 @@ async function main() {
   // pick with feed descriptions if the AI is unavailable. We reorder the pool so
   // items shown in recent editions sink to the back (anti-repetition), then record
   // today's picks after the build.
-  const seenLib = loadSeenLib();
-  let libPool = await libraryPromise;
-  // Resilience: if YouTube's feeds were blocked this run (0 videos), reuse the
-  // last-good cached pool so the Library never goes blank; on a good fetch, refresh
-  // the cache. Rotation (preferUnseen) still gives daily variety from whatever pool.
-  if (libPool.videos?.length) {
-    try { fs.writeFileSync(LIB_POOL, JSON.stringify(libPool)); } catch {}
-  } else {
-    try {
-      const cached = JSON.parse(fs.readFileSync(LIB_POOL, 'utf8'));
-      if (cached.videos?.length) { libPool = cached; console.log(`   ↻ Library video feeds empty — reusing last-good pool (${cached.videos.length} videos)`); }
-    } catch {}
-  }
-  const library = await curateLibrary(preferUnseen(libPool, seenLib));
+  const libPool = await libraryPromise;
+  // Library videos are now our OWN curated IP videos (data/library-videos.json) — no
+  // YouTube fetch, no AI curation. Show the newest few; podcast = newest fetched episode.
+  const library = {
+    videos: (libPool.videos || []).slice(0, 6),
+    podcast: libPool.podcasts?.[0]
+      ? { ...libPool.podcasts[0], blurb: libPool.podcasts[0].rawDesc || '' }
+      : null,
+  };
 
   // Fund Manager Interviews — resilient like the Library: cache the last-good set and
   // reuse it if the YouTube Data API returns nothing (or the key is missing) this run.
@@ -307,7 +302,6 @@ async function main() {
   // 8) persist dedup state + health log
   const allLinks = new Set([...seen, ...summarised.map((s) => s.link.split('?')[0].replace(/\/$/, ''))]);
   saveSeen(allLinks);
-  saveSeenLib(seenLib, library); // record today's Library picks so they rotate out
   fs.writeFileSync(path.join(PUBLIC_DIR, 'health.json'), JSON.stringify({ ts: new Date().toISOString(), health }, null, 2));
 
   const counts = Object.entries(buckets).map(([k, v]) => `${k}:${v.length}`).join(' ');
