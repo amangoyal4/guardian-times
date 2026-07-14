@@ -1,12 +1,22 @@
-// summarize.js — turns raw stories into Guardian Times editorial via Gemini.
-// Runs on the PAID tier with Gemini 2.5 Pro + "thinking" for sharper reasoning.
+// summarize.js — turns raw stories into Guardian Capital Brief editorial via Gemini.
+// Hybrid tier: Gemini 2.5 Pro (+ "thinking") for the reasoning-heavy editor's cut
+// and Mechanism of the Day; Gemini 2.5 Flash for the high-volume summaries + audio
+// script. ~3× cheaper than full Pro with near-identical quality.
 // Handles rate limits with exponential backoff. Falls back to raw text if the API is unavailable.
 
 import { diverseVideos } from './library.js';
 
-// Gemini 2.5 Pro is the editorial brain. Override with GEMINI_MODEL if needed
-// (e.g. 'gemini-2.5-flash' for a cheaper/faster run).
-const MODEL = process.env.GEMINI_MODEL || 'gemini-2.5-pro';
+// Hybrid model routing — the cost/quality sweet spot:
+//   • PRO   handles the reasoning-heavy pieces where quality visibly shows:
+//           the editor's story selection and the Mechanism of the Day.
+//   • FLASH handles the high-volume, low-divergence work: the ~28 story
+//           summaries and the audio briefing script (Flash reads nearly the
+//           same here at ~5× lower cost).
+// This lands total spend around a third of full-Pro with almost no perceptible
+// quality loss. Override either via env if needed.
+const PRO   = process.env.GEMINI_MODEL       || 'gemini-2.5-pro';
+const FLASH = process.env.GEMINI_FLASH_MODEL || 'gemini-2.5-flash';
+const MODEL = PRO; // default for callGemini calls that don't name a model
 const API_KEY = process.env.GEMINI_API_KEY;
 const ENDPOINT = (model) =>
   `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${API_KEY}`;
@@ -29,14 +39,14 @@ const STRIKE_LIMIT = 3;
 // from maxOutputTokens, so we send (answer + thinking) as the cap — otherwise a
 // rich think pass eats the whole budget and the visible answer returns empty.
 // (Gemini 2.5 Pro cannot turn thinking off; Flash can, via thinking: 0.)
-async function callGemini(prompt, { maxTokens = 1024, tries = 4, thinking = 256, temperature = 0.4 } = {}) {
+async function callGemini(prompt, { maxTokens = 1024, tries = 4, thinking = 256, temperature = 0.4, model = MODEL } = {}) {
   if (!API_KEY) throw new Error('GEMINI_API_KEY not set');
   if (circuitOpen) throw new Error('Gemini circuit open (sustained rate limiting)');
   let delay = 2000;
   let saw429 = false;
   for (let attempt = 1; attempt <= tries; attempt++) {
     try {
-      const res = await fetch(ENDPOINT(MODEL), {
+      const res = await fetch(ENDPOINT(model), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -124,8 +134,8 @@ ${sourceBlock}`;
 
   try {
     const out = extractJson(await callGemini(prompt, lead
-      ? { maxTokens: 1500, thinking: 1100, temperature: 0.45 }
-      : { maxTokens: 900, thinking: 600, temperature: 0.45 }));
+      ? { maxTokens: 1500, thinking: 1100, temperature: 0.45, model: FLASH }
+      : { maxTokens: 900, thinking: 600, temperature: 0.45, model: FLASH }));
     return {
       ...item,
       headline: out.headline || item.title,
@@ -340,7 +350,7 @@ Return ONLY the script text, nothing else.
 TODAY'S STORIES (most important first):
 ${lines}`;
   try {
-    const text = await callGemini(prompt, { maxTokens: 4200, thinking: 1600, temperature: 0.6 });
+    const text = await callGemini(prompt, { maxTokens: 4200, thinking: 1600, temperature: 0.6, model: FLASH });
     return (text || '').replace(/```/g, '').trim();
   } catch (err) {
     console.log(`  ⚠ briefing script generation failed (${err.message}); audio falls back to per-story readout.`);
@@ -441,7 +451,7 @@ ${pLines.join('\n')}`;
  */
 export async function summariseAll(items, { leadIds = new Set(), gapMs = 1500 } = {}) {
   const out = [];
-  console.log(`\n✍  Summarising ${items.length} stories via ${MODEL}…`);
+  console.log(`\n✍  Summarising ${items.length} stories via ${FLASH} (selection + mechanism run on ${PRO})…`);
   for (let i = 0; i < items.length; i++) {
     const item = items[i];
     const lead = leadIds.has(item.link);
