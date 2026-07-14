@@ -217,8 +217,11 @@ async function main() {
   // Fund-manager interviews fetch (YouTube Data API) — network-only, runs in parallel.
   const managersPromise = fetchManagerInterviews();
   const mechanism = await generateMechanism(topAll);
-  const explainers = await generateExplainers(topAll);
-  const myths = await generateMyths(topAll);
+  // Knowledge Desk is Mechanism-only now (removes the explainers + myths AI calls to
+  // trim cost and keep the desk focused). Pass empty arrays so the section renders
+  // just the mechanism (knowledgePage handles empty gracefully).
+  const explainers = [];
+  const myths = [];
   // Library curation — ONE Gemini call, kept in the protected pre-summary block so a
   // quota throttle degrades only tail story summaries; it falls back to a recency
   // pick with feed descriptions if the AI is unavailable. We reorder the pool so

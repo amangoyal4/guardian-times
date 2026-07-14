@@ -117,7 +117,7 @@ function knowledgePage(num, mechanism, explainers, myths) {
 
   return `<section class="page" id="page-knowledge">
       <div class="section-head"><span class="pgnum">${num}</span><h2>The Knowledge Desk</h2><span class="kicker">Learn what others won't</span></div>
-      <p class="lede">A mechanism explained in full, concepts worth mastering, and the misconceptions worth unlearning — born from today's news, built from first principles.</p>
+      <p class="lede">One financial mechanism explained in full, from first principles — the plumbing behind today's news that most professionals never actually learn.</p>
       ${mech}
       ${explHTML}
       ${mythHTML ? `<div class="section-head" style="border-bottom:1px solid var(--line);padding-top:8px"><h2 style="font-size:22px">What the consensus gets wrong</h2></div>${mythHTML}` : ''}
