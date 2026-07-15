@@ -9,7 +9,9 @@ import { diverseVideos } from './library.js';
 // Hybrid model routing — the cost/quality sweet spot:
 //   • PRO   handles the reasoning-heavy pieces where quality visibly shows:
 //           the editor's story selection and the Mechanism of the Day.
-//   • FLASH handles the high-volume, low-divergence work: the ~28 story
+//           It also writes the LEAD stories' summaries (the marquee items with
+//           the fuller analysis that readers scrutinise most).
+//   • FLASH handles the high-volume, low-divergence work: the long-tail story
 //           summaries and the audio briefing script (Flash reads nearly the
 //           same here at ~5× lower cost).
 // This lands total spend around a third of full-Pro with almost no perceptible
@@ -133,8 +135,11 @@ Rewrite this raw news item into Guardian Capital Brief editorial — substantive
 ${sourceBlock}`;
 
   try {
+    // Lead stories (the marquee items readers scrutinise, with the fuller
+    // analysis) get Pro's sharper writing + "so what"; the long tail runs on
+    // Flash. Selection and Mechanism are already Pro elsewhere.
     const out = extractJson(await callGemini(prompt, lead
-      ? { maxTokens: 1500, thinking: 1100, temperature: 0.45, model: FLASH }
+      ? { maxTokens: 1500, thinking: 1100, temperature: 0.45, model: PRO }
       : { maxTokens: 900, thinking: 600, temperature: 0.45, model: FLASH }));
     return {
       ...item,
@@ -451,7 +456,7 @@ ${pLines.join('\n')}`;
  */
 export async function summariseAll(items, { leadIds = new Set(), gapMs = 1500 } = {}) {
   const out = [];
-  console.log(`\n✍  Summarising ${items.length} stories via ${FLASH} (selection + mechanism run on ${PRO})…`);
+  console.log(`\n✍  Summarising ${items.length} stories — lead stories on ${PRO}, the rest on ${FLASH} (selection + mechanism also on ${PRO})…`);
   for (let i = 0; i < items.length; i++) {
     const item = items[i];
     const lead = leadIds.has(item.link);
