@@ -228,7 +228,10 @@ ${catalogue}`;
     // call that kept tripping a transient 429 (then falling back to the dumb keyword
     // router — the cause of e.g. an NBFC landing in Macro). More retry headroom and a
     // smaller token footprint get it through the cold-start burst limit reliably.
-    const out = extractJson(await callGemini(prompt, { maxTokens: 1800, thinking: 2048, temperature: 0.3, tries: 6 }));
+    // thinking 1400: story classification/routing converges well below 2k of
+    // reasoning — trimming here is invisible in the output and holds the daily
+    // spend under the ₹22 ceiling without touching any reader-facing Pro quality.
+    const out = extractJson(await callGemini(prompt, { maxTokens: 1800, thinking: 1400, temperature: 0.3, tries: 6 }));
     const valid = {};
     for (const sec of sections) {
       const ids = Array.isArray(out[sec]) ? out[sec] : [];
@@ -270,7 +273,10 @@ Return ONLY JSON:
 TODAY'S STORIES:
 ${context}`;
   try {
-    return extractJson(await callGemini(prompt, { maxTokens: 3400, thinking: 2600, temperature: 0.5 }));
+    // maxTokens stays 3400 so the written mechanism keeps its full depth/length;
+    // only the internal reasoning cap is trimmed 2600→2000 (reasoning quality
+    // saturates well before 2k here). Reader-facing quality is unchanged.
+    return extractJson(await callGemini(prompt, { maxTokens: 3400, thinking: 2000, temperature: 0.5 }));
   } catch (err) {
     console.log(`  ⚠ mechanism generation failed (${err.message}); using fallback.`);
     return null;
