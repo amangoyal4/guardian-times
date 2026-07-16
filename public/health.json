@@ -1,5 +1,5 @@
 {
-  "ts": "2026-07-15T01:34:44.747Z",
+  "ts": "2026-07-16T01:34:49.370Z",
   "health": [
     {
       "id": "et-markets",
@@ -40,7 +40,7 @@
       "id": "fe-markets",
       "name": "Financial Express — Market",
       "ok": true,
-      "count": 49,
+      "count": 23,
       "error": null
     },
     {
@@ -138,7 +138,7 @@
       "id": "bs-economy",
       "name": "Business Standard — Economy",
       "ok": true,
-      "count": 20,
+      "count": 25,
       "error": null
     },
     {
@@ -159,7 +159,7 @@
       "id": "nse-circ",
       "name": "NSE — Circulars",
       "ok": true,
-      "count": 18,
+      "count": 20,
       "error": null
     },
     {
