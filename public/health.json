@@ -1,11 +1,11 @@
 {
-  "ts": "2026-07-16T01:34:49.370Z",
+  "ts": "2026-07-17T01:34:30.907Z",
   "health": [
     {
       "id": "et-markets",
       "name": "Economic Times — Markets",
       "ok": true,
-      "count": 50,
+      "count": 19,
       "error": null
     },
     {
@@ -25,9 +25,9 @@
     {
       "id": "mc-business",
       "name": "Moneycontrol — Business",
-      "ok": false,
-      "count": 0,
-      "error": "Unexpected close tag\nLine: 17\nColumn: 10\nChar: >"
+      "ok": true,
+      "count": 15,
+      "error": null
     },
     {
       "id": "bl-markets",
@@ -40,28 +40,28 @@
       "id": "fe-markets",
       "name": "Financial Express — Market",
       "ok": true,
-      "count": 23,
+      "count": 29,
       "error": null
     },
     {
       "id": "et-economy",
       "name": "Economic Times — Economy",
       "ok": true,
-      "count": 50,
+      "count": 5,
       "error": null
     },
     {
       "id": "et-industry",
       "name": "Economic Times — Industry",
       "ok": true,
-      "count": 50,
+      "count": 21,
       "error": null
     },
     {
       "id": "et-wealth",
       "name": "Economic Times — Wealth",
       "ok": true,
-      "count": 50,
+      "count": 0,
       "error": null
     },
     {
@@ -88,16 +88,16 @@
     {
       "id": "mc-markets",
       "name": "Moneycontrol — Markets",
-      "ok": false,
-      "count": 0,
-      "error": "Feed not recognized as RSS 1 or 2."
+      "ok": true,
+      "count": 4,
+      "error": null
     },
     {
       "id": "mc-economy",
       "name": "Moneycontrol — Economy",
-      "ok": false,
-      "count": 0,
-      "error": "Unexpected close tag\nLine: 17\nColumn: 10\nChar: >"
+      "ok": true,
+      "count": 4,
+      "error": null
     },
     {
       "id": "bl-economy",
@@ -138,7 +138,7 @@
       "id": "bs-economy",
       "name": "Business Standard — Economy",
       "ok": true,
-      "count": 25,
+      "count": 16,
       "error": null
     },
     {
