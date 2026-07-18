@@ -1,11 +1,11 @@
 {
-  "ts": "2026-07-17T01:34:30.907Z",
+  "ts": "2026-07-18T01:34:52.816Z",
   "health": [
     {
       "id": "et-markets",
       "name": "Economic Times — Markets",
       "ok": true,
-      "count": 19,
+      "count": 50,
       "error": null
     },
     {
@@ -40,28 +40,28 @@
       "id": "fe-markets",
       "name": "Financial Express — Market",
       "ok": true,
-      "count": 29,
+      "count": 32,
       "error": null
     },
     {
       "id": "et-economy",
       "name": "Economic Times — Economy",
       "ok": true,
-      "count": 5,
+      "count": 50,
       "error": null
     },
     {
       "id": "et-industry",
       "name": "Economic Times — Industry",
       "ok": true,
-      "count": 21,
+      "count": 50,
       "error": null
     },
     {
       "id": "et-wealth",
       "name": "Economic Times — Wealth",
       "ok": true,
-      "count": 0,
+      "count": 50,
       "error": null
     },
     {
@@ -138,7 +138,7 @@
       "id": "bs-economy",
       "name": "Business Standard — Economy",
       "ok": true,
-      "count": 16,
+      "count": 15,
       "error": null
     },
     {
@@ -158,9 +158,9 @@
     {
       "id": "nse-circ",
       "name": "NSE — Circulars",
-      "ok": true,
-      "count": 20,
-      "error": null
+      "ok": false,
+      "count": 0,
+      "error": "Request timed out after 20000ms"
     },
     {
       "id": "guardian-biz",
