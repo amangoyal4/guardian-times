@@ -100,6 +100,14 @@ const NOISE = new RegExp([
   "ahead of market", 'things (to know|that will decide)', 'stocks? to watch',
   'quick wrap', 'market wrap', 'trading guide', 'stocks? to buy', '\\d+ stocks?',
   'market talk', 'roundup', "here'?s what", 'what to watch',
+  // Daily tip-sheet / preview filler. These all appeared in a live edition on
+  // 2026-07-20 and are exactly what the AI editor is told to drop — but the
+  // deterministic list had no pattern for them, so they sailed through when the
+  // AI fell back. Anchored tightly so real news is never caught.
+  'pre-?market', 'trade setup', 'stocks? in news', 'watch\\s?list',
+  'stock (recommendations?|picks?)', 'recommends? (a |the )?(one|two|three|four|five|six|\\d+) stocks?',
+  'week ahead', 'buy or sell', 'hot stocks?', 'technical (view|picks?)',
+  '(top|best) \\d+ (stocks?|picks?)', 'golden rules?',
   // Pre-market index "preview" filler — these are recurring daily noise (often
   // several near-identical copies from different papers that even contradict each
   // other: "cautious"/"flat"/"gap-down"). No lasting decision value. NOTE: this
@@ -140,6 +148,25 @@ const IRRELEVANT = new RegExp([
   'box office', 'celebrity', 'royal family', 'football', 'cricket score', 'horoscope', 'astrolog',
 ].join('|'), 'i');
 
+// Ordinary CRIME / police-blotter & personality news. The AI editor is explicitly
+// told to drop these, but there was NO deterministic pattern for them — which is
+// how "Andrew, Tristan Tate arrested on new charges of rape, trafficking" reached
+// a live edition (2026-07-20) once the AI fell back on a quota failure.
+// Deliberately anchored on VIOLENT / PERSONAL crime and individual court outcomes,
+// NOT on financial-regulatory enforcement: a SEBI penalty, an RBI fine, a debarment
+// or a settlement order is real compliance news and must still get through.
+const CRIME = new RegExp([
+  // "arrested"/"shooting" need care: markets copy uses them as metaphors
+  // ("RBI arrested the rupee slide", "gold shooting higher"). The lookahead keeps
+  // the crime sense and lets the metaphor through.
+  '\\barrested\\b(?!\\s+(the|a|an|its|his|her|their)\\b)', '\\barrests\\b',
+  'mass shooting', 'shooting incident', '\\bshot dead\\b',
+  '\\brape\\b', '\\brapist\\b', '\\bsex(ual)? (assault|abuse|misconduct|offence)',
+  '\\btrafficking\\b', '\\bmolest', '\\bmurder', '\\bhomicide\\b', '\\bmanslaughter\\b',
+  '\\bkidnap', '\\bextradit', '\\bjailed\\b', '\\bsentenced to\\b', '\\bconvicted\\b',
+  '\\bpaedophil', '\\bpedophil', '\\bstabb', '\\bassaulted\\b',
+].join('|'), 'i');
+
 // War / geopolitics / diplomacy as GENERAL news has no place here — but the same
 // event with a clear MONEY angle (oil spiking on a conflict, the rupee sliding,
 // defence orders) absolutely does. So drop a headline only when it reads as pure
@@ -174,7 +201,11 @@ async function main() {
 
   // 2) ROUTE + TAG, then drop hard procedural noise
   const routed = routeAll(items).filter(
-    (it) => !NOISE.test(it.title) && !IRRELEVANT.test(it.title) && !isPureGeopolitics(it.title),
+    (it) =>
+      !NOISE.test(it.title) &&
+      !IRRELEVANT.test(it.title) &&
+      !CRIME.test(it.title) &&
+      !isPureGeopolitics(it.title),
   );
 
   // 3) BUILD CANDIDATE POOLS (ranked, generous) per section
