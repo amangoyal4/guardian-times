@@ -13,8 +13,31 @@ const LOGO = fs.readFileSync(path.join(__dirname, 'logo_b64.txt'), 'utf8').trim(
 // Escapes the 5 HTML-significant chars. The quote escapes matter because esc() is
 // also used inside double-quoted attributes (href/src) — without them a feed-supplied
 // URL containing a quote could break out of the attribute.
+// Feed-supplied text (YouTube titles, RSS headlines, podcast titles) arrives
+// ALREADY HTML-encoded — e.g. YouTube gives "India&#39;s" and "War &amp; Oil".
+// If we simply re-escape that, the '&' becomes '&amp;' and the reader sees the
+// raw "&#39;" / "&amp;" on screen (the double-encoding bug). So we DECODE any
+// existing entities first, then encode cleanly — making esc idempotent and
+// correct no matter how many times a value has been encoded upstream.
+const decodeEntities = (s = '') =>
+  String(s)
+    .replace(/&#x([0-9a-fA-F]+);/g, (_, h) => String.fromCodePoint(parseInt(h, 16)))
+    .replace(/&#(\d+);/g, (_, n) => String.fromCodePoint(parseInt(n, 10)))
+    .replace(/&(?:apos);/g, "'")
+    .replace(/&(?:quot);/g, '"')
+    .replace(/&(?:lt);/g, '<')
+    .replace(/&(?:gt);/g, '>')
+    .replace(/&(?:nbsp);/g, ' ')
+    .replace(/&(?:rsquo|lsquo);/g, "'")
+    .replace(/&(?:rdquo|ldquo);/g, '"')
+    .replace(/&(?:mdash);/g, '—')
+    .replace(/&(?:ndash);/g, '–')
+    .replace(/&(?:hellip);/g, '…')
+    .replace(/&amp;/g, '&'); // MUST be last so "&amp;lt;" -> "&lt;", not "<"
+
 const esc = (s = '') =>
-  s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+  decodeEntities(s)
+    .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
     .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
 
 // ---------- small render helpers ----------
