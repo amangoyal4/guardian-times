@@ -35,6 +35,12 @@ function cleanTitle(raw = '', source = '') {
   return t.trim();
 }
 
+// Article-level premium paths: the SOURCE is free but THIS story opens a
+// subscribe/register wall. Covers ET Prime (/prime/), Mint & others (/premium/),
+// and Hindu BusinessLine premium (/bl-premium/). Anchored on path segments so a
+// normal free article is never mistaken for premium.
+const PREMIUM_URL = /\/(prime|premium|bl-?premium)\//i;
+
 // Normalise one raw RSS item into our internal shape.
 function normalise(item, feed) {
   const link = item.link || item.guid || '';
@@ -48,6 +54,10 @@ function normalise(item, feed) {
     weight: feed.weight || 1,
     title: cleanTitle(item.title || '', source),
     link: link.trim(),
+    // paywalled = the link likely throws a wall on click: a metered source, or a
+    // known premium article path. Used to down-rank, prefer free duplicates, and
+    // cap paid stories in the editor's cut so the paper is majorly free-to-read.
+    paywalled: !!feed.metered || PREMIUM_URL.test(link),
     published: published ? new Date(published) : null,
     rawSummary: cleanText(item.contentSnippet || item.content || item.summary || item.description || ''),
   };
@@ -201,9 +211,12 @@ export async function fetchAll({ hours = 24, seenLinks = new Set() } = {}) {
     pool = [...withDate, ...noDate];
   }
 
-  // Sort BEST-FIRST before dedup so the highest-weight (most authoritative) source's
-  // copy of a shared story is the one we keep; tie-break on recency.
+  // Sort BEST-FIRST before dedup so the copy we keep is the best one. FREE beats
+  // paywalled first (so a free source's copy of a shared story survives over a
+  // metered/premium copy), THEN highest weight (most authoritative), THEN recency.
   pool.sort((a, b) => {
+    const p = (a.paywalled ? 1 : 0) - (b.paywalled ? 1 : 0);
+    if (p !== 0) return p; // free (0) sorts before paywalled (1)
     const w = (b.weight || 1) - (a.weight || 1);
     if (w !== 0) return w;
     return (b.published?.getTime() || 0) - (a.published?.getTime() || 0);

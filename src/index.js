@@ -179,7 +179,10 @@ const isPureGeopolitics = (t = '') => WAR.test(t) && !FIN.test(t);
 
 function score(it) {
   const t = it.published?.getTime() || 0;
-  return t + it.weight * 3.6e6 - (JUNK.test(it.title) ? 1e15 : 0);
+  // Paywalled stories sink below every free story (penalty >> the 48h recency
+  // spread) but stay above hard JUNK — so the deterministic fallback ordering,
+  // section leads, and mechanism input are all free-first too.
+  return t + it.weight * 3.6e6 - (JUNK.test(it.title) ? 1e15 : 0) - (it.paywalled ? 1e10 : 0);
 }
 
 // Indian stories first (newest + higher feed weight within each region block).

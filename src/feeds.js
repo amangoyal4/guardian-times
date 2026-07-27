@@ -3,12 +3,18 @@
 // can contribute stories to several pages. `weight` nudges ordering (higher = more likely to lead).
 // To disable a feed without deleting it, set enabled:false.
 // `paywall:true` marks sources that throw a hard subscription wall when opened —
-// the fetcher skips these so every link in the paper is free to read.
+// the fetcher SKIPS these entirely so every link is free (WSJ, FT, Bloomberg, Economist).
+// `metered:true` marks sources that are free in RSS but throw a soft register/subscribe
+// wall on many articles when clicked (e.g. Business Standard, MarketWatch). These are
+// NOT skipped — instead their stories are down-ranked, a free copy of the same story
+// always wins in dedup, and the AI editor tags them [PAID] and keeps at most 1-2
+// genuinely-important paid items per edition. Article-level premium URLs (/prime/,
+// /premium/, /bl-premium/) are detected per-link the same way (see fetcher.js).
 
 export const FEEDS = [
   // ---- Indian markets & business ----
   { id: 'et-markets',     name: 'Economic Times — Markets', url: 'https://economictimes.indiatimes.com/markets/rssfeeds/1977021501.cms', section: 'india',      region: 'in', weight: 3, enabled: true },
-  { id: 'bs-markets',     name: 'Business Standard — Markets', url: 'https://news.google.com/rss/search?q=site:business-standard.com/markets+when:1d&hl=en-IN&gl=IN&ceid=IN:en', section: 'india', region: 'in', weight: 3, enabled: true }, // direct RSS 403-blocks bots; routed via Google News
+  { id: 'bs-markets',     name: 'Business Standard — Markets', url: 'https://news.google.com/rss/search?q=site:business-standard.com/markets+when:1d&hl=en-IN&gl=IN&ceid=IN:en', section: 'india', region: 'in', weight: 3, enabled: true, metered: true }, // direct RSS 403-blocks bots; routed via Google News. metered: soft paywall on click
   { id: 'mint-markets',   name: 'Livemint — Markets',       url: 'https://www.livemint.com/rss/markets',                                   section: 'india',      region: 'in', weight: 3, enabled: true },
   { id: 'mc-business',    name: 'Moneycontrol — Business',  url: 'https://www.moneycontrol.com/rss/business.xml',                          section: 'india',      region: 'in', weight: 2, enabled: true },
   { id: 'bl-markets',     name: 'Hindu BusinessLine',       url: 'https://www.thehindubusinessline.com/markets/feeder/default.rss',        section: 'india',      region: 'in', weight: 2, enabled: true },
@@ -29,7 +35,7 @@ export const FEEDS = [
   { id: 'bl-banking',     name: 'Hindu BusinessLine — Money & Banking', url: 'https://www.thehindubusinessline.com/money-and-banking/feeder/default.rss', section: 'compliance', region: 'in', weight: 2, enabled: true },
   { id: 'cnbctv18-mkt',   name: 'CNBC-TV18 — Market',       url: 'https://news.google.com/rss/search?q=site:cnbctv18.com/market+when:1d&hl=en-IN&gl=IN&ceid=IN:en', section: 'india', region: 'in', weight: 2, enabled: true }, // via Google News (direct RSS unreliable)
   { id: 'ndtvprofit',     name: 'NDTV Profit — Markets',    url: 'https://news.google.com/rss/search?q=site:ndtvprofit.com+when:1d&hl=en-IN&gl=IN&ceid=IN:en', section: 'india', region: 'in', weight: 2, enabled: true }, // via Google News
-  { id: 'bs-economy',     name: 'Business Standard — Economy', url: 'https://news.google.com/rss/search?q=site:business-standard.com/economy+when:1d&hl=en-IN&gl=IN&ceid=IN:en', section: 'macro', region: 'in', weight: 2, enabled: true },
+  { id: 'bs-economy',     name: 'Business Standard — Economy', url: 'https://news.google.com/rss/search?q=site:business-standard.com/economy+when:1d&hl=en-IN&gl=IN&ceid=IN:en', section: 'macro', region: 'in', weight: 2, enabled: true, metered: true }, // metered: soft paywall on click
   { id: 'fe-economy',     name: 'Financial Express — Economy', url: 'https://news.google.com/rss/search?q=site:financialexpress.com/economy+when:1d&hl=en-IN&gl=IN&ceid=IN:en', section: 'macro', region: 'in', weight: 2, enabled: false }, // GN path returns 0 — disabled
 
   // ---- Regulators / compliance ----
@@ -45,7 +51,7 @@ export const FEEDS = [
   { id: 'ft-home',        name: 'Financial Times — Home',   url: 'https://www.ft.com/rss/home',                                            section: 'global',     region: 'global', weight: 2, enabled: true, paywall: true },
   { id: 'guardian-biz',   name: 'The Guardian — Business',  url: 'https://www.theguardian.com/uk/business/rss',                            section: 'global',     region: 'global', weight: 3, enabled: true }, // Reuters public RSS discontinued; Guardian Business as global-wire replacement (free)
   { id: 'cnbc-finance',   name: 'CNBC — Finance',           url: 'https://www.cnbc.com/id/10000664/device/rss/rss.html',                   section: 'global',     region: 'global', weight: 3, enabled: true }, // free
-  { id: 'mw-top',         name: 'MarketWatch — Top',        url: 'https://feeds.content.dowjones.io/public/rss/mw_topstories',             section: 'global',     region: 'global', weight: 2, enabled: true }, // free
+  { id: 'mw-top',         name: 'MarketWatch — Top',        url: 'https://feeds.content.dowjones.io/public/rss/mw_topstories',             section: 'global',     region: 'global', weight: 2, enabled: true, metered: true }, // metered: Dow Jones soft paywall on many articles
   { id: 'economist-fin',  name: 'Economist — Finance',      url: 'https://www.economist.com/finance-and-economics/rss.xml',                section: 'macro',      region: 'global', weight: 2, enabled: true, paywall: true },
   { id: 'ap-business',    name: 'AP — Business',            url: 'https://rsshub.app/apnews/topics/business',                             section: 'global',     region: 'global', weight: 2, enabled: false }, // optional free wire; enable if reliable
   { id: 'investing-news', name: 'Investing.com — News',     url: 'https://www.investing.com/rss/news.rss',                                 section: 'global',     region: 'global', weight: 1, enabled: true }, // free

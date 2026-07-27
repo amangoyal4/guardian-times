@@ -181,7 +181,7 @@ export async function selectStories(bySection, perSection = 8) {
     for (const it of items.slice(0, 30)) {
       const id = nextId++;
       idToLink.set(id, it.link);
-      lines.push(`${id}. ${it.isIndian ? 'IN' : 'GL'} (${it.source}) ${it.title}`);
+      lines.push(`${id}. ${it.isIndian ? 'IN' : 'GL'}${it.paywalled ? ' [PAID]' : ''} (${it.source}) ${it.title}`);
     }
   }
   const catalogue = lines.join('\n');
@@ -211,6 +211,7 @@ RUTHLESSLY DROP procedural noise:
 - near-duplicates: keep the single best version of the same story. This applies ACROSS THE WHOLE EDITION, not just within one section — if the SAME underlying event appears in more than one section (e.g. an IPO in both 'india' and 'sector', or a pre-market preview in both 'macro' and 'india'), keep it ONCE in the single most relevant section and drop the rest. Two stories about the same company/IPO/event on the same day are duplicates even if the headlines are worded differently.
 
 Selection rules:
+- FREE-TO-READ PRIORITY: lines marked [PAID] open a subscription/registration wall when clicked. This paper must be MAJORLY free to read. So: (a) when a [PAID] story and a free (unmarked) story cover the SAME event, ALWAYS pick the free one; (b) select a [PAID] story ONLY when it is genuinely important AND not available from a free source; (c) NEVER select more than 2 [PAID] stories in the ENTIRE edition across ALL sections combined. Prefer a free story even if a [PAID] headline looks marginally sharper. Fill sections from the free pool first.
 - Each section: build a FULL, SUBSTANTIAL slate — aim to fill all ${perSection} slots with genuinely useful stories. From a large pool (you have dozens of candidates per section) there are almost always ${perSection} stories worth a professional's attention in macro, india, sector and global, so DO fill those sections up; a rich, comprehensive edition is the goal. The bar is "genuinely useful for a wealth/PMS/AIF professional to know" — NOT only the rare items that force an immediate reallocation. Fall short of ${perSection} ONLY when the pool truly lacks enough relevant, non-duplicate stories (compliance is often legitimately thin — leave it short rather than padding it with non-regulator items). Never pad with the banned noise (roundups, previews, tip-sheets, "stocks to watch"), but do not leave good stories out just to be minimalist.
 - Place each chosen id under the section its CONTENT belongs to (per the definitions above), NOT where it was provisionally filed.
 - Within a section, order Indian stories first (IN), then global (GL); within each, MOST IMPORTANT FIRST — the lead (first) story of each section gets the longest treatment, so make it the single most consequential item, not merely the newest.
