@@ -235,7 +235,7 @@ function libraryPage(num, library) {
 
   return `<section class="page" id="page-library">
       ${head}
-      <div class="lib-grid">${vidCards}</div>
+      <div class="lib-grid" id="libGrid">${vidCards}</div>
       ${podHTML}
     </section>`;
 }
@@ -360,12 +360,23 @@ export function buildHTML(data) {
   const audioJson = JSON.stringify(segments).replace(/</g, '\\u003c');
   const audioFile = data.audioFile ? esc(data.audioFile) : '';
 
+  // Live-Library config: the published sheet CSV URL + the server-enriched videos
+  // (used as the title/thumbnail base so known videos keep their polished titles;
+  // brand-new sheet rows render instantly and get enriched on the next build).
+  const LIB_CSV = process.env.LIBRARY_SHEET_CSV_URL || '';
+  const libVideos = (data.library?.videos || []).map((v) => ({
+    link: v.link, videoId: v.videoId, title: v.title, thumb: v.thumb, channel: v.channel,
+    platform: v.platform, orientation: v.orientation, blurb: v.blurb, published: v.published, duration: v.duration,
+  }));
+  const libConfig = JSON.stringify({ csv: LIB_CSV, videos: libVideos }).replace(/</g, '\\u003c');
+
   return tpl
     .replace('__LOGO__', LOGO)
     .replace('__TICKER__', ticker)
     .replace('__PAGES__', pages)
     .replace('__AUDIODATA__', audioJson)
     .replace('__BRIEFINGAUDIO__', audioFile)
+    .replace('__LIBCONFIG__', libConfig)
     .replace('__RUNTIME__', data.runTime || new Date().toUTCString());
 }
 

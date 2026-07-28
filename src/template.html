@@ -332,6 +332,7 @@ __PAGES__
 
 <script>window.__BRIEFING_AUDIO__="__BRIEFINGAUDIO__";</script>
 <script type="application/json" id="audio-script">__AUDIODATA__</script>
+<script type="application/json" id="lib-config">__LIBCONFIG__</script>
 <script>
   const navBtns=document.querySelectorAll('.nav-btn');
   const pages=document.querySelectorAll('.page');
@@ -640,6 +641,91 @@ __PAGES__
     }
   })();
 
+</script>
+<script>
+/* Live Library — refresh the video cards straight from the published Google Sheet,
+   so a newly-added video shows on refresh WITHOUT waiting for the 7am build. Free:
+   no build, no Gemini, no server. Cards are thumbnail+link ONLY (clicking opens the
+   platform, exactly like the server-rendered version — nothing plays inline). Any
+   error silently keeps the server-rendered grid. Also emits a "new video" message
+   the host app can turn into a push notification (inert until the app wires it up). */
+(function(){
+  try {
+    var cfgEl = document.getElementById('lib-config');
+    var grid  = document.getElementById('libGrid');
+    if(!cfgEl || !grid) return;
+    var cfg; try { cfg = JSON.parse(cfgEl.textContent||'{}'); } catch(e){ return; }
+    if(!cfg || !cfg.csv) return;                       // no sheet configured → leave server grid
+
+    var canon = function(u){ return (u||'').split(/[?#]/)[0].replace(/\/$/,''); };
+    var base = {}; (cfg.videos||[]).forEach(function(v){ base[canon(v.link)] = v; });
+    var ytId = function(u){ var m=(u||'').match(/(?:v=|youtu\.be\/|\/embed\/|\/shorts\/|\/live\/)([A-Za-z0-9_-]{11})/); return m?m[1]:''; };
+    var platformOf = function(u){ u=u||''; if(/youtube\.com|youtu\.be/i.test(u))return'YouTube'; if(/vimeo\.com/i.test(u))return'Vimeo'; if(/tiktok\.com/i.test(u))return'TikTok'; if(/instagram\.com/i.test(u))return'Instagram'; if(/linkedin\.com/i.test(u))return'LinkedIn'; if(/facebook\.com|fb\.watch/i.test(u))return'Facebook'; return'Video'; };
+    var isPortrait = function(u){ return /youtube\.com\/shorts\//i.test(u)||/instagram\.com\/reels?\//i.test(u)||/tiktok\.com/i.test(u); };
+    var esc = function(s){ return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); };
+    var when = function(d){ if(!d) return 'recent'; var t=new Date(d).getTime(); if(!t) return 'recent'; var h=Math.round((Date.now()-t)/3.6e6); if(h<1)return'just now'; if(h<24)return h+'h ago'; var dd=Math.round(h/24); return dd<=1?'1 day ago':dd+' days ago'; };
+    var parseCSV = function(s){ s=s.replace(/\r\n/g,'\n').replace(/\r/g,'\n'); var rows=[],row=[],f='',q=false; for(var i=0;i<s.length;i++){var c=s[i]; if(q){ if(c==='"'){ if(s[i+1]==='"'){f+='"';i++;} else q=false; } else f+=c; } else if(c==='"')q=true; else if(c===','){row.push(f);f='';} else if(c==='\n'){row.push(f);rows.push(row);row=[];f='';} else f+=c;} if(f.length||row.length){row.push(f);rows.push(row);} return rows.filter(function(r){return r.some(function(c){return c.trim()!=='';});}); };
+
+    fetch(cfg.csv).then(function(r){ return r.text(); }).then(function(txt){
+      var rows = parseCSV(txt); if(rows.length<2) return;
+      var head = rows[0].map(function(h){ return h.trim().toLowerCase(); });
+      var col = function(){ for(var i=0;i<arguments.length;i++){ var x=head.indexOf(arguments[i]); if(x>=0) return x; } return -1; };
+      var iU=col('url','link','video'), iT=col('title','name'), iB=col('blurb','description','caption'), iTh=col('thumbnail','thumb','image','cover'), iS=col('source','channel','label'), iD=col('date','published','posted'), iDur=col('duration','length');
+      if(iU<0) return;
+      var get=function(r,i){ return i>=0 ? (r[i]||'').trim() : ''; };
+      var vids = rows.slice(1).map(function(r){
+        var url=get(r,iU); if(!url) return null;
+        var b = base[canon(url)] || {}; var id = ytId(url);
+        return { link:url, videoId:id,
+          title: get(r,iT) || b.title || '',
+          thumb: get(r,iTh) || b.thumb || (id?('https://i.ytimg.com/vi/'+id+'/maxresdefault.jpg'):''),
+          channel: get(r,iS) || b.channel || platformOf(url),
+          platform: platformOf(url),
+          orientation: (isPortrait(url)||b.orientation==='portrait')?'portrait':'landscape',
+          blurb: get(r,iB)||b.blurb||'', duration: get(r,iDur)||b.duration||'', published: get(r,iD)||b.published||'',
+          isNew: !base[canon(url)] };
+      }).filter(Boolean);
+      if(!vids.length) return;                          // empty sheet → keep server grid
+      vids.sort(function(a,b){ return (new Date(b.published||0).getTime()||0)-(new Date(a.published||0).getTime()||0); });
+      var show = vids.slice(0,6);
+
+      grid.innerHTML = show.map(function(v,idx){
+        var plat = v.platform && v.platform!=='Video' ? v.platform : '';
+        return '<article class="lib-card" data-idx="'+idx+'">'
+          + '<a class="lib-thumb'+(v.orientation==='portrait'?' lib-thumb--portrait':'')+'" href="'+esc(v.link)+'" target="_blank" rel="noopener">'
+          + (v.thumb?'<img loading="lazy" src="'+esc(v.thumb)+'" data-id="'+esc(v.videoId)+'" alt="">':'')
+          + (plat?'<span class="lib-badge">'+esc(plat)+'</span>':'')
+          + '<span class="lib-play">&#9658;</span></a>'
+          + '<div class="lib-body"><div class="eyebrow"><span class="src">'+esc(v.channel)+'</span><span class="dot"></span><span class="time">'+esc(when(v.published))+'</span>'+(v.duration?'<span class="dot"></span><span class="time">'+esc(v.duration)+'</span>':'')+'</div>'
+          + '<h3 class="hl"><a href="'+esc(v.link)+'" target="_blank" rel="noopener">'+esc(v.title||v.channel)+'</a></h3>'
+          + (v.blurb?'<div class="summary">'+esc(v.blurb)+'</div>':'')
+          + '<a class="readmore" href="'+esc(v.link)+'" target="_blank" rel="noopener">Watch'+(plat?' on '+esc(plat):'')+' <span class="arr">&rarr;</span></a></div></article>';
+      }).join('');
+
+      // maxres thumbnails don't exist for every video → fall back to hqdefault
+      var imgs = grid.querySelectorAll('img[data-id]');
+      for(var i=0;i<imgs.length;i++){ (function(img){ img.addEventListener('error', function h(){ img.removeEventListener('error',h); var id=img.getAttribute('data-id'); if(id) img.src='https://i.ytimg.com/vi/'+id+'/hqdefault.jpg'; }); })(imgs[i]); }
+
+      // best-effort: real title for a brand-new title-less video (CORS-friendly oEmbed proxy)
+      show.forEach(function(v,idx){ if(v.title) return; try { fetch('https://noembed.com/embed?url='+encodeURIComponent(v.link)).then(function(r){return r.json();}).then(function(o){ if(!o||!o.title) return; var a=grid.querySelector('article[data-idx="'+idx+'"] .hl a'); if(a) a.textContent=o.title; }).catch(function(){}); } catch(e){} });
+
+      // notify the host app of videos added since the last build (once per device)
+      var fresh = vids.filter(function(v){ return v.isNew; });
+      if(fresh.length){
+        var seen=[]; try{ seen=JSON.parse(localStorage.getItem('gcb_lib_seen')||'[]'); }catch(e){}
+        fresh.forEach(function(v){
+          if(seen.indexOf(canon(v.link))>=0) return; seen.push(canon(v.link));
+          var payload={ type:'new_library_video', title:v.title||'New video', platform:v.platform, url:v.link, thumbnail:v.thumb };
+          try{ if(window.ReactNativeWebView) window.ReactNativeWebView.postMessage(JSON.stringify(payload)); }catch(e){}
+          try{ if(window.webkit&&window.webkit.messageHandlers&&window.webkit.messageHandlers.guardian) window.webkit.messageHandlers.guardian.postMessage(payload); }catch(e){}
+          try{ if(window.GuardianApp&&typeof window.GuardianApp.onNewVideo==='function') window.GuardianApp.onNewVideo(JSON.stringify(payload)); }catch(e){}
+          try{ document.dispatchEvent(new CustomEvent('guardian:new-video',{detail:payload})); }catch(e){}
+        });
+        try{ localStorage.setItem('gcb_lib_seen', JSON.stringify(seen.slice(-200))); }catch(e){}
+      }
+    }).catch(function(){ /* any failure → server-rendered grid stays as-is */ });
+  } catch(e){ /* no-op */ }
+})();
 </script>
 </body>
 </html>
