@@ -202,19 +202,23 @@ function libraryPage(num, library) {
       <p class="watch-empty">The Library is quiet today — the video and podcast feeds returned nothing in the window.</p></section>`;
   }
 
-  const vidCards = videos.map((v) => `
+  const vidCards = videos.map((v) => {
+    const plat = v.platform && v.platform !== 'Video' ? v.platform : '';
+    return `
       <article class="lib-card">
         <a class="lib-thumb" href="${esc(v.link)}" target="_blank" rel="noopener">
           ${v.thumb ? `<img loading="lazy" src="${esc(v.thumb)}" alt="">` : ''}
+          ${plat ? `<span class="lib-badge">${esc(plat)}</span>` : ''}
           <span class="lib-play">&#9658;</span>
         </a>
         <div class="lib-body">
-          <div class="eyebrow"><span class="src">${esc(v.channel)}</span><span class="dot"></span><span class="time">${timeAgo(v.published)}</span></div>
+          <div class="eyebrow"><span class="src">${esc(v.channel)}</span><span class="dot"></span><span class="time">${timeAgo(v.published)}</span>${v.duration ? `<span class="dot"></span><span class="time">${esc(v.duration)}</span>` : ''}</div>
           <h3 class="hl"><a href="${esc(v.link)}" target="_blank" rel="noopener">${esc(v.title)}</a></h3>
           ${v.blurb ? `<div class="summary">${esc(v.blurb)}</div>` : ''}
-          <a class="readmore" href="${esc(v.link)}" target="_blank" rel="noopener">Watch on YouTube <span class="arr">&rarr;</span></a>
+          <a class="readmore" href="${esc(v.link)}" target="_blank" rel="noopener">Watch${plat ? ` on ${esc(plat)}` : ''} <span class="arr">&rarr;</span></a>
         </div>
-      </article>`).join('');
+      </article>`;
+  }).join('');
 
   const dur = podcast ? fmtDur(podcast.duration) : '';
   const podHTML = podcast ? `
