@@ -170,6 +170,10 @@ function parseCsv(text) {
 //    live CSV export endpoint (needs the sheet shared "anyone with link can view");
 //  - a Publish-to-web CSV URL (…/pub?output=csv) or an export URL → used as-is;
 //  - any other URL → tried as-is.
+// Values in a "publish" cell that mean "this row is ready to go live". Google
+// Sheets checkboxes export as TRUE/FALSE, so TRUE is the common case.
+const PUBLISH_TRUTHY = /^(true|yes|y|1|✓|x|live|publish|published|ready)$/i;
+
 function toCsvUrl(url = '') {
   if (/output=csv|format=csv/i.test(url)) return url;
   const m = url.match(/docs\.google\.com\/spreadsheets\/d\/([a-zA-Z0-9-_]+)/);
@@ -196,15 +200,22 @@ export async function fetchSheetVideos() {
       url: col('url', 'link', 'video', 'video url'),
       blurb: col('blurb', 'description', 'desc', 'caption'),
       source: col('source', 'channel', 'label'),
-      date: col('date', 'published', 'posted'),
+      date: col('date', 'posted', 'date posted'),
       duration: col('duration', 'length'),
       thumb: col('thumbnail', 'thumb', 'thumbnail url', 'image', 'cover'),
+      publish: col('publish', 'published', 'live', 'ready', 'status', 'go live'),
     };
     if (ci.url < 0) throw new Error('sheet needs at least a "url" header column');
     const get = (r, i) => (i >= 0 ? (r[i] || '').trim() : '');
+    // PUBLISH GATE: a row only appears (and only fires a notification) once its
+    // "publish" cell is ticked/TRUE — so a half-filled row being edited, or a
+    // pasted draft, shows and notifies NOTHING until marketing marks it ready.
+    // If the sheet has no publish column at all, every row is treated as live
+    // (backward-compatible for a simple sheet).
+    const published = (r) => ci.publish < 0 || PUBLISH_TRUTHY.test(get(r, ci.publish));
     return rows.slice(1)
+      .filter((r) => get(r, ci.url) && published(r))
       .map((r) => ({ title: get(r, ci.title), url: get(r, ci.url), blurb: get(r, ci.blurb), source: get(r, ci.source), date: get(r, ci.date), duration: get(r, ci.duration), thumb: get(r, ci.thumb) }))
-      .filter((v) => v.url)
       .map(mapVideoRecord)
       .sort(byNewest);
   } catch (e) {

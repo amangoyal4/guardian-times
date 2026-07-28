@@ -8,7 +8,11 @@ the app's job. This document is everything you need to wire it up.
 
 ## What the page emits
 
-As soon as a new Library video is detected (once per device, deduped via
+The page only ever emits for a **published** video — a row whose "Publish" box is
+ticked in the sheet. Draft/half-filled rows are invisible to the page and never fire,
+so you'll never receive a notification for an unfinished video.
+
+As soon as a newly-published Library video is detected (once per device, deduped via
 `localStorage`), the page fires the **same payload** on four channels — listen on
 whichever matches your wrapper:
 

@@ -670,11 +670,13 @@ __PAGES__
       var rows = parseCSV(txt); if(rows.length<2) return;
       var head = rows[0].map(function(h){ return h.trim().toLowerCase(); });
       var col = function(){ for(var i=0;i<arguments.length;i++){ var x=head.indexOf(arguments[i]); if(x>=0) return x; } return -1; };
-      var iU=col('url','link','video'), iT=col('title','name'), iB=col('blurb','description','caption'), iTh=col('thumbnail','thumb','image','cover'), iS=col('source','channel','label'), iD=col('date','published','posted'), iDur=col('duration','length');
+      var iU=col('url','link','video'), iT=col('title','name'), iB=col('blurb','description','caption'), iTh=col('thumbnail','thumb','image','cover'), iS=col('source','channel','label'), iD=col('date','posted','date posted'), iDur=col('duration','length'), iPub=col('publish','published','live','ready','status','go live');
       if(iU<0) return;
+      var PUB=/^(true|yes|y|1|✓|x|live|publish|published|ready)$/i;
       var get=function(r,i){ return i>=0 ? (r[i]||'').trim() : ''; };
       var vids = rows.slice(1).map(function(r){
         var url=get(r,iU); if(!url) return null;
+        if(iPub>=0 && !PUB.test(get(r,iPub))) return null;   // publish gate: skip unticked/draft rows
         var b = base[canon(url)] || {}; var id = ytId(url);
         return { link:url, videoId:id,
           title: get(r,iT) || b.title || '',
