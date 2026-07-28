@@ -56,11 +56,26 @@ const byNewest = (a, b) => (new Date(b.published || 0).getTime() || 0) - (new Da
 // oEmbed is free and keyless for both YouTube and Vimeo. It returns the EXACT
 // posted title, the channel, and a thumbnail — so the paper always matches what's
 // live on the platform, and marketing need only paste a URL.
+// Which platform a link is on — used for the card label and to decide whether we
+// can auto-pull metadata. YouTube / Vimeo / TikTok expose keyless oEmbed; Instagram,
+// LinkedIn and Facebook do NOT (they require an approved API app), so those rely on
+// the title + thumbnail the sheet provides.
+function platformOf(url = '') {
+  if (/youtube\.com|youtu\.be/i.test(url)) return 'YouTube';
+  if (/vimeo\.com/i.test(url)) return 'Vimeo';
+  if (/tiktok\.com/i.test(url)) return 'TikTok';
+  if (/instagram\.com/i.test(url)) return 'Instagram';
+  if (/linkedin\.com/i.test(url)) return 'LinkedIn';
+  if (/facebook\.com|fb\.watch/i.test(url)) return 'Facebook';
+  return 'Video';
+}
+
 async function fetchOembed(url) {
   let endpoint = '';
   if (/youtube\.com|youtu\.be/i.test(url)) endpoint = `https://www.youtube.com/oembed?url=${encodeURIComponent(url)}&format=json`;
   else if (/vimeo\.com/i.test(url)) endpoint = `https://vimeo.com/api/oembed.json?url=${encodeURIComponent(url)}`;
-  else return null;
+  else if (/tiktok\.com/i.test(url)) endpoint = `https://www.tiktok.com/oembed?url=${encodeURIComponent(url)}`;
+  else return null; // Instagram / LinkedIn / Facebook: no keyless oEmbed — use sheet values
   try {
     const r = await fetch(endpoint, { redirect: 'follow' });
     if (!r.ok) return null;
@@ -87,15 +102,20 @@ const fmtSeconds = (s) => {
 // explicit sheet/manifest overrides. Runs at build time over the ~6 shown videos.
 async function enrichVideos(videos) {
   return Promise.all(videos.map(async (v) => {
-    const o = await fetchOembed(v.link);
-    const out = { ...v };
-    if (!v._titleSet && o?.title) out.title = o.title;                 // posted title
-    if (!v._channelSet && o?.author_name) out.channel = o.author_name; // posted channel
+    const platform = platformOf(v.link);
+    const o = await fetchOembed(v.link); // null for Instagram / LinkedIn / Facebook
+    const out = { ...v, platform };
+    if (!v._titleSet && o?.title) out.title = o.title;                          // posted title (YT/Vimeo/TikTok)
+    if (!v._channelSet) out.channel = o?.author_name || v.channel || platform;  // channel, else platform label
     if (!v._thumbSet) {
-      if (v.videoId) out.thumb = await bestYouTubeThumb(v.videoId);    // highest-res YouTube
-      else if (o?.thumbnail_url) out.thumb = o.thumbnail_url;          // Vimeo high-res
+      if (v.videoId) out.thumb = await bestYouTubeThumb(v.videoId);             // highest-res YouTube
+      else if (o?.thumbnail_url) out.thumb = o.thumbnail_url;                   // Vimeo/TikTok thumbnail
     }
-    if (!v.duration && typeof o?.duration === 'number') out.duration = fmtSeconds(o.duration); // Vimeo
+    if (!v.duration && typeof o?.duration === 'number') out.duration = fmtSeconds(o.duration);
+    // Platforms we can't auto-fetch need the sheet to supply title + thumbnail;
+    // warn loudly (in the build log) so an incomplete row is easy to spot and fix.
+    if (!out.title) console.log(`  ⚠ Library: ${platform} link has no title — add a "title" in the sheet: ${v.link}`);
+    if (!out.thumb) console.log(`  ⚠ Library: ${platform} link has no thumbnail — add a "thumbnail" image URL in the sheet: ${v.link}`);
     return out;
   }));
 }
@@ -142,8 +162,17 @@ export async function fetchSheetVideos() {
     const rows = parseCsv(await res.text());
     if (rows.length < 2) return [];
     const header = rows[0].map((h) => h.trim().toLowerCase());
-    const col = (name) => header.indexOf(name);
-    const ci = { title: col('title'), url: col('url'), blurb: col('blurb'), source: col('source'), date: col('date'), duration: col('duration'), thumb: col('thumb') };
+    // Accept common header aliases so a slightly-differently-named column still works.
+    const col = (...names) => { for (const n of names) { const i = header.indexOf(n); if (i >= 0) return i; } return -1; };
+    const ci = {
+      title: col('title', 'name'),
+      url: col('url', 'link', 'video', 'video url'),
+      blurb: col('blurb', 'description', 'desc', 'caption'),
+      source: col('source', 'channel', 'label'),
+      date: col('date', 'published', 'posted'),
+      duration: col('duration', 'length'),
+      thumb: col('thumbnail', 'thumb', 'thumbnail url', 'image', 'cover'),
+    };
     if (ci.url < 0) throw new Error('sheet needs at least a "url" header column');
     const get = (r, i) => (i >= 0 ? (r[i] || '').trim() : '');
     return rows.slice(1)
