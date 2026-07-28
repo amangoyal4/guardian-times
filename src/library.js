@@ -164,9 +164,25 @@ function parseCsv(text) {
 // video (columns matched by header, case-insensitive: title, url, blurb, source,
 // date, duration, thumb) — no code, no git. Falls back to the JSON manifest if the
 // sheet is unset or unreachable, so the build never breaks on a bad/empty sheet.
+// Accept ANY form of Google Sheets URL and read it as CSV, so marketing keeps a
+// normal editable sheet (no CSV file to manage):
+//  - a normal sheet URL  …/spreadsheets/d/<ID>/edit#gid=<GID>  → rewritten to the
+//    live CSV export endpoint (needs the sheet shared "anyone with link can view");
+//  - a Publish-to-web CSV URL (…/pub?output=csv) or an export URL → used as-is;
+//  - any other URL → tried as-is.
+function toCsvUrl(url = '') {
+  if (/output=csv|format=csv/i.test(url)) return url;
+  const m = url.match(/docs\.google\.com\/spreadsheets\/d\/([a-zA-Z0-9-_]+)/);
+  if (m) {
+    const gid = (url.match(/[#&?]gid=(\d+)/) || [])[1] || '0';
+    return `https://docs.google.com/spreadsheets/d/${m[1]}/export?format=csv&gid=${gid}`;
+  }
+  return url;
+}
+
 export async function fetchSheetVideos() {
-  const url = process.env.LIBRARY_SHEET_CSV_URL;
-  if (!url) return null; // not configured — caller uses the manifest
+  if (!process.env.LIBRARY_SHEET_CSV_URL) return null; // not configured — caller uses the manifest
+  const url = toCsvUrl(process.env.LIBRARY_SHEET_CSV_URL.trim());
   try {
     const res = await fetch(url, { redirect: 'follow' });
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
