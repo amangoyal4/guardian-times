@@ -43,6 +43,7 @@ function mapVideoRecord(v) {
     blurb: v.blurb || '',
     published: v.date || null,
     duration: v.duration || '',
+    orientation: isPortraitUrl(v.url) ? 'portrait' : 'landscape',
     // Track what the sheet/manifest set explicitly so enrichment only fills gaps
     // (an explicit value is always an intentional override of the posted metadata).
     _titleSet: !!v.title,
@@ -60,6 +61,13 @@ const byNewest = (a, b) => (new Date(b.published || 0).getTime() || 0) - (new Da
 // can auto-pull metadata. YouTube / Vimeo / TikTok expose keyless oEmbed; Instagram,
 // LinkedIn and Facebook do NOT (they require an approved API app), so those rely on
 // the title + thumbnail the sheet provides.
+// Vertical formats (9:16) — YouTube Shorts, Instagram Reels, all of TikTok. These
+// render "contained" so the tall frame shows fully instead of being cropped into
+// the landscape tile. Vimeo verticals are caught later from the oEmbed dimensions.
+function isPortraitUrl(url = '') {
+  return /youtube\.com\/shorts\//i.test(url) || /instagram\.com\/reels?\//i.test(url) || /tiktok\.com/i.test(url);
+}
+
 function platformOf(url = '') {
   if (/youtube\.com|youtu\.be/i.test(url)) return 'YouTube';
   if (/vimeo\.com/i.test(url)) return 'Vimeo';
@@ -112,6 +120,9 @@ async function enrichVideos(videos) {
       else if (o?.thumbnail_url) out.thumb = o.thumbnail_url;                   // Vimeo/TikTok thumbnail
     }
     if (!v.duration && typeof o?.duration === 'number') out.duration = fmtSeconds(o.duration);
+    // Refine orientation from real oEmbed dimensions (catches vertical Vimeo, etc.)
+    // when the URL alone didn't already mark it portrait.
+    if (out.orientation !== 'portrait' && o?.width && o?.height && o.height > o.width) out.orientation = 'portrait';
     // Platforms we can't auto-fetch need the sheet to supply title + thumbnail;
     // warn loudly (in the build log) so an incomplete row is easy to spot and fix.
     if (!out.title) console.log(`  ⚠ Library: ${platform} link has no title — add a "title" in the sheet: ${v.link}`);

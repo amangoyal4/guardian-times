@@ -206,7 +206,7 @@ function libraryPage(num, library) {
     const plat = v.platform && v.platform !== 'Video' ? v.platform : '';
     return `
       <article class="lib-card">
-        <a class="lib-thumb" href="${esc(v.link)}" target="_blank" rel="noopener">
+        <a class="lib-thumb${v.orientation === 'portrait' ? ' lib-thumb--portrait' : ''}" href="${esc(v.link)}" target="_blank" rel="noopener">
           ${v.thumb ? `<img loading="lazy" src="${esc(v.thumb)}" alt="">` : ''}
           ${plat ? `<span class="lib-badge">${esc(plat)}</span>` : ''}
           <span class="lib-play">&#9658;</span>

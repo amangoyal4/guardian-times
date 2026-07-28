@@ -207,6 +207,10 @@
   .lib-card:hover .lib-thumb img{transform:scale(1.04)}
   .lib-play{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:46px;height:46px;border-radius:50%;background:rgba(10,10,10,.78);color:#fff;display:flex;align-items:center;justify-content:center;font-size:15px;padding-left:3px;pointer-events:none}
   .lib-badge{position:absolute;left:8px;top:8px;z-index:2;font-family:'IBM Plex Mono',monospace;font-size:9.5px;line-height:1;letter-spacing:.06em;text-transform:uppercase;font-weight:600;color:#fff;background:rgba(10,10,10,.72);padding:4px 7px;border-radius:4px;pointer-events:none}
+  /* Vertical videos (Shorts/Reels/TikTok): show the tall frame in full on a dark
+     letterbox tile instead of cropping it into the landscape card. */
+  .lib-thumb--portrait{background:#0a0a0a}
+  .lib-thumb--portrait img{object-fit:contain}
   .lib-body{padding-top:13px}
   .lib-grid h3.hl{font-size:19px;margin:5px 0 7px}
   .pod-feature{display:grid;grid-template-columns:160px 1fr;gap:26px;align-items:start;background:var(--ink);color:var(--paper);padding:26px 30px;margin:8px 0 20px}
