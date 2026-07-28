@@ -34,23 +34,78 @@ function mapVideoRecord(v) {
   const id = ytIdFromUrl(v.url);
   return {
     channel: v.source || 'Guardian Capital',
-    title: String(v.title),
+    title: v.title ? String(v.title) : '',
     link: v.url,
     videoId: id,
+    // hqdefault is the safe sync default; enrichVideos() upgrades YouTube to the
+    // highest available resolution and pulls the real posted title/thumb.
     thumb: v.thumb || (id ? `https://i.ytimg.com/vi/${id}/hqdefault.jpg` : ''),
     blurb: v.blurb || '',
     published: v.date || null,
     duration: v.duration || '',
+    // Track what the sheet/manifest set explicitly so enrichment only fills gaps
+    // (an explicit value is always an intentional override of the posted metadata).
+    _titleSet: !!v.title,
+    _thumbSet: !!v.thumb,
+    _channelSet: !!v.source,
   };
 }
 const byNewest = (a, b) => (new Date(b.published || 0).getTime() || 0) - (new Date(a.published || 0).getTime() || 0);
+
+// ---- Auto-pull posted metadata (title + highest-quality thumbnail) ----
+// oEmbed is free and keyless for both YouTube and Vimeo. It returns the EXACT
+// posted title, the channel, and a thumbnail — so the paper always matches what's
+// live on the platform, and marketing need only paste a URL.
+async function fetchOembed(url) {
+  let endpoint = '';
+  if (/youtube\.com|youtu\.be/i.test(url)) endpoint = `https://www.youtube.com/oembed?url=${encodeURIComponent(url)}&format=json`;
+  else if (/vimeo\.com/i.test(url)) endpoint = `https://vimeo.com/api/oembed.json?url=${encodeURIComponent(url)}`;
+  else return null;
+  try {
+    const r = await fetch(endpoint, { redirect: 'follow' });
+    if (!r.ok) return null;
+    return await r.json();
+  } catch { return null; }
+}
+
+// YouTube's maxresdefault (1280×720) exists only when a HD thumbnail was set/generated
+// (true for proper uploads). We verify it exists and fall back to hqdefault so a card
+// never shows a broken image.
+async function bestYouTubeThumb(id) {
+  const max = `https://i.ytimg.com/vi/${id}/maxresdefault.jpg`;
+  try { const r = await fetch(max, { method: 'HEAD' }); if (r.ok) return max; } catch {}
+  return `https://i.ytimg.com/vi/${id}/sddefault.jpg`;
+}
+
+const fmtSeconds = (s) => {
+  s = Math.round(Number(s) || 0);
+  const m = Math.floor(s / 60), ss = String(s % 60).padStart(2, '0');
+  return m ? `${m}:${ss}` : `0:${ss}`;
+};
+
+// Enrich each video with the real posted title + best thumbnail, keeping any
+// explicit sheet/manifest overrides. Runs at build time over the ~6 shown videos.
+async function enrichVideos(videos) {
+  return Promise.all(videos.map(async (v) => {
+    const o = await fetchOembed(v.link);
+    const out = { ...v };
+    if (!v._titleSet && o?.title) out.title = o.title;                 // posted title
+    if (!v._channelSet && o?.author_name) out.channel = o.author_name; // posted channel
+    if (!v._thumbSet) {
+      if (v.videoId) out.thumb = await bestYouTubeThumb(v.videoId);    // highest-res YouTube
+      else if (o?.thumbnail_url) out.thumb = o.thumbnail_url;          // Vimeo high-res
+    }
+    if (!v.duration && typeof o?.duration === 'number') out.duration = fmtSeconds(o.duration); // Vimeo
+    return out;
+  }));
+}
 
 export function loadLibraryVideos() {
   let arr = [];
   try { arr = JSON.parse(fs.readFileSync(VIDEO_MANIFEST, 'utf8')); }
   catch (e) { console.log(`  ⚠ Library manifest not read (${e.message}) — video grid will be empty.`); }
   if (!Array.isArray(arr)) return [];
-  return arr.filter((v) => v && v.title && v.url).map(mapVideoRecord).sort(byNewest);
+  return arr.filter((v) => v && v.url).map(mapVideoRecord).sort(byNewest);
 }
 
 // Minimal RFC-4180 CSV parser: handles quoted fields, embedded commas, escaped
@@ -89,11 +144,11 @@ export async function fetchSheetVideos() {
     const header = rows[0].map((h) => h.trim().toLowerCase());
     const col = (name) => header.indexOf(name);
     const ci = { title: col('title'), url: col('url'), blurb: col('blurb'), source: col('source'), date: col('date'), duration: col('duration'), thumb: col('thumb') };
-    if (ci.title < 0 || ci.url < 0) throw new Error('sheet needs at least "title" and "url" header columns');
+    if (ci.url < 0) throw new Error('sheet needs at least a "url" header column');
     const get = (r, i) => (i >= 0 ? (r[i] || '').trim() : '');
     return rows.slice(1)
       .map((r) => ({ title: get(r, ci.title), url: get(r, ci.url), blurb: get(r, ci.blurb), source: get(r, ci.source), date: get(r, ci.date), duration: get(r, ci.duration), thumb: get(r, ci.thumb) }))
-      .filter((v) => v.title && v.url)
+      .filter((v) => v.url)
       .map(mapVideoRecord)
       .sort(byNewest);
   } catch (e) {
@@ -415,8 +470,10 @@ export async function fetchLibrary({ days = 45 } = {}) {
   // Videos come from the marketing Google Sheet when configured (LIBRARY_SHEET_CSV_URL),
   // otherwise the JSON manifest. Sheet failure falls back to the manifest automatically.
   const sheetVideos = await fetchSheetVideos();
-  const videos = sheetVideos ?? loadLibraryVideos();
+  const rawVideos = sheetVideos ?? loadLibraryVideos();
   const source = sheetVideos ? 'Google Sheet' : 'manifest';
+  // Pull the real posted title + highest-quality thumbnail for the ones we'll show.
+  const videos = await enrichVideos(rawVideos.slice(0, 6));
   const podcasts = [...rssPods.flat(), ...ytPods.flat()]
     .filter(Boolean)
     .sort((a, b) => (new Date(b.published).getTime() || 0) - (new Date(a.published).getTime() || 0));
