@@ -78,6 +78,7 @@ jobs:
           GEMINI_MODEL: gemini-2.5-pro
           GEMINI_TTS_VOICE: Gacrux   # mature anchor voice
           YOUTUBE_API_KEY: ${{ secrets.YOUTUBE_API_KEY }}   # Fund Manager Interviews search
+          LIBRARY_SHEET_CSV_URL: ${{ vars.LIBRARY_SHEET_CSV_URL }}   # marketing's Library videos sheet (published-to-web CSV); empty = use JSON manifest
         run: npm run build
 
       - name: Commit edition + dedup state

@@ -25,27 +25,81 @@ function ytIdFromUrl(url = '') {
 }
 
 // Load our IP videos from the manifest, normalised to the card shape, newest first.
+// Map ONE raw video record ({title, url, blurb, source, date, duration, thumb})
+// — from the JSON manifest OR the marketing Google Sheet — into a Library card.
+// Videos are hosted on YouTube/Vimeo (any size/aspect ratio; the host normalises
+// playback), so we only need a link + thumbnail. YouTube thumbnails derive from
+// the 11-char id; Vimeo/other hosts supply `thumb` explicitly.
+function mapVideoRecord(v) {
+  const id = ytIdFromUrl(v.url);
+  return {
+    channel: v.source || 'Guardian Capital',
+    title: String(v.title),
+    link: v.url,
+    videoId: id,
+    thumb: v.thumb || (id ? `https://i.ytimg.com/vi/${id}/hqdefault.jpg` : ''),
+    blurb: v.blurb || '',
+    published: v.date || null,
+    duration: v.duration || '',
+  };
+}
+const byNewest = (a, b) => (new Date(b.published || 0).getTime() || 0) - (new Date(a.published || 0).getTime() || 0);
+
 export function loadLibraryVideos() {
   let arr = [];
   try { arr = JSON.parse(fs.readFileSync(VIDEO_MANIFEST, 'utf8')); }
   catch (e) { console.log(`  ⚠ Library manifest not read (${e.message}) — video grid will be empty.`); }
   if (!Array.isArray(arr)) return [];
-  return arr
-    .filter((v) => v && v.title && v.url)
-    .map((v) => {
-      const id = ytIdFromUrl(v.url);
-      return {
-        channel: v.source || 'Guardian Capital',
-        title: String(v.title),
-        link: v.url,
-        videoId: id,
-        thumb: v.thumb || (id ? `https://i.ytimg.com/vi/${id}/hqdefault.jpg` : ''),
-        blurb: v.blurb || '',
-        published: v.date || null,
-        duration: v.duration || '',
-      };
-    })
-    .sort((a, b) => (new Date(b.published || 0).getTime() || 0) - (new Date(a.published || 0).getTime() || 0));
+  return arr.filter((v) => v && v.title && v.url).map(mapVideoRecord).sort(byNewest);
+}
+
+// Minimal RFC-4180 CSV parser: handles quoted fields, embedded commas, escaped
+// quotes ("") and newlines inside quotes. Enough for a Google-Sheet export.
+function parseCsv(text) {
+  const rows = [];
+  let row = [], field = '', inQ = false;
+  const s = text.replace(/\r\n/g, '\n').replace(/\r/g, '\n');
+  for (let i = 0; i < s.length; i++) {
+    const c = s[i];
+    if (inQ) {
+      if (c === '"') { if (s[i + 1] === '"') { field += '"'; i++; } else inQ = false; }
+      else field += c;
+    } else if (c === '"') inQ = true;
+    else if (c === ',') { row.push(field); field = ''; }
+    else if (c === '\n') { row.push(field); rows.push(row); row = []; field = ''; }
+    else field += c;
+  }
+  if (field.length || row.length) { row.push(field); rows.push(row); }
+  return rows.filter((r) => r.some((c) => c.trim() !== ''));
+}
+
+// Marketing "backend": a shared Google Sheet, published to the web as CSV. Set the
+// published-CSV URL as env/secret LIBRARY_SHEET_CSV_URL. Marketing adds a row per
+// video (columns matched by header, case-insensitive: title, url, blurb, source,
+// date, duration, thumb) — no code, no git. Falls back to the JSON manifest if the
+// sheet is unset or unreachable, so the build never breaks on a bad/empty sheet.
+export async function fetchSheetVideos() {
+  const url = process.env.LIBRARY_SHEET_CSV_URL;
+  if (!url) return null; // not configured — caller uses the manifest
+  try {
+    const res = await fetch(url, { redirect: 'follow' });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const rows = parseCsv(await res.text());
+    if (rows.length < 2) return [];
+    const header = rows[0].map((h) => h.trim().toLowerCase());
+    const col = (name) => header.indexOf(name);
+    const ci = { title: col('title'), url: col('url'), blurb: col('blurb'), source: col('source'), date: col('date'), duration: col('duration'), thumb: col('thumb') };
+    if (ci.title < 0 || ci.url < 0) throw new Error('sheet needs at least "title" and "url" header columns');
+    const get = (r, i) => (i >= 0 ? (r[i] || '').trim() : '');
+    return rows.slice(1)
+      .map((r) => ({ title: get(r, ci.title), url: get(r, ci.url), blurb: get(r, ci.blurb), source: get(r, ci.source), date: get(r, ci.date), duration: get(r, ci.duration), thumb: get(r, ci.thumb) }))
+      .filter((v) => v.title && v.url)
+      .map(mapVideoRecord)
+      .sort(byNewest);
+  } catch (e) {
+    console.log(`  ⚠ Library Google Sheet unreachable (${e.message}) — falling back to JSON manifest.`);
+    return null;
+  }
 }
 
 const parser = new Parser({
@@ -358,11 +412,15 @@ export async function fetchLibrary({ days = 45 } = {}) {
     Promise.all(YT_PODCASTS.map((c) => fetchYtPodcast(c, days))),
   ]);
 
-  const videos = loadLibraryVideos();
+  // Videos come from the marketing Google Sheet when configured (LIBRARY_SHEET_CSV_URL),
+  // otherwise the JSON manifest. Sheet failure falls back to the manifest automatically.
+  const sheetVideos = await fetchSheetVideos();
+  const videos = sheetVideos ?? loadLibraryVideos();
+  const source = sheetVideos ? 'Google Sheet' : 'manifest';
   const podcasts = [...rssPods.flat(), ...ytPods.flat()]
     .filter(Boolean)
     .sort((a, b) => (new Date(b.published).getTime() || 0) - (new Date(a.published).getTime() || 0));
 
-  console.log(`   ${videos.length} IP video(s) from manifest · ${podcasts.length} podcast episodes live`);
+  console.log(`   ${videos.length} IP video(s) from ${source} · ${podcasts.length} podcast episodes live`);
   return { videos, podcasts };
 }

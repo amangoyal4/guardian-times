@@ -1,41 +1,63 @@
-# Library videos — your own IP videos
+# Library videos — how the marketing team adds videos
 
-The Library section's video grid is driven entirely by **`library-videos.json`** in
-this folder. No YouTube auto-fetching, no AI — you control exactly what shows.
+The Library's video grid can be driven by a **Google Sheet** (recommended, for the
+marketing team) or a **JSON file** (fallback, for developers). No code or git needed
+for the sheet path.
 
-## How to add a video ("the backend")
+## The golden rule: never upload raw video files
 
-1. Upload the video somewhere that gives a shareable link — **unlisted YouTube** or
-   **Vimeo** are easiest (free hosting, reliable playback). The video does **not** need
-   to be public; unlisted is fine.
-2. Add an entry to the array in `library-videos.json`:
+Whatever the size or shape of the video — landscape interview, vertical reel, square
+clip — **upload it to the firm's unlisted YouTube or Vimeo channel first**, then use
+only the **link**. YouTube/Vimeo handle every size, resolution, aspect ratio, mobile
+playback, thumbnails and bandwidth automatically and for free. The Library shows a
+tidy, uniform card (a 16:9 tile, thumbnail auto-cropped) no matter the source size,
+and clicking plays the video at its native size on the host.
 
-```json
-{
-  "title": "Guardian Capital — Q1 FY26 Market Outlook",
-  "blurb": "One or two sentences on what the viewer will learn.",
-  "url": "https://www.youtube.com/watch?v=XXXXXXXXXXX",
-  "source": "Guardian Capital",
-  "date": "2026-07-10",
-  "duration": "12:30"
-}
-```
+- **Unlisted** = not searchable/public, but anyone with the link can watch. Perfect
+  for client-facing IP that shouldn't be fully public.
 
-3. Commit the file. The **next morning's build** (7 AM) picks it up automatically —
-   or ask Claude to trigger a build to show it immediately.
+## Option A — Google Sheet (recommended for marketing)
+
+**One-time setup (developer, ~5 min):**
+1. Create a Google Sheet with these column headers in row 1 (order doesn't matter,
+   names are case-insensitive): `title`, `url`, `blurb`, `source`, `date`,
+   `duration`, `thumb`.
+2. In Google Sheets: **File → Share → Publish to web → (this sheet) → Comma-separated
+   values (.csv) → Publish**. Copy the URL it gives you.
+3. In the GitHub repo: **Settings → Secrets and variables → Actions → Variables →
+   New repository variable**, name `LIBRARY_SHEET_CSV_URL`, value = that CSV URL.
+
+**Adding a video (marketing, any time):**
+1. Upload the video to the firm's unlisted YouTube/Vimeo. Copy the share link.
+2. Add a new row to the sheet:
+
+| title | url | blurb | source | date | duration | thumb |
+|---|---|---|---|---|---|---|
+| Q1 FY26 Market Outlook | https://youtu.be/XXXXXXXXXXX | One line on what viewers learn. | Guardian Capital | 2026-07-28 | 12:30 | |
+
+3. That's it. The next morning's edition (7 AM) shows it automatically — or ask the
+   dev to trigger a build to show it immediately.
+
+## Option B — JSON file (developer fallback)
+
+If no sheet URL is configured, the grid reads `library-videos.json` in this folder
+(an array of the same fields). Edit, commit, next build picks it up. `[]` = no videos.
 
 ## Fields
 
 | Field | Required | Notes |
 |---|---|---|
-| `title` | ✅ | Shown as the headline. |
+| `title` | ✅ | The headline shown on the card. |
 | `url` | ✅ | The video link — unlisted YouTube or Vimeo. |
 | `blurb` | — | 1–2 line description under the title. |
-| `source` | — | Label shown above the title. Defaults to **Guardian Capital**. |
-| `date` | — | `YYYY-MM-DD`. Newest videos show first; up to 6 are shown. |
+| `source` | — | Label above the title. Defaults to **Guardian Capital**. |
+| `date` | — | `YYYY-MM-DD`. Newest shows first; up to 6 videos display. |
 | `duration` | — | Display string like `12:30`. |
-| `thumb` | — | Thumbnail URL. **YouTube thumbnails auto-generate** from the link, so you only need this for **Vimeo** or other hosts (right-click the video's thumbnail → copy image address). |
+| `thumb` | — | Thumbnail URL. **YouTube auto-generates** from the link, so only needed for **Vimeo / vertical videos** (right-click the video's thumbnail → Copy image address). |
 
-The two entries currently in the file are **examples** — replace them with your real
-videos. If the file is empty (`[]`), the video grid simply shows nothing (the podcast
-still appears).
+## How different video sizes are handled
+
+You don't need to do anything. Each card is a fixed 16:9 tile and the thumbnail is
+centre-cropped to fill it, so vertical, square and landscape videos all sit neatly in
+the same grid. For a vertical video where the auto-crop cuts something important, add
+a custom `thumb` (a landscape-friendly image) in that row.
