@@ -162,7 +162,7 @@ ${sourceBlock}`;
  * so the caller can keep its own ranking.
  * Returns { macro:[link,...], sector:[...], india:[...], global:[...], compliance:[...] }.
  */
-export async function selectStories(bySection, perSection = 8) {
+export async function selectStories(bySection, perSection = 8, { recentlyCovered = '' } = {}) {
   // Build a compact catalogue. CRITICAL: reference each story by a SHORT INTEGER
   // id, never its full URL. Earlier versions tagged lines with the raw link and
   // asked the model to echo links back; with ~40 selections that output ran past
@@ -212,14 +212,20 @@ RUTHLESSLY DROP procedural noise:
 
 Selection rules:
 - FREE-TO-READ PRIORITY: lines marked [PAID] open a subscription/registration wall when clicked. This paper must be MAJORLY free to read. So: (a) when a [PAID] story and a free (unmarked) story cover the SAME event, ALWAYS pick the free one; (b) select a [PAID] story ONLY when it is genuinely important AND not available from a free source; (c) NEVER select more than 2 [PAID] stories in the ENTIRE edition across ALL sections combined. Prefer a free story even if a [PAID] headline looks marginally sharper. Fill sections from the free pool first.
-- Each section: build a FULL, SUBSTANTIAL slate — aim to fill all ${perSection} slots with genuinely useful stories. From a large pool (you have dozens of candidates per section) there are almost always ${perSection} stories worth a professional's attention in macro, india, sector and global, so DO fill those sections up; a rich, comprehensive edition is the goal. The bar is "genuinely useful for a wealth/PMS/AIF professional to know" — NOT only the rare items that force an immediate reallocation. Fall short of ${perSection} ONLY when the pool truly lacks enough relevant, non-duplicate stories (compliance is often legitimately thin — leave it short rather than padding it with non-regulator items). Never pad with the banned noise (roundups, previews, tip-sheets, "stocks to watch"), but do not leave good stories out just to be minimalist.
+- Each section: build a SUBSTANTIAL but DIVERSE slate — aim for a good number of stories, but a slightly shorter, varied section BEATS a fuller one padded with repeats or near-identical themes. The bar is "genuinely useful for a wealth/PMS/AIF professional to know" and DISTINCT from the other stories you've picked. Fill up to ${perSection} with genuinely different stories; leave a slot empty rather than add a same-theme repeat, a routine daily-ticker item, or a story that just re-states something already covered in recent editions (see RECENTLY COVERED below). Never pad with banned noise (roundups, previews, tip-sheets, "stocks to watch"). Compliance is often legitimately thin — leave it short rather than padding it.
+- MACRO MUST BE DIVERSE — not a daily market ticker. The rupee's level, crude's move, bond yields / banking liquidity, and the Sensex/Nifty move are all INTERCONNECTED and recur EVERY day; include AT MOST 2 such "daily market level" items total, and only when there is a real NEW development (a policy decision, a broken level, a fresh driver) — never just today's number. Fill the rest of macro with genuinely DIFFERENT developments: RBI/policy action, inflation/GDP/trade/IIP data prints, fiscal and tax, banking-system structural news, commodities beyond crude, or global macro with a specific India read-through. A macro section that is five reworded versions of "rupee/crude/bonds moved today" is a FAILURE of this job.
 - Place each chosen id under the section its CONTENT belongs to (per the definitions above), NOT where it was provisionally filed.
 - Within a section, order Indian stories first (IN), then global (GL); within each, MOST IMPORTANT FIRST — the lead (first) story of each section gets the longest treatment, so make it the single most consequential item, not merely the newest.
 - Use ONLY the numeric ids that appear below. Do not invent ids. Put each id in at most ONE section.
 
 Return ONLY JSON, no markdown. Use the bare integers (not strings):
 { "macro":[1,2], "sector":[3], "india":[4,5], "global":[6], "compliance":[7] }
+${recentlyCovered ? `
+RECENTLY COVERED (headlines from the last few editions — the reader has ALREADY seen these):
+${recentlyCovered}
 
+FRESHNESS: this paper is read EVERY morning. Do NOT re-select a story that merely re-states a theme already covered above — especially the recurring macro cluster (rupee level, crude move, bond yields/liquidity, index moves). Pick such a theme again ONLY if today's story carries a genuinely NEW, material development, not just an updated number. Actively favour topics, sectors and angles that do NOT appear above — reward the reader with something new each day.
+` : ''}
 CANDIDATE POOL:
 ${catalogue}`;
 

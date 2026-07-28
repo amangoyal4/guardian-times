@@ -18,6 +18,9 @@ import { buildHTML, writeEdition } from './build.js';
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const PUBLIC_DIR = path.join(__dirname, '..', 'public');
 const STATE_FILE = path.join(__dirname, '..', 'archive', 'seen.json');
+// Rolling record of the last few editions' headlines — fed back into the editor's
+// cut so recurring macro themes (rupee/crude/bonds) don't repeat day after day.
+const RECENT_FILE = path.join(__dirname, '..', 'archive', 'recent-coverage.json');
 // Library has its own rolling seen-state so videos/podcasts shown in recent
 // editions rotate OUT — without this the same evergreen videos resurface daily
 // (the feeds change slowly). Kept separate from the news seen.json.
@@ -38,7 +41,10 @@ const MGR_POOL = path.join(__dirname, '..', 'archive', 'managers-pool.json');
 // so if the quota throttles, only the tail-end story summaries degrade to raw
 // headlines — and even those keep clean titles + free links. Raise further only with
 // paid billing on the Gemini key.
-const PER_SECTION = { macro: 9, india: 10, sector: 8, global: 6, compliance: 5 };
+// macro trimmed 9→6: it's the section that recurs (rupee/crude/bonds), so a
+// tighter, more DIVERSE macro reads fresher and trims cost. Other sections carry
+// genuinely distinct daily news, so they stay fuller.
+const PER_SECTION = { macro: 6, india: 10, sector: 8, global: 6, compliance: 5 };
 // larger pool handed to the AI editor so it has room to choose
 const POOL = 50;
 
@@ -50,6 +56,25 @@ function saveSeen(links) {
   fs.mkdirSync(path.dirname(STATE_FILE), { recursive: true });
   // keep last ~500 links so the dedup window doesn't grow forever
   fs.writeFileSync(STATE_FILE, JSON.stringify([...links].slice(-500)));
+}
+
+// ---- Cross-day THEME memory (anti-repetition) ----
+// seen.json dedups by LINK, but the same macro THEME (rupee level, crude move,
+// bond yields) returns every day via a NEW link, so link-dedup can't catch it —
+// that's why macro felt like the same paper each morning. We record the headlines
+// each edition actually ran (macro + global emphasised, since those recur most)
+// and feed the last few days back into the editor's cut so it can deliberately
+// avoid re-running a theme unless there's genuinely new information.
+function loadRecent() {
+  try { return JSON.parse(fs.readFileSync(RECENT_FILE, 'utf8')); }
+  catch { return []; }
+}
+function saveRecent(prev, buckets) {
+  fs.mkdirSync(path.dirname(RECENT_FILE), { recursive: true });
+  const hs = (arr) => (arr || []).map((x) => x.headline || x.title).filter(Boolean);
+  const today = { macro: hs(buckets.macro), global: hs(buckets.global), india: hs(buckets.india), sector: hs(buckets.sector) };
+  const merged = [...prev, today].slice(-4); // last 4 editions is enough to spot "same all week"
+  fs.writeFileSync(RECENT_FILE, JSON.stringify(merged));
 }
 
 // ---- Library anti-repetition: rolling seen-state for videos + podcasts ----
@@ -222,9 +247,17 @@ async function main() {
   }
   for (const k of Object.keys(pools)) pools[k] = rank(pools[k]).slice(0, POOL);
 
-  // 4) EDITORIAL CUT — AI picks the important stories; ranking is the fallback
+  // 4) EDITORIAL CUT — AI picks the important stories; ranking is the fallback.
+  // Feed the last few editions' macro/global headlines in so the cut can avoid
+  // re-running the same recurring themes (the "same news every day" problem).
+  const recent = loadRecent();
+  const recentDigest = recent
+    .flatMap((e) => [...(e.macro || []), ...(e.global || [])])
+    .slice(-50)
+    .map((h) => `- ${h}`)
+    .join('\n');
   const byLinkAll = new Map(routed.map((it) => [it.link, it]));
-  const picks = await selectStories(pools, Math.max(...Object.values(PER_SECTION)));
+  const picks = await selectStories(pools, Math.max(...Object.values(PER_SECTION)), { recentlyCovered: recentDigest });
   const buckets = {};
   for (const k of Object.keys(pools)) {
     if (picks && picks[k]?.length) {
@@ -339,6 +372,7 @@ async function main() {
   // 8) persist dedup state + health log
   const allLinks = new Set([...seen, ...summarised.map((s) => s.link.split('?')[0].replace(/\/$/, ''))]);
   saveSeen(allLinks);
+  saveRecent(recent, buckets); // record today's headlines for tomorrow's anti-repetition
   fs.writeFileSync(path.join(PUBLIC_DIR, 'health.json'), JSON.stringify({ ts: new Date().toISOString(), health }, null, 2));
 
   const counts = Object.entries(buckets).map(([k, v]) => `${k}:${v.length}`).join(' ');
