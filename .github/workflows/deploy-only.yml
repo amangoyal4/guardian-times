@@ -1,0 +1,32 @@
+# Deploy-only: publish the CURRENT public/ folder to GitHub Pages WITHOUT running a
+# build. Use this to push a hand-edit to the live edition (e.g. removing a section)
+# without a full Gemini rebuild — zero API cost. Manual trigger only.
+name: Deploy current public/ (no build)
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# Never cancel an in-flight deploy from the daily build; queue instead.
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: public
+      - id: deployment
+        uses: actions/deploy-pages@v4
