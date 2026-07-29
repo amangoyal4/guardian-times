@@ -295,13 +295,10 @@ async function main() {
   // items shown in recent editions sink to the back (anti-repetition), then record
   // today's picks after the build.
   const libPool = await libraryPromise;
-  // Library videos are now our OWN curated IP videos (data/library-videos.json) — no
-  // YouTube fetch, no AI curation. Show the newest few; podcast = newest fetched episode.
+  // Library is our OWN curated IP videos (Google Sheet / manifest). Podcast of the day
+  // was removed 2026-07-28. Show the newest few.
   const library = {
     videos: (libPool.videos || []).slice(0, 6),
-    podcast: libPool.podcasts?.[0]
-      ? { ...libPool.podcasts[0], blurb: libPool.podcasts[0].rawDesc || '' }
-      : null,
   };
 
   // Fund Manager Interviews — resilient like the Library: cache the last-good set and

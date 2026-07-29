@@ -526,25 +526,16 @@ export function diverseVideos(videos, n) {
  * latest episode of each curated podcast. Pure RSS — no Gemini here.
  * @returns {Promise<{videos: object[], podcasts: object[]}>}
  */
-export async function fetchLibrary({ days = 45 } = {}) {
-  console.log('\n📚 Building Library (our IP videos from manifest + podcast of the day)…');
-  // Videos = our own IP, from the manifest (no YouTube fetch). Podcast = auto-fetched.
-  const [rssPods, ytPods] = await Promise.all([
-    Promise.all(PODCASTS.map((p) => fetchPodcast(p, days))),
-    Promise.all(YT_PODCASTS.map((c) => fetchYtPodcast(c, days))),
-  ]);
-
+export async function fetchLibrary() {
+  console.log('\n📚 Building Library (our IP videos)…');
   // Videos come from the marketing Google Sheet when configured (LIBRARY_SHEET_CSV_URL),
   // otherwise the JSON manifest. Sheet failure falls back to the manifest automatically.
+  // (Podcast of the day was removed 2026-07-28.)
   const sheetVideos = await fetchSheetVideos();
   const rawVideos = sheetVideos ?? loadLibraryVideos();
   const source = sheetVideos ? 'Google Sheet' : 'manifest';
   // Pull the real posted title + highest-quality thumbnail for the ones we'll show.
   const videos = await enrichVideos(rawVideos.slice(0, 6));
-  const podcasts = [...rssPods.flat(), ...ytPods.flat()]
-    .filter(Boolean)
-    .sort((a, b) => (new Date(b.published).getTime() || 0) - (new Date(a.published).getTime() || 0));
-
-  console.log(`   ${videos.length} IP video(s) from ${source} · ${podcasts.length} podcast episodes live`);
-  return { videos, podcasts };
+  console.log(`   ${videos.length} IP video(s) from ${source}`);
+  return { videos };
 }

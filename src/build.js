@@ -189,18 +189,11 @@ function managersPage(num, managers) {
     </section>`;
 }
 
-// The Library desk — curated finance videos to watch + a podcast to hear.
+// The Library desk — curated finance videos to watch.
 function libraryPage(num, library) {
   const videos = library?.videos || [];
-  const podcast = library?.podcast || null;
-  const head = `<div class="section-head"><span class="pgnum">${num}</span><h2>The Library</h2><span class="kicker">Watch &middot; Listen &middot; Learn</span></div>
-      <p class="lede">Beyond the headlines — the finest finance teaching to watch and hear today, curated from India's best markets channels and the world's most thoughtful investing podcasts.</p>`;
-
-  if (!videos.length && !podcast) {
-    return `<section class="page" id="page-library">
-      ${head}
-      <p class="watch-empty">The Library is quiet today — the video and podcast feeds returned nothing in the window.</p></section>`;
-  }
+  const head = `<div class="section-head"><span class="pgnum">${num}</span><h2>The Library</h2><span class="kicker">Watch &middot; Learn</span></div>
+      <p class="lede">Beyond the headlines — the finest finance teaching to watch today, from our own desk and India's best markets channels.</p>`;
 
   const vidCards = videos.map((v) => {
     const plat = v.platform && v.platform !== 'Video' ? v.platform : '';
@@ -220,23 +213,9 @@ function libraryPage(num, library) {
       </article>`;
   }).join('');
 
-  const dur = podcast ? fmtDur(podcast.duration) : '';
-  const podHTML = podcast ? `
-      <div class="section-head" style="border-bottom:1px solid var(--line);padding-top:8px"><h2 style="font-size:22px">Podcast of the day</h2></div>
-      <div class="pod-feature">
-        ${podcast.image ? `<a class="pod-art" href="${esc(podcast.link)}" target="_blank" rel="noopener"><img loading="lazy" src="${esc(podcast.image)}" alt=""></a>` : ''}
-        <div class="pod-body">
-          <div class="eyebrow"><span class="src">${esc(podcast.show)}</span><span class="dot"></span><span class="time">${timeAgo(podcast.published)}</span>${dur ? `<span class="dot"></span><span class="time">${esc(dur)}</span>` : ''}</div>
-          <h3 class="hl"><a href="${esc(podcast.link)}" target="_blank" rel="noopener">${esc(podcast.title)}</a></h3>
-          ${podcast.blurb ? `<div class="summary">${esc(podcast.blurb)}</div>` : ''}
-          <a class="readmore" href="${esc(podcast.link)}" target="_blank" rel="noopener">Listen <span class="arr">&rarr;</span></a>
-        </div>
-      </div>` : '';
-
   return `<section class="page" id="page-library">
       ${head}
-      <div class="lib-grid" id="libGrid">${vidCards}</div>
-      ${podHTML}
+      <div class="lib-grid" id="libGrid">${vidCards || '<p class="watch-empty">No videos in the Library yet.</p>'}</div>
     </section>`;
 }
 
