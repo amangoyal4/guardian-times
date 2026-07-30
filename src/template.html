@@ -211,6 +211,12 @@
      letterbox tile instead of cropping it into the landscape card. */
   .lib-thumb--portrait{background:#0a0a0a}
   .lib-thumb--portrait img{object-fit:contain}
+  /* Branded placeholder BEHIND every thumbnail — if the image is missing or fails
+     to load (e.g. an Instagram post with no thumbnail), this shows instead of a
+     blank/broken tile, so a card can never look broken. The <img> (z-index 1) sits
+     on top and hides itself on error, revealing this. */
+  .lib-thumb img{position:relative;z-index:1}
+  .lib-ph{position:absolute;inset:0;z-index:0;display:flex;align-items:center;justify-content:center;background:linear-gradient(135deg,#232338,#0c0c12);color:rgba(255,255,255,.45);font-family:'IBM Plex Mono',monospace;font-size:12px;letter-spacing:.14em;text-transform:uppercase}
   .lib-body{padding-top:13px}
   .lib-grid h3.hl{font-size:19px;margin:5px 0 7px}
   .pod-feature{display:grid;grid-template-columns:160px 1fr;gap:26px;align-items:start;background:var(--ink);color:var(--paper);padding:26px 30px;margin:8px 0 20px}
@@ -663,6 +669,7 @@ __PAGES__
     var platformOf = function(u){ u=u||''; if(/youtube\.com|youtu\.be/i.test(u))return'YouTube'; if(/vimeo\.com/i.test(u))return'Vimeo'; if(/tiktok\.com/i.test(u))return'TikTok'; if(/instagram\.com/i.test(u))return'Instagram'; if(/linkedin\.com/i.test(u))return'LinkedIn'; if(/facebook\.com|fb\.watch/i.test(u))return'Facebook'; return'Video'; };
     var isPortrait = function(u){ return /youtube\.com\/shorts\//i.test(u)||/instagram\.com\/reels?\//i.test(u)||/tiktok\.com/i.test(u); };
     var esc = function(s){ return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); };
+    var nd = function(s){ if(!s) return ''; s=String(s).trim(); if(/^\d{4}-\d{2}-\d{2}$/.test(s)) return s; var m=s.match(/^(\d{1,2})[-/](\d{1,2})[-/](\d{4})$/); if(m){ var dd=+m[1],mm=+m[2]; if(dd<=12&&mm>12){var t=dd;dd=mm;mm=t;} return m[3]+'-'+('0'+mm).slice(-2)+'-'+('0'+dd).slice(-2); } var d=new Date(s); if(isNaN(d.getTime())) return ''; return new Date(Date.UTC(d.getFullYear(),d.getMonth(),d.getDate())).toISOString().slice(0,10); };
     var when = function(d){ if(!d) return 'recent'; var t=new Date(d).getTime(); if(!t) return 'recent'; var h=Math.round((Date.now()-t)/3.6e6); if(h<1)return'just now'; if(h<24)return h+'h ago'; var dd=Math.round(h/24); return dd<=1?'1 day ago':dd+' days ago'; };
     var parseCSV = function(s){ s=s.replace(/\r\n/g,'\n').replace(/\r/g,'\n'); var rows=[],row=[],f='',q=false; for(var i=0;i<s.length;i++){var c=s[i]; if(q){ if(c==='"'){ if(s[i+1]==='"'){f+='"';i++;} else q=false; } else f+=c; } else if(c==='"')q=true; else if(c===','){row.push(f);f='';} else if(c==='\n'){row.push(f);rows.push(row);row=[];f='';} else f+=c;} if(f.length||row.length){row.push(f);rows.push(row);} return rows.filter(function(r){return r.some(function(c){return c.trim()!=='';});}); };
 
@@ -684,7 +691,7 @@ __PAGES__
           channel: get(r,iS) || b.channel || platformOf(url),
           platform: platformOf(url),
           orientation: (isPortrait(url)||b.orientation==='portrait')?'portrait':'landscape',
-          blurb: get(r,iB)||b.blurb||'', duration: get(r,iDur)||b.duration||'', published: get(r,iD)||b.published||'',
+          blurb: get(r,iB)||b.blurb||'', duration: get(r,iDur)||b.duration||'', published: nd(get(r,iD))||b.published||'',
           isNew: !base[canon(url)] };
       }).filter(Boolean);
       if(!vids.length) return;                          // empty sheet → keep server grid
@@ -695,6 +702,7 @@ __PAGES__
         var plat = v.platform && v.platform!=='Video' ? v.platform : '';
         return '<article class="lib-card" data-idx="'+idx+'">'
           + '<a class="lib-thumb'+(v.orientation==='portrait'?' lib-thumb--portrait':'')+'" href="'+esc(v.link)+'" target="_blank" rel="noopener">'
+          + '<span class="lib-ph">'+esc(plat||'Video')+'</span>'
           + (v.thumb?'<img loading="lazy" src="'+esc(v.thumb)+'" data-id="'+esc(v.videoId)+'" alt="">':'')
           + (plat?'<span class="lib-badge">'+esc(plat)+'</span>':'')
           + '<span class="lib-play">&#9658;</span></a>'
@@ -704,9 +712,11 @@ __PAGES__
           + '<a class="readmore" href="'+esc(v.link)+'" target="_blank" rel="noopener">Watch'+(plat?' on '+esc(plat):'')+' <span class="arr">&rarr;</span></a></div></article>';
       }).join('');
 
-      // maxres thumbnails don't exist for every video → fall back to hqdefault
-      var imgs = grid.querySelectorAll('img[data-id]');
-      for(var i=0;i<imgs.length;i++){ (function(img){ img.addEventListener('error', function h(){ img.removeEventListener('error',h); var id=img.getAttribute('data-id'); if(id) img.src='https://i.ytimg.com/vi/'+id+'/hqdefault.jpg'; }); })(imgs[i]); }
+      // Thumbnail error handling: YouTube maxres → hqdefault; anything that still
+      // fails (or a non-YouTube image, e.g. an expired Instagram URL) hides itself
+      // so the branded .lib-ph placeholder behind it shows — never a broken tile.
+      var imgs = grid.querySelectorAll('.lib-thumb img');
+      for(var i=0;i<imgs.length;i++){ (function(img){ img.addEventListener('error', function h(){ img.removeEventListener('error',h); var id=img.getAttribute('data-id'); if(id){ img.addEventListener('error', function(){ img.style.display='none'; }); img.src='https://i.ytimg.com/vi/'+id+'/hqdefault.jpg'; } else { img.style.display='none'; } }); })(imgs[i]); }
 
       // best-effort: real title for a brand-new title-less video (CORS-friendly oEmbed proxy)
       show.forEach(function(v,idx){ if(v.title) return; var q=v.videoId?('https://www.youtube.com/watch?v='+v.videoId):v.link; try { fetch('https://noembed.com/embed?url='+encodeURIComponent(q)).then(function(r){return r.json();}).then(function(o){ if(!o||!o.title) return; var a=grid.querySelector('article[data-idx="'+idx+'"] .hl a'); if(a) a.textContent=o.title; }).catch(function(){}); } catch(e){} });

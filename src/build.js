@@ -200,7 +200,8 @@ function libraryPage(num, library) {
     return `
       <article class="lib-card">
         <a class="lib-thumb${v.orientation === 'portrait' ? ' lib-thumb--portrait' : ''}" href="${esc(v.link)}" target="_blank" rel="noopener">
-          ${v.thumb ? `<img loading="lazy" src="${esc(v.thumb)}" alt="">` : ''}
+          <span class="lib-ph">${esc(plat || 'Video')}</span>
+          ${v.thumb ? `<img loading="lazy" src="${esc(v.thumb)}" alt="" onerror="this.style.display='none'">` : ''}
           ${plat ? `<span class="lib-badge">${esc(plat)}</span>` : ''}
           <span class="lib-play">&#9658;</span>
         </a>

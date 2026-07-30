@@ -25,6 +25,21 @@ function ytIdFromUrl(url = '') {
 }
 
 // Load our IP videos from the manifest, normalised to the card shape, newest first.
+// Normalise a sheet date to ISO YYYY-MM-DD so sorting and "x days ago" work
+// regardless of how marketing typed it: 2026-07-29, 26-Jul-2026, 29-07-2026,
+// 29/07/2026 (day-first, the Indian convention). Returns null if unrecognisable.
+function normalizeDate(s) {
+  if (!s) return null;
+  s = String(s).trim();
+  if (/^\d{4}-\d{2}-\d{2}$/.test(s)) return s;                        // already ISO YYYY-MM-DD
+  let m = s.match(/^(\d{1,2})[-/](\d{1,2})[-/](\d{4})$/);             // DD-MM-YYYY (day-first, Indian)
+  if (m) { let dd = +m[1], mm = +m[2]; if (dd <= 12 && mm > 12) { const t = dd; dd = mm; mm = t; } return `${m[3]}-${String(mm).padStart(2, '0')}-${String(dd).padStart(2, '0')}`; }
+  const d = new Date(s);                                              // e.g. 26-Jul-2026
+  if (isNaN(d.getTime())) return null;
+  // rebuild from the parsed calendar components as UTC → never shifts a day by timezone
+  return new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate())).toISOString().slice(0, 10);
+}
+
 // Map ONE raw video record ({title, url, blurb, source, date, duration, thumb})
 // — from the JSON manifest OR the marketing Google Sheet — into a Library card.
 // Videos are hosted on YouTube/Vimeo (any size/aspect ratio; the host normalises
@@ -41,7 +56,7 @@ function mapVideoRecord(v) {
     // highest available resolution and pulls the real posted title/thumb.
     thumb: v.thumb || (id ? `https://i.ytimg.com/vi/${id}/hqdefault.jpg` : ''),
     blurb: v.blurb || '',
-    published: v.date || null,
+    published: normalizeDate(v.date),
     duration: v.duration || '',
     orientation: isPortraitUrl(v.url) ? 'portrait' : 'landscape',
     // Track what the sheet/manifest set explicitly so enrichment only fills gaps
@@ -100,6 +115,21 @@ async function bestYouTubeThumb(id) {
   return `https://i.ytimg.com/vi/${id}/sddefault.jpg`;
 }
 
+// Instagram / LinkedIn / Facebook block keyless oEmbed, so we can't get their
+// thumbnail the normal way. microlink.io (free) reads the page's Open Graph tags
+// and returns the poster image + dimensions. Best-effort only: on any failure the
+// card falls back to its branded placeholder (so it's never broken). Re-fetched
+// each daily build, so a signed CDN URL stays fresh. Returns {thumb, width, height}.
+async function fetchSocialMeta(url) {
+  try {
+    const r = await fetch('https://api.microlink.io/?url=' + encodeURIComponent(url));
+    if (!r.ok) return {};
+    const j = await r.json();
+    const img = j?.data?.image || {};
+    return { thumb: img.url || '', width: img.width || 0, height: img.height || 0 };
+  } catch { return {}; }
+}
+
 const fmtSeconds = (s) => {
   s = Math.round(Number(s) || 0);
   const m = Math.floor(s / 60), ss = String(s % 60).padStart(2, '0');
@@ -115,14 +145,19 @@ async function enrichVideos(videos) {
     const out = { ...v, platform };
     if (!v._titleSet && o?.title) out.title = o.title;                          // posted title (YT/Vimeo/TikTok)
     if (!v._channelSet) out.channel = o?.author_name || v.channel || platform;  // channel, else platform label
+    let social = null;
     if (!v._thumbSet) {
       if (v.videoId) out.thumb = await bestYouTubeThumb(v.videoId);             // highest-res YouTube
       else if (o?.thumbnail_url) out.thumb = o.thumbnail_url;                   // Vimeo/TikTok thumbnail
+      else if (/Instagram|LinkedIn|Facebook/i.test(platform)) {                // no oEmbed → try og:image
+        social = await fetchSocialMeta(v.link);
+        if (social.thumb) out.thumb = social.thumb;
+      }
     }
     if (!v.duration && typeof o?.duration === 'number') out.duration = fmtSeconds(o.duration);
-    // Refine orientation from real oEmbed dimensions (catches vertical Vimeo, etc.)
-    // when the URL alone didn't already mark it portrait.
-    if (out.orientation !== 'portrait' && o?.width && o?.height && o.height > o.width) out.orientation = 'portrait';
+    // Refine orientation from real dimensions (vertical Vimeo, or a portrait IG post).
+    const w = o?.width || social?.width, h = o?.height || social?.height;
+    if (out.orientation !== 'portrait' && w && h && h > w) out.orientation = 'portrait';
     // Platforms we can't auto-fetch need the sheet to supply title + thumbnail;
     // warn loudly (in the build log) so an incomplete row is easy to spot and fix.
     if (!out.title) console.log(`  ⚠ Library: ${platform} link has no title — add a "title" in the sheet: ${v.link}`);
