@@ -17,12 +17,12 @@ const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 export const MANAGERS = [
   // Tier 1 — highest priority
   { name: 'Kenneth Andrade', firm: 'Old Bridge Capital', tier: 1 },
-  { name: 'Manish Sonthalia', firm: 'M Capital', tier: 1 },
+  { name: 'Manish Sonthalia', firm: 'Emkay Investment Managers', tier: 1 },
   { name: 'Jigar Mistry', firm: 'Buoyant Capital', tier: 1 },
   { name: 'Aditya Khemka', firm: 'InCred PMS', tier: 1 },
   { name: 'Trilok Chandra', firm: 'Ambit Asset Management', tier: 1 },
   { name: 'Sanjay Doshi', firm: 'Turtle Wealth Management', tier: 1 },
-  { name: 'Ajay Khandelwal', firm: 'Khandwala Securities PMS', tier: 1 },
+  { name: 'Ajay Khandelwal', firm: 'Motilal Oswal AMC', tier: 1 },
   { name: 'Rajeev Thakkar', firm: 'PPFAS Mutual Fund', tier: 1 },
   { name: 'Saurabh Mukherjea', firm: 'Marcellus Investment Managers', tier: 1 },
   { name: 'Samir Arora', firm: 'Helios Capital Management', tier: 1 },
