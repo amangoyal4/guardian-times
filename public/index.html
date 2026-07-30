@@ -1202,7 +1202,7 @@
       for(var i=0;i<imgs.length;i++){ (function(img){ img.addEventListener('error', function h(){ img.removeEventListener('error',h); var id=img.getAttribute('data-id'); if(id) img.src='https://i.ytimg.com/vi/'+id+'/hqdefault.jpg'; }); })(imgs[i]); }
 
       // best-effort: real title for a brand-new title-less video (CORS-friendly oEmbed proxy)
-      show.forEach(function(v,idx){ if(v.title) return; try { fetch('https://noembed.com/embed?url='+encodeURIComponent(v.link)).then(function(r){return r.json();}).then(function(o){ if(!o||!o.title) return; var a=grid.querySelector('article[data-idx="'+idx+'"] .hl a'); if(a) a.textContent=o.title; }).catch(function(){}); } catch(e){} });
+      show.forEach(function(v,idx){ if(v.title) return; var q=v.videoId?('https://www.youtube.com/watch?v='+v.videoId):v.link; try { fetch('https://noembed.com/embed?url='+encodeURIComponent(q)).then(function(r){return r.json();}).then(function(o){ if(!o||!o.title) return; var a=grid.querySelector('article[data-idx="'+idx+'"] .hl a'); if(a) a.textContent=o.title; }).catch(function(){}); } catch(e){} });
 
       // notify the host app of videos added since the last build (once per device)
       var fresh = vids.filter(function(v){ return v.isNew; });
