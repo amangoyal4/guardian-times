@@ -193,13 +193,13 @@ You are doing the morning EDITORIAL CUT for today's edition. Below is the candid
 Your job: select the most IMPORTANT, decision-relevant stories a wealth/PMS professional must know, PLACE EACH IN THE CORRECT SECTION, and RUTHLESSLY DROP procedural noise.
 
 SECTION DEFINITIONS — re-file every story by what it is ACTUALLY about, ignoring where it was provisionally placed:
-- macro = the economy & markets at large: interest rates, inflation, GDP, fiscal/trade data, currency (rupee/dollar), bond yields, banking-system liquidity & money-market rates, commodities (crude/gold), central-bank action. NOT single companies.
+- macro = the economy & markets at large: interest rates, inflation, GDP, fiscal/trade data, currency (rupee/dollar), bond yields, banking-system liquidity & money-market rates, forex reserves & CROSS-BORDER FLOWS (FCNR(B)/NRI deposits, FPI/FII debt & equity flows, ECBs), commodities (crude/gold), central-bank action & RBI operations/data. NOT single companies.
 - sector = a whole INDUSTRY or theme moving together (autos, pharma, banks, IT, realty, metals, defence, semiconductors). NOT a single company — one company's IPO/order/result is NOT a sector story.
 - india = a specific INDIAN company or Indian single-stock / IPO / listing / order win / earnings / M&A / market-index move.
 - global = "Global Markets": a NON-INDIAN company, market/index (Wall Street, Nasdaq, a US/EU/Asian stock) or a global MARKET/ECONOMIC development with real read-through to investors. A story about a global event whose angle is its impact ON India is usually macro or india, not global.
-- compliance = a STATUTORY / REGULATORY BODY acting in its rule-making or enforcement capacity — and NOTHING ELSE. Qualifying bodies: SEBI, RBI, IRDAI, PFRDA, AMFI, MCA / IBBI / NFRA, the CCI, GST Council / CBDT / CBIC, or a stock exchange issuing a regulatory circular. Qualifying actions: circulars, master directions, consultation papers, new or changed norms/rules/frameworks, penalties, fines, bans, debarments, settlement/adjudication orders, enforcement. The story is about the RULE-MAKER or ENFORCER acting. EXCLUDE absolutely: a company simply doing an IPO or reporting earnings (→ india); AND all ordinary crime / law-enforcement news — arrests, police FIRs, ED/CBI raids, money-laundering cases, individual court verdicts, fraud-by-a-person stories. Those are NOT compliance even when finance-flavoured. If a crime item genuinely moves a listed stock, file it under india/global; otherwise DROP it. If nothing in the pool is a genuine regulator action, leave compliance EMPTY — never pad it.
+- compliance = a STATUTORY / REGULATORY BODY acting in its rule-making or enforcement capacity — and NOTHING ELSE. Qualifying bodies: SEBI, RBI, IRDAI, PFRDA, AMFI, MCA / IBBI / NFRA, the CCI, GST Council / CBDT / CBIC, or a stock exchange issuing a regulatory circular. Qualifying actions: circulars, master directions, consultation papers, new or changed norms/rules/frameworks, penalties, fines, bans, debarments, settlement/adjudication orders, enforcement. The story is about the RULE-MAKER or ENFORCER acting. EXCLUDE absolutely: a company simply doing an IPO or reporting earnings (→ india); AND all ordinary crime / law-enforcement news — arrests, police FIRs, ED/CBI raids, money-laundering cases, individual court verdicts, fraud-by-a-person stories. Those are NOT compliance even when finance-flavoured. If a crime item genuinely moves a listed stock, file it under india/global; otherwise DROP it. ALSO EXCLUDE (these are MACRO, not compliance): banking-system & deposit/forex FLOWS such as FCNR(B)/NRI deposit inflows, liquidity, money-market or FPI/FII flows, forex reserves, and routine RBI operations/data — compliance is ONLY when a regulator ISSUES a rule, norm, circular, penalty or order, never a description of money moving. If nothing in the pool is a genuine regulator action, leave compliance EMPTY — never pad it.
 
-Examples of correct re-filing: "Banking liquidity falls, money-market rates rise" → macro (not india). "Turtlemint IPO opens" → india (not sector). "Asian equities hit record highs" → global (not macro). "NSE FY26 earnings ahead of IPO" → india (not compliance). "SEBI reworks margin-trading rules" → compliance.
+Examples of correct re-filing: "Banking liquidity falls, money-market rates rise" → macro (not india). "FCNR(B) inflows may miss initial estimates" / "NRI deposits surge" → macro (NOT compliance — it's a flow, not a regulator action). "Turtlemint IPO opens" → india (not sector). "Pharma sector faces US tariff overhang" → sector (a whole industry). "Asian equities hit record highs" → global (not macro). "NSE FY26 earnings ahead of IPO" → india (not compliance). "SEBI reworks margin-trading rules" → compliance. The SAME underlying theme (e.g. FCNR/deposit flows) must appear in ONE section only — never in both macro and compliance.
 
 RUTHLESSLY DROP procedural noise:
 - routine auction notices and results (RBI VRR/repo/reverse-repo auctions, T-bill / G-Sec / SDL auction announcements or cut-offs, "full auction result")
@@ -213,6 +213,7 @@ RUTHLESSLY DROP procedural noise:
 Selection rules:
 - FREE-TO-READ PRIORITY: lines marked [PAID] open a subscription/registration wall when clicked. This paper must be MAJORLY free to read. So: (a) when a [PAID] story and a free (unmarked) story cover the SAME event, ALWAYS pick the free one; (b) select a [PAID] story ONLY when it is genuinely important AND not available from a free source; (c) NEVER select more than 2 [PAID] stories in the ENTIRE edition across ALL sections combined. Prefer a free story even if a [PAID] headline looks marginally sharper. Fill sections from the free pool first.
 - Each section: build a SUBSTANTIAL but DIVERSE slate — aim for a good number of stories, but a slightly shorter, varied section BEATS a fuller one padded with repeats or near-identical themes. The bar is "genuinely useful for a wealth/PMS/AIF professional to know" and DISTINCT from the other stories you've picked. Fill up to ${perSection} with genuinely different stories; leave a slot empty rather than add a same-theme repeat, a routine daily-ticker item, or a story that just re-states something already covered in recent editions (see RECENTLY COVERED below). Never pad with banned noise (roundups, previews, tip-sheets, "stocks to watch"). Compliance is often legitimately thin — leave it short rather than padding it.
+- DON'T STARVE SECTOR: actively hunt the pool for whole-INDUSTRY / thematic stories (a sector's earnings trend, a policy or tariff hitting an industry, a theme like defence/PSU/realty/IT/pharma/autos/metals moving together, a regulator move reshaping an industry's economics) and FILE THEM IN sector — don't let them leak into india or macro. A single company's result is india, but the same news framed as an industry read-through belongs in sector. If genuine industry stories exist in the pool, fill sector properly rather than leaving it thin.
 - MACRO MUST BE DIVERSE — not a daily market ticker. The rupee's level, crude's move, bond yields / banking liquidity, and the Sensex/Nifty move are all INTERCONNECTED and recur EVERY day; include AT MOST 2 such "daily market level" items total, and only when there is a real NEW development (a policy decision, a broken level, a fresh driver) — never just today's number. Fill the rest of macro with genuinely DIFFERENT developments: RBI/policy action, inflation/GDP/trade/IIP data prints, fiscal and tax, banking-system structural news, commodities beyond crude, or global macro with a specific India read-through. A macro section that is five reworded versions of "rupee/crude/bonds moved today" is a FAILURE of this job.
 - Place each chosen id under the section its CONTENT belongs to (per the definitions above), NOT where it was provisionally filed.
 - Within a section, order Indian stories first (IN), then global (GL); within each, MOST IMPORTANT FIRST — the lead (first) story of each section gets the longest treatment, so make it the single most consequential item, not merely the newest.
@@ -230,15 +231,12 @@ CANDIDATE POOL:
 ${catalogue}`;
 
   try {
-    // Heavier `tries` + a lighter thinking budget: this is the FIRST call of the run
-    // and the single biggest request, and on a freshly-billed tier it was the one
-    // call that kept tripping a transient 429 (then falling back to the dumb keyword
-    // router — the cause of e.g. an NBFC landing in Macro). More retry headroom and a
-    // smaller token footprint get it through the cold-start burst limit reliably.
-    // thinking 1400: story classification/routing converges well below 2k of
-    // reasoning — trimming here is invisible in the output and holds the daily
-    // spend under the ₹22 ceiling without touching any reader-facing Pro quality.
-    const out = extractJson(await callGemini(prompt, { maxTokens: 1800, thinking: 1400, temperature: 0.3, tries: 6 }));
+    // This is the run's most important call: it routes the WHOLE pool into sections,
+    // so its reasoning budget directly drives categorisation quality. thinking 3072
+    // (restored from a cost-trimmed 1400 on 2026-08-02 after mis-filings like FCNR in
+    // compliance + a thin sector) gives it room to route ~150 candidates carefully and
+    // dedupe across sections. Heavy `tries` keeps it off the keyword-router fallback.
+    const out = extractJson(await callGemini(prompt, { maxTokens: 1800, thinking: 3072, temperature: 0.3, tries: 6 }));
     const valid = {};
     for (const sec of sections) {
       const ids = Array.isArray(out[sec]) ? out[sec] : [];
@@ -283,7 +281,7 @@ ${context}`;
     // maxTokens stays 3400 so the written mechanism keeps its full depth/length;
     // only the internal reasoning cap is trimmed 2600→2000 (reasoning quality
     // saturates well before 2k here). Reader-facing quality is unchanged.
-    return extractJson(await callGemini(prompt, { maxTokens: 3400, thinking: 2000, temperature: 0.5 }));
+    return extractJson(await callGemini(prompt, { maxTokens: 3400, thinking: 2600, temperature: 0.5 }));
   } catch (err) {
     console.log(`  ⚠ mechanism generation failed (${err.message}); using fallback.`);
     return null;
