@@ -1,0 +1,40 @@
+# Regenerate ONLY the briefing voice-over for the current live edition and redeploy —
+# no Gemini news rebuild (TTS-only, ~₹3). Use when a build's voice fell back to the
+# browser voice. Manual trigger only.
+name: Regenerate audio only (no build)
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  regen:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - run: npm ci || npm install
+      - name: Regenerate briefing MP3 from the live script
+        env:
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          GEMINI_TTS_VOICE: Gacrux
+        run: node scripts/regen-audio.mjs
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: public
+      - id: deployment
+        uses: actions/deploy-pages@v4
