@@ -1,5 +1,5 @@
 {
-  "ts": "2026-08-02T01:37:24.143Z",
+  "ts": "2026-08-03T01:37:32.519Z",
   "health": [
     {
       "id": "et-markets",
@@ -25,9 +25,9 @@
     {
       "id": "mc-business",
       "name": "Moneycontrol — Business",
-      "ok": true,
-      "count": 15,
-      "error": null
+      "ok": false,
+      "count": 0,
+      "error": "Unexpected close tag\nLine: 17\nColumn: 10\nChar: >"
     },
     {
       "id": "bl-markets",
@@ -40,7 +40,7 @@
       "id": "fe-markets",
       "name": "Financial Express — Market",
       "ok": true,
-      "count": 12,
+      "count": 8,
       "error": null
     },
     {
@@ -88,16 +88,16 @@
     {
       "id": "mc-markets",
       "name": "Moneycontrol — Markets",
-      "ok": true,
-      "count": 4,
-      "error": null
+      "ok": false,
+      "count": 0,
+      "error": "Unexpected close tag\nLine: 17\nColumn: 10\nChar: >"
     },
     {
       "id": "mc-economy",
       "name": "Moneycontrol — Economy",
-      "ok": true,
-      "count": 4,
-      "error": null
+      "ok": false,
+      "count": 0,
+      "error": "Feed not recognized as RSS 1 or 2."
     },
     {
       "id": "bl-economy",
@@ -124,7 +124,7 @@
       "id": "cnbctv18-mkt",
       "name": "CNBC-TV18 — Market",
       "ok": true,
-      "count": 100,
+      "count": 20,
       "error": null
     },
     {
@@ -138,7 +138,7 @@
       "id": "bs-economy",
       "name": "Business Standard — Economy",
       "ok": true,
-      "count": 6,
+      "count": 15,
       "error": null
     },
     {
@@ -166,7 +166,7 @@
       "id": "guardian-biz",
       "name": "The Guardian — Business",
       "ok": true,
-      "count": 37,
+      "count": 40,
       "error": null
     },
     {
