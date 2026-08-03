@@ -27,7 +27,7 @@ const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 // Phrased as "instruction:" — Gemini TTS treats a leading directive ending in a
 // colon as delivery guidance and speaks only the text that follows it.
 const STYLE =
-  'Read this aloud in the warm, polished, articulate voice of a senior Indian English business-news anchor — natural human intonation, unhurried but engaging, with gentle emphasis on the key figures and a brief, natural pause between stories. Sound like a real person speaking to one listener, never like a robot or a teleprompter:';
+  'Read this aloud in the warm, polished voice of a senior Indian English business-news anchor. CRITICAL: speak at a STEADY, EVEN, MEASURED pace of about 150 words per minute and HOLD EXACTLY THAT SAME TEMPO from the first word to the last — never speed up, never slow down, keep the rhythm perfectly consistent throughout. Natural human intonation, gentle emphasis on the key figures, and a brief natural pause between stories. Calm, clear and unrushed, like a real person speaking to one listener, never robotic:';
 
 // Split a long script into TTS-sized chunks on sentence boundaries. Gemini TTS caps
 // how much audio a single call returns, so we synthesise per chunk and join the PCM.
