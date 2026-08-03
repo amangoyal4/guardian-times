@@ -1,6 +1,7 @@
 // index.js — the orchestrator. Run: node src/index.js
 import fs from 'fs';
 import path from 'path';
+import crypto from 'crypto';
 import { fileURLToPath } from 'url';
 import { fetchAll, dedupeBuckets } from './fetcher.js';
 import { routeAll } from './router.js';
@@ -218,6 +219,32 @@ function rank(items) {
   });
 }
 
+// Download any short-lived signed CDN thumbnails (Instagram/LinkedIn/Facebook) and
+// re-host them locally under public/thumbs/, rewriting each video's thumb to the
+// local path — so the image can't expire (403) between the morning build and when a
+// reader opens the paper. Durable hosts (i.ytimg, vimeocdn) are left untouched. Old
+// files are pruned so the folder only holds the current edition's thumbnails.
+async function localizeThumbs(videos, dir) {
+  const EXPIRING = /cdninstagram|scontent|licdn\.com|fbcdn/i;
+  const tdir = path.join(dir, 'thumbs');
+  fs.mkdirSync(tdir, { recursive: true });
+  const keep = new Set();
+  for (const v of videos || []) {
+    if (!v.thumb || !EXPIRING.test(v.thumb)) continue;
+    try {
+      const res = await fetch(v.thumb, { redirect: 'follow' });
+      if (!res.ok) { console.log(`   ⚠ thumb fetch ${res.status} for ${v.platform} — keeping placeholder`); continue; }
+      const buf = Buffer.from(await res.arrayBuffer());
+      if (buf.length < 500) continue; // guard against error pages
+      const name = `lib-${crypto.createHash('md5').update(v.link).digest('hex').slice(0, 12)}.jpg`;
+      fs.writeFileSync(path.join(tdir, name), buf);
+      v.thumb = `thumbs/${name}`; // relative to the site root — served from Pages, never expires
+      keep.add(name);
+    } catch (e) { console.log(`   ⚠ thumb localise failed (${e.message})`); }
+  }
+  try { for (const f of fs.readdirSync(tdir)) if (!keep.has(f)) fs.unlinkSync(path.join(tdir, f)); } catch {}
+}
+
 async function main() {
   const t0 = Date.now();
   const seen = loadSeen();
@@ -300,6 +327,12 @@ async function main() {
   const library = {
     videos: (libPool.videos || []).slice(0, 6),
   };
+  // Instagram/LinkedIn/Facebook thumbnails are SIGNED CDN URLs that expire within
+  // hours — embedding them means the image 403s by the time a reader opens the page
+  // (→ placeholder). So download those images at build time and host them on our own
+  // site (public/thumbs/), which never expires. YouTube (i.ytimg) URLs are durable
+  // and left as-is.
+  await localizeThumbs(library.videos, PUBLIC_DIR);
 
   // Fund Manager Interviews — resilient like the Library: cache the last-good set and
   // reuse it if the YouTube Data API returns nothing (or the key is missing) this run.
