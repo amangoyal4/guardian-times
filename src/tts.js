@@ -43,7 +43,7 @@ function chunkScript(text, maxChars = 1100) {
   return chunks;
 }
 
-async function synthChunk(text, tries = 3) {
+async function synthChunk(text, { tries = 4, style = true } = {}) {
   let delay = 3000;
   for (let attempt = 1; attempt <= tries; attempt++) {
     try {
@@ -52,7 +52,7 @@ async function synthChunk(text, tries = 3) {
         headers: { 'Content-Type': 'application/json' },
         signal: AbortSignal.timeout(120000),
         body: JSON.stringify({
-          contents: [{ parts: [{ text: `${STYLE}\n\n${text}` }] }],
+          contents: [{ parts: [{ text: style ? `${STYLE}\n\n${text}` : text }] }],
           generationConfig: {
             responseModalities: ['AUDIO'],
             speechConfig: { voiceConfig: { prebuiltVoiceConfig: { voiceName: VOICE } } },
@@ -99,21 +99,44 @@ export async function synthesizeBriefing(scriptText, { gapMs = 800 } = {}) {
   if (!API_KEY) return null;
   const text = String(scriptText || '').trim();
   if (text.length < 80) return null;
-  try {
-    const chunks = chunkScript(text);
-    console.log(`\n🔊 Synthesising briefing voice — ${chunks.length} chunk(s) via ${TTS_MODEL} (voice: ${VOICE})…`);
-    const pcms = [];
-    for (let i = 0; i < chunks.length; i++) {
+  const chunks = chunkScript(text);
+  console.log(`\n🔊 Synthesising briefing voice — ${chunks.length} chunk(s) via ${TTS_MODEL} (voice: ${VOICE})…`);
+  // Per-chunk resilient: a single chunk that keeps returning "no audio" (a transient
+  // hiccup or a content-refusal on one segment) must NOT throw away the whole voice.
+  // Try the styled prompt; if that fails, retry the chunk WITHOUT the style directive
+  // (which can trip a refusal); only then skip that chunk. As long as most chunks
+  // synthesise, we still serve the human MP3 (minus at most a segment or two).
+  const pcms = [];
+  let ok = 0;
+  for (let i = 0; i < chunks.length; i++) {
+    try {
       pcms.push(await synthChunk(chunks[i]));
-      if (i < chunks.length - 1) await sleep(gapMs);
+      ok++;
+    } catch (err1) {
+      try {
+        pcms.push(await synthChunk(chunks[i], { tries: 2, style: false }));
+        ok++;
+        console.log(`   ↻ chunk ${i + 1}/${chunks.length} recovered without the style directive.`);
+      } catch (err2) {
+        console.log(`   ⚠ chunk ${i + 1}/${chunks.length} skipped (${err2.message}).`);
+      }
     }
+    if (i < chunks.length - 1) await sleep(gapMs);
+  }
+  // Serve the human voice only if a solid majority came through; otherwise the
+  // browser voice is the cleaner fallback than a heavily-gapped briefing.
+  if (!pcms.length || ok < Math.ceil(chunks.length * 0.6)) {
+    console.log(`  ⚠ briefing voice synthesis failed (${ok}/${chunks.length} chunks); page falls back to the browser voice.\n`);
+    return null;
+  }
+  try {
     const pcm = Buffer.concat(pcms);
     const mp3 = pcmToMp3(pcm);
     const secs = pcm.byteLength / 2 / RATE;
-    console.log(`   voice ready — ${(mp3.length / 1e6).toFixed(2)} MB MP3, ~${Math.round(secs)}s (${(secs / 60).toFixed(1)} min) audio\n`);
+    console.log(`   voice ready — ${(mp3.length / 1e6).toFixed(2)} MB MP3, ~${Math.round(secs)}s (${(secs / 60).toFixed(1)} min), ${ok}/${chunks.length} chunks\n`);
     return mp3;
   } catch (err) {
-    console.log(`  ⚠ briefing voice synthesis failed (${err.message}); page falls back to the browser voice.\n`);
+    console.log(`  ⚠ MP3 encode failed (${err.message}); page falls back to the browser voice.\n`);
     return null;
   }
 }
