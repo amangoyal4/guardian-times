@@ -19,6 +19,8 @@ export const FEEDS = [
   { id: 'mc-business',    name: 'Moneycontrol — Business',  url: 'https://www.moneycontrol.com/rss/business.xml',                          section: 'india',      region: 'in', weight: 2, enabled: true },
   { id: 'bl-markets',     name: 'Hindu BusinessLine',       url: 'https://www.thehindubusinessline.com/markets/feeder/default.rss',        section: 'india',      region: 'in', weight: 2, enabled: true },
   { id: 'fe-markets',     name: 'Financial Express — Market', url: 'https://news.google.com/rss/search?q=site:financialexpress.com/market+when:1d&hl=en-IN&gl=IN&ceid=IN:en', section: 'india', region: 'in', weight: 2, enabled: true }, // direct RSS malformed; routed via Google News
+  { id: 'fe-business',    name: 'Financial Express — Business', url: 'https://news.google.com/rss/search?q=site:financialexpress.com/business+when:1d&hl=en-IN&gl=IN&ceid=IN:en', section: 'india', region: 'in', weight: 2, enabled: true }, // added 2026-08-04 (user); high-volume, via Google News
+  { id: 'firstpost-biz',  name: 'Firstpost — Business', url: 'https://news.google.com/rss/search?q=site:firstpost.com/business+when:1d&hl=en-IN&gl=IN&ceid=IN:en', section: 'india', region: 'in', weight: 2, enabled: true }, // added 2026-08-04 (user); via Google News
   { id: 'bt-money',       name: 'Business Today',           url: 'https://www.businesstoday.in/rssfeeds/?id=225',                          section: 'india',      region: 'in', weight: 2, enabled: false }, // feed returns 0 items consistently — disabled
 
   // ---- More Indian sources (all free to read) ----

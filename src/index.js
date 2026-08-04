@@ -193,6 +193,10 @@ const CRIME = new RegExp([
   '\\bpaedophil', '\\bpedophil', '\\bstabb', '\\bassaulted\\b',
 ].join('|'), 'i');
 
+// TEMPORARY topic mute (user request 2026-08-04): no FCNR / NRI-deposit news for a
+// month. REMOVE THIS BLOCK after ~2026-09-04 to let the topic back in.
+const TEMP_MUTE = /\bfcnr\b|fcnr\s*\(b\)|foreign\s+currency\s+non-?resident|\bnri\b\s+deposit/i;
+
 // War / geopolitics / diplomacy as GENERAL news has no place here — but the same
 // event with a clear MONEY angle (oil spiking on a conflict, the rupee sliding,
 // defence orders) absolutely does. So drop a headline only when it reads as pure
@@ -219,30 +223,46 @@ function rank(items) {
   });
 }
 
-// Download any short-lived signed CDN thumbnails (Instagram/LinkedIn/Facebook) and
-// re-host them locally under public/thumbs/, rewriting each video's thumb to the
-// local path — so the image can't expire (403) between the morning build and when a
-// reader opens the paper. Durable hosts (i.ytimg, vimeocdn) are left untouched. Old
-// files are pruned so the folder only holds the current edition's thumbnails.
+// Host Instagram/LinkedIn/Facebook thumbnails LOCALLY (public/thumbs/) so they can't
+// expire (their signed CDN URLs 403 within ~2h). Key resilience rules, learned the
+// hard way:
+//   • CAPTURE-ONCE-AND-KEEP: the file is named by a hash of the video link, so once
+//     an image is saved it is REUSED on every later build and never re-fetched — a
+//     flaky source (microlink is unreliable) or an expired URL can no longer lose it.
+//   • NEVER prune a thumbnail whose video is still in the edition. Pruning only
+//     removes files for videos that have dropped out (true orphans). (The earlier bug
+//     pruned good thumbs whenever that day's fetch failed.)
+//   • Best-effort fetch with retries; if it can't be captured, the card shows the
+//     branded placeholder — for a GUARANTEED image, put a thumbnail URL in the sheet.
 async function localizeThumbs(videos, dir) {
-  const EXPIRING = /cdninstagram|scontent|licdn\.com|fbcdn/i;
+  const NEEDS = /Instagram|LinkedIn|Facebook/i; // platforms whose thumbnails must be re-hosted
   const tdir = path.join(dir, 'thumbs');
   fs.mkdirSync(tdir, { recursive: true });
   const keep = new Set();
   for (const v of videos || []) {
-    if (!v.thumb || !EXPIRING.test(v.thumb)) continue;
-    try {
-      const res = await fetch(v.thumb, { redirect: 'follow' });
-      if (!res.ok) { console.log(`   ⚠ thumb fetch ${res.status} for ${v.platform} — keeping placeholder`); continue; }
-      const buf = Buffer.from(await res.arrayBuffer());
-      if (buf.length < 500) continue; // guard against error pages
-      const name = `lib-${crypto.createHash('md5').update(v.link).digest('hex').slice(0, 12)}.jpg`;
-      fs.writeFileSync(path.join(tdir, name), buf);
-      v.thumb = `thumbs/${name}`; // relative to the site root — served from Pages, never expires
-      keep.add(name);
-    } catch (e) { console.log(`   ⚠ thumb localise failed (${e.message})`); }
+    if (!NEEDS.test(v.platform || '')) continue; // YouTube/Vimeo hosts are durable — leave as-is
+    const name = `lib-${crypto.createHash('md5').update(v.link).digest('hex').slice(0, 12)}.jpg`;
+    const fpath = path.join(tdir, name);
+    if (fs.existsSync(fpath)) { v.thumb = `thumbs/${name}`; keep.add(name); continue; } // reuse — capture-once
+    if (v.thumb && /^https?:/i.test(v.thumb)) {
+      let ok = false;
+      for (let t = 0; t < 3 && !ok; t++) {
+        try {
+          const res = await fetch(v.thumb, { redirect: 'follow' });
+          if (res.ok) {
+            const buf = Buffer.from(await res.arrayBuffer());
+            if (buf.length > 500) { fs.writeFileSync(fpath, buf); v.thumb = `thumbs/${name}`; keep.add(name); ok = true; }
+          }
+        } catch {}
+        if (!ok) await new Promise((r) => setTimeout(r, 800));
+      }
+      if (!ok) { v.thumb = ''; console.log(`   ⚠ couldn't capture ${v.platform} thumbnail — placeholder (add a thumbnail URL in the sheet for a guaranteed image)`); }
+    } else {
+      v.thumb = ''; // no source at all → placeholder
+    }
   }
-  try { for (const f of fs.readdirSync(tdir)) if (!keep.has(f)) fs.unlinkSync(path.join(tdir, f)); } catch {}
+  // Prune ONLY orphans (files whose video is no longer shown). Never touch a kept one.
+  try { for (const f of fs.readdirSync(tdir)) if (/^lib-.*\.jpg$/.test(f) && !keep.has(f)) fs.unlinkSync(path.join(tdir, f)); } catch {}
 }
 
 async function main() {
@@ -260,6 +280,7 @@ async function main() {
       !NOISE.test(it.title) &&
       !IRRELEVANT.test(it.title) &&
       !CRIME.test(it.title) &&
+      !TEMP_MUTE.test(it.title) &&
       !isPureGeopolitics(it.title),
   );
 
