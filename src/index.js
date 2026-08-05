@@ -197,6 +197,25 @@ const CRIME = new RegExp([
 // month. REMOVE THIS BLOCK after ~2026-09-04 to let the topic back in.
 const TEMP_MUTE = /\bfcnr\b|fcnr\s*\(b\)|foreign\s+currency\s+non-?resident|\bnri\b\s+deposit/i;
 
+// STALE-ARTICLE guard. Some feeds re-surface OLD articles with a fresh pubDate, so the
+// recency window alone can't catch them (e.g. a Dec-2025 RBI MPC piece appearing in
+// Aug 2026). But many news URLs embed the article's OWN date — .../december-2025-...,
+// .../2025/03/... — so if the URL clearly encodes a date older than ~75 days, drop it.
+// Only fires on explicit month-year or /YYYY/MM/ patterns, so bare-year slugs like
+// "budget-2025" (legit current commentary) are NOT dropped.
+const MONTHS = { jan: 0, feb: 1, mar: 2, apr: 3, may: 4, jun: 5, jul: 6, aug: 7, sep: 8, oct: 9, nov: 10, dec: 11 };
+function urlDate(url = '') {
+  const u = url.toLowerCase();
+  let m = u.match(/\/(20\d{2})[/\-](0[1-9]|1[0-2])[/\-]/); // /2025/03/ or /2025-03-
+  if (m) return Date.UTC(+m[1], +m[2] - 1, 1);
+  m = u.match(/\b(jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)[a-z]*[-_](20\d{2})\b/); // december-2025
+  if (m) return Date.UTC(+m[2], MONTHS[m[1]], 1);
+  m = u.match(/\b(20\d{2})[-_](jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)[a-z]*\b/); // 2025-december
+  if (m) return Date.UTC(+m[1], MONTHS[m[2]], 1);
+  return null;
+}
+const isStaleByUrl = (url) => { const t = urlDate(url); return t ? (Date.now() - t) > 75 * 86400 * 1000 : false; };
+
 // War / geopolitics / diplomacy as GENERAL news has no place here — but the same
 // event with a clear MONEY angle (oil spiking on a conflict, the rupee sliding,
 // defence orders) absolutely does. So drop a headline only when it reads as pure
@@ -281,6 +300,7 @@ async function main() {
       !IRRELEVANT.test(it.title) &&
       !CRIME.test(it.title) &&
       !TEMP_MUTE.test(it.title) &&
+      !isStaleByUrl(it.link) &&
       !isPureGeopolitics(it.title),
   );
 
