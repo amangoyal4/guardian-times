@@ -361,16 +361,21 @@ HOW TO WRITE IT (spoken English):
 - Spell EVERYTHING the way it is SPOKEN. Numbers, currency and symbols become words: "five hundred crore rupees" not "₹500 cr"; "up three point two per cent" not "+3.2%"; "the first quarter of financial year twenty-six" not "Q1FY26". Never emit the characters ₹, $, %, &, or shorthand like "bps", "YoY", "Q1FY26".
 - Target 1500 to 1900 words (about eight to nine minutes spoken). Plain text only — NO markdown, NO bullet points, NO numerals like "1." — the ONLY labels allowed are the spoken "Highlight one/two/… ten". Just the words to be read aloud.
 
-Return ONLY the script text, nothing else.
+Return the spoken script text, then on its OWN line the exact delimiter @@TITLES@@, then a JSON array of the 10 highlights' CRISP WRITTEN titles in the SAME order as Highlight one to ten — each ≤6 words, normal written form (you MAY use ₹, %, cr, $ and figures like 6.5%), e.g. ["Nabard pulls ₹8,000cr bond","Comex gold jumps $61","RBI cuts repo rate 25bps"]. Nothing after the array. (The delimiter and array are metadata — they are NOT part of the spoken script.)
 
 TODAY'S STORIES (most important first):
 ${lines}`;
   try {
-    const text = await callGemini(prompt, { maxTokens: 4200, thinking: 1600, temperature: 0.6, model: FLASH });
-    return (text || '').replace(/```/g, '').trim();
+    const raw = ((await callGemini(prompt, { maxTokens: 4600, thinking: 1600, temperature: 0.6, model: FLASH })) || '').replace(/```/g, '');
+    const parts = raw.split(/@@TITLES@@/);
+    let titles = [];
+    if (parts[1]) {
+      try { titles = JSON.parse(parts[1].trim().replace(/^[^[]*/, '').replace(/[^\]]*$/, '')).map((s) => String(s).trim()).filter(Boolean); } catch {}
+    }
+    return { text: parts[0].trim(), titles };
   } catch (err) {
     console.log(`  ⚠ briefing script generation failed (${err.message}); audio falls back to per-story readout.`);
-    return '';
+    return { text: '', titles: [] };
   }
 }
 

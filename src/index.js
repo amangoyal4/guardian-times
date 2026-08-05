@@ -421,7 +421,7 @@ async function main() {
   const BRIEF_ORDER = ['macro', 'india', 'sector', 'global', 'compliance'];
   const briefingInput = BRIEF_ORDER.flatMap((s) => (buckets[s] || []).slice(0, 4));
   const weekday = new Date().toLocaleDateString('en-GB', { weekday: 'long', timeZone: 'Asia/Kolkata' });
-  const audioScript = await generateBriefingScript(briefingInput, { weekday });
+  const { text: audioScript, titles: chapterTitles } = await generateBriefingScript(briefingInput, { weekday });
   let audioFile = '';
   if (audioScript) {
     const mp3 = await synthesizeBriefing(audioScript);
@@ -435,7 +435,7 @@ async function main() {
   // 7) BUILD + WRITE
   const html = buildHTML({
     ...buckets, market, mechanism, explainers, myths, library, managers,
-    audioScript, audioFile,
+    audioScript, audioFile, chapterTitles,
     runTime: new Date().toUTCString(),
   });
   const stamp = writeEdition(html, PUBLIC_DIR);

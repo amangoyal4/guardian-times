@@ -349,14 +349,18 @@ export function buildHTML(data) {
     const text = segments.map((s) => s.text).join(' ');
     const total = text.split(/\s+/).filter(Boolean).length || 1;
     const NUMS = ['one', 'two', 'three', 'four', 'five', 'six', 'seven', 'eight', 'nine', 'ten'];
+    const crisp = Array.isArray(data.chapterTitles) ? data.chapterTitles : [];
     const out = [];
     const re = /\bhighlight (one|two|three|four|five|six|seven|eight|nine|ten)\b[.:)\s]*/gi;
     let m;
     while ((m = re.exec(text))) {
       const before = text.slice(0, m.index).split(/\s+/).filter(Boolean).length;
-      let title = (text.slice(m.index + m[0].length).split(/(?<=[.!?])\s/)[0] || '').replace(/\s+/g, ' ').trim();
-      if (title.length > 48) title = title.slice(0, 46).replace(/[\s,;:.]+\S*$/, '') + '…';
-      out.push({ n: NUMS.indexOf(m[1].toLowerCase()) + 1, title, frac: before / total });
+      let title = crisp[out.length]; // crisp written headline from the briefing call
+      if (!title) { // fallback: trim the spoken headline sentence after the marker
+        title = (text.slice(m.index + m[0].length).split(/(?<=[.!?])\s/)[0] || '').replace(/\s+/g, ' ').trim();
+        if (title.length > 48) title = title.slice(0, 46).replace(/[\s,;:.]+\S*$/, '') + '…';
+      }
+      out.push({ n: NUMS.indexOf(m[1].toLowerCase()) + 1, title: String(title), frac: before / total });
     }
     return out;
   })();
