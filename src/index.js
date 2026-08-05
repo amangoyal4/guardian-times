@@ -197,6 +197,10 @@ const CRIME = new RegExp([
 // month. REMOVE THIS BLOCK after ~2026-09-04 to let the topic back in.
 const TEMP_MUTE = /\bfcnr\b|fcnr\s*\(b\)|foreign\s+currency\s+non-?resident|\bnri\b\s+deposit/i;
 
+// STANDING topic mute (user preference 2026-08-05): no IPO / new-listing coverage.
+// (Excludes bare "public issue" — that also matches bond/NCD issues.)
+const IPO_MUTE = /\bIPO\b|\bIPOs\b|initial public offer|\bDRHP\b|red[- ]herring prospectus|grey market premium|\bGMP\b|maiden (public )?issue|(stock[- ]?market|market) debut|debut(s|ed)? (at|on)\b|lists? at\b.{0,18}(premium|discount)|shares? to list\b|listing (gain|gains|pop|price)/i;
+
 // STALE-ARTICLE guard. Some feeds re-surface OLD articles with a fresh pubDate, so the
 // recency window alone can't catch them (e.g. a Dec-2025 RBI MPC piece appearing in
 // Aug 2026). But many news URLs embed the article's OWN date — .../december-2025-...,
@@ -300,6 +304,7 @@ async function main() {
       !IRRELEVANT.test(it.title) &&
       !CRIME.test(it.title) &&
       !TEMP_MUTE.test(it.title) &&
+      !IPO_MUTE.test(it.title) &&
       !isStaleByUrl(it.link) &&
       !isPureGeopolitics(it.title),
   );
