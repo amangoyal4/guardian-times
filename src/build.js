@@ -340,6 +340,28 @@ export function buildHTML(data) {
   const audioJson = JSON.stringify(segments).replace(/</g, '\\u003c');
   const audioFile = data.audioFile ? esc(data.audioFile) : '';
 
+  // Chapter markers for the audio player. The briefing narrates "Highlight one …
+  // ten", so we find each marker's WORD position and store it as a FRACTION of the
+  // total words. The client multiplies that by the real audio duration → accurate
+  // per-highlight timestamps without a fixed wpm guess. Title = the spoken sentence
+  // after the marker, trimmed short for the compact 2-column list.
+  const chapters = (() => {
+    const text = segments.map((s) => s.text).join(' ');
+    const total = text.split(/\s+/).filter(Boolean).length || 1;
+    const NUMS = ['one', 'two', 'three', 'four', 'five', 'six', 'seven', 'eight', 'nine', 'ten'];
+    const out = [];
+    const re = /\bhighlight (one|two|three|four|five|six|seven|eight|nine|ten)\b[.:)\s]*/gi;
+    let m;
+    while ((m = re.exec(text))) {
+      const before = text.slice(0, m.index).split(/\s+/).filter(Boolean).length;
+      let title = (text.slice(m.index + m[0].length).split(/(?<=[.!?])\s/)[0] || '').replace(/\s+/g, ' ').trim();
+      if (title.length > 48) title = title.slice(0, 46).replace(/[\s,;:.]+\S*$/, '') + '…';
+      out.push({ n: NUMS.indexOf(m[1].toLowerCase()) + 1, title, frac: before / total });
+    }
+    return out;
+  })();
+  const chaptersJson = JSON.stringify(chapters).replace(/</g, '\\u003c');
+
   // Live-Library config: the published sheet CSV URL + the server-enriched videos
   // (used as the title/thumbnail base so known videos keep their polished titles;
   // brand-new sheet rows render instantly and get enriched on the next build).
@@ -355,6 +377,7 @@ export function buildHTML(data) {
     .replace('__TICKER__', ticker)
     .replace('__PAGES__', pages)
     .replace('__AUDIODATA__', audioJson)
+    .replace('__CHAPTERS__', chaptersJson)
     .replace('__BRIEFINGAUDIO__', audioFile)
     .replace('__LIBCONFIG__', libConfig)
     .replace('__RUNTIME__', data.runTime || new Date().toUTCString());

@@ -66,6 +66,18 @@
   .audio-speed{grid-column:3;justify-self:end;background:none;border:1px solid #3a3a42;color:var(--paper);cursor:pointer;font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:.04em;padding:6px 9px;border-radius:4px;transition:all .15s ease}
   .audio-speed:hover{background:#26262c;border-color:#5a5a64}
   @media(max-width:560px){.audio-title{font-size:14px}.audio-status{font-size:9.5px}.audio-trio{gap:12px}}
+  /* Chapter list under the player — compact, two columns, "tap to jump" */
+  .chapwrap{border-top:1px solid #24252d;margin-top:11px;padding-top:9px}
+  .chaphd{font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:.07em;text-transform:uppercase;color:#83838c;margin-bottom:5px}
+  .chaps{display:grid;grid-template-columns:1fr 1fr;gap:1px 20px}
+  .chap{display:flex;align-items:baseline;gap:8px;background:none;border:none;color:#cfcfd6;cursor:pointer;text-align:left;font-family:'Inter',sans-serif;font-size:11.5px;line-height:1.3;padding:4px 5px;border-radius:4px;width:100%;transition:background .12s ease}
+  .chap:hover{background:rgba(255,255,255,.055)}
+  .chap.on{background:rgba(201,162,75,.15)}
+  .chap .cn{font-family:'IBM Plex Mono',monospace;font-size:10.5px;color:#83838c;flex:0 0 15px}
+  .chap .ct{flex:1 1 auto;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .chap.on .ct{color:#f3efe6}
+  .chap .cx{font-family:'IBM Plex Mono',monospace;font-size:10.5px;color:#9a9aa2;flex:0 0 auto;font-variant-numeric:tabular-nums}
+  @media(max-width:560px){.chaps{grid-template-columns:1fr;gap:0}}
 
   /* Nav */
   .nav-wrap{position:sticky;top:0;z-index:50;background:rgba(251,250,247,.94);backdrop-filter:blur(8px);border-bottom:1px solid var(--line)}
@@ -311,6 +323,10 @@
       </div>
       <button class="audio-speed" id="audioSpeed" aria-label="Playback speed">1&times;</button>
     </div>
+    <div class="chapwrap" id="chapWrap" hidden>
+      <div class="chaphd">In this briefing &mdash; tap to jump</div>
+      <div class="chaps" id="chapList"></div>
+    </div>
   </div>
 </div>
 
@@ -338,6 +354,7 @@ __PAGES__
 
 <script>window.__BRIEFING_AUDIO__="__BRIEFINGAUDIO__";</script>
 <script type="application/json" id="audio-script">__AUDIODATA__</script>
+<script type="application/json" id="audio-chapters">__CHAPTERS__</script>
 <script type="application/json" id="lib-config">__LIBCONFIG__</script>
 <script>
   const navBtns=document.querySelectorAll('.nav-btn');
@@ -615,8 +632,28 @@ __PAGES__
         wave.setAttribute('aria-valuenow', Math.round(p));
         timeEl.textContent = fmt(t) + ' / ' + (D ? fmt(D) : '--:--');
       }
-      audio.addEventListener('loadedmetadata', function(){ paint(0); });
-      audio.addEventListener('timeupdate', function(){ if(!dragging) paint(audio.currentTime); });
+      // ----- chapter list: "In this briefing", tap a highlight to jump -----
+      var chapWrap = document.getElementById('chapWrap'), chapList = document.getElementById('chapList');
+      var chapters = []; try { chapters = JSON.parse(document.getElementById('audio-chapters').textContent || '[]'); } catch(_){}
+      var chapEls = [];
+      function ce(s){ return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+      function mountChapters(){
+        var D = dur(); if(!chapWrap || !chapList || !chapters.length || !D || chapList.childElementCount) return;
+        chapList.innerHTML = chapters.map(function(c){
+          var t = Math.max(0, Math.round((c.frac||0) * D));
+          return '<button class="chap" data-t="'+t+'"><span class="cn">'+c.n+'</span><span class="ct">'+ce(c.title||('Highlight '+c.n))+'</span><span class="cx">'+fmt(t)+'</span></button>';
+        }).join('');
+        chapEls = [].slice.call(chapList.querySelectorAll('.chap'));
+        chapEls.forEach(function(el){ el.addEventListener('click', function(){ audio.currentTime = +el.getAttribute('data-t'); if(audio.paused) audio.play(); }); });
+        chapWrap.hidden = false;
+      }
+      function highlightChapter(t){
+        if(!chapEls.length) return; var D = dur(), ai = 0;
+        for(var i=0;i<chapters.length;i++){ if(t >= (chapters[i].frac||0)*D - 0.4) ai = i; }
+        for(var j=0;j<chapEls.length;j++) chapEls[j].classList.toggle('on', j===ai);
+      }
+      audio.addEventListener('loadedmetadata', function(){ paint(0); mountChapters(); });
+      audio.addEventListener('timeupdate', function(){ if(!dragging){ paint(audio.currentTime); highlightChapter(audio.currentTime); } });
       audio.addEventListener('play',  function(){ toggle.classList.add('playing'); statusEl.innerHTML = '<span class="live-dot"></span>Playing &middot; your briefing'; });
       audio.addEventListener('pause', function(){ if(!audio.ended){ toggle.classList.remove('playing'); statusEl.textContent = 'Paused'; } });
       audio.addEventListener('ended', function(){ toggle.classList.remove('playing'); statusEl.innerHTML = idleStatus; paint(0); });
