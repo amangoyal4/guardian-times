@@ -340,14 +340,26 @@ export function buildHTML(data) {
   const audioJson = JSON.stringify(segments).replace(/</g, '\\u003c');
   const audioFile = data.audioFile ? esc(data.audioFile) : '';
 
-  // Chapter markers for the audio player. The briefing narrates "Highlight one …
-  // ten", so we find each marker's WORD position and store it as a FRACTION of the
-  // total words. The client multiplies that by the real audio duration → accurate
-  // per-highlight timestamps without a fixed wpm guess. Title = the spoken sentence
-  // after the marker, trimmed short for the compact 2-column list.
+  // Chapter markers for the audio player. The briefing narrates "Highlight one … ten",
+  // so we find each marker's WORD position in the SAME text the voice was made from.
+  // When the synthesiser handed back real per-chunk timing (data.audioTiming), we map
+  // the word position to actual seconds using the measured chunk durations — accurate
+  // to ~1s. Otherwise we store a word FRACTION and the client multiplies by the real
+  // audio duration (a slightly looser estimate). Title = crisp written headline.
   const chapters = (() => {
-    const text = segments.map((s) => s.text).join(' ');
+    const text = String(data.audioScript || segments.map((s) => s.text).join(' '));
     const total = text.split(/\s+/).filter(Boolean).length || 1;
+    const timing = Array.isArray(data.audioTiming) ? data.audioTiming : null;
+    const secAtWord = (W) => {
+      if (!timing || timing.length < 2) return null;
+      for (let k = 1; k < timing.length; k++) {
+        if (W <= timing[k].words) {
+          const a = timing[k - 1], b = timing[k], dw = (b.words - a.words) || 1;
+          return Math.max(0, a.sec + ((W - a.words) / dw) * (b.sec - a.sec));
+        }
+      }
+      return timing[timing.length - 1].sec;
+    };
     const NUMS = ['one', 'two', 'three', 'four', 'five', 'six', 'seven', 'eight', 'nine', 'ten'];
     const crisp = Array.isArray(data.chapterTitles) ? data.chapterTitles : [];
     const out = [];
@@ -360,7 +372,10 @@ export function buildHTML(data) {
         title = (text.slice(m.index + m[0].length).split(/(?<=[.!?])\s/)[0] || '').replace(/\s+/g, ' ').trim();
         if (title.length > 48) title = title.slice(0, 46).replace(/[\s,;:.]+\S*$/, '') + '…';
       }
-      out.push({ n: NUMS.indexOf(m[1].toLowerCase()) + 1, title: String(title), frac: before / total });
+      const ch = { n: NUMS.indexOf(m[1].toLowerCase()) + 1, title: String(title), frac: before / total };
+      const sec = secAtWord(before);
+      if (sec != null) ch.sec = Math.round(sec);
+      out.push(ch);
     }
     return out;
   })();

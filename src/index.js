@@ -423,19 +423,21 @@ async function main() {
   const weekday = new Date().toLocaleDateString('en-GB', { weekday: 'long', timeZone: 'Asia/Kolkata' });
   const { text: audioScript, titles: chapterTitles } = await generateBriefingScript(briefingInput, { weekday });
   let audioFile = '';
+  let audioTiming = null; // per-chunk timing for accurate audio chapters (null → word estimate)
   if (audioScript) {
-    const mp3 = await synthesizeBriefing(audioScript);
-    if (mp3) {
+    const voice = await synthesizeBriefing(audioScript);
+    if (voice && voice.mp3) {
       fs.mkdirSync(PUBLIC_DIR, { recursive: true });
-      fs.writeFileSync(path.join(PUBLIC_DIR, 'briefing.mp3'), mp3);
+      fs.writeFileSync(path.join(PUBLIC_DIR, 'briefing.mp3'), voice.mp3);
       audioFile = `briefing.mp3?v=${Date.now()}`; // cache-bust so today's voice isn't stale-cached
+      audioTiming = voice.timing || null;
     }
   }
 
   // 7) BUILD + WRITE
   const html = buildHTML({
     ...buckets, market, mechanism, explainers, myths, library, managers,
-    audioScript, audioFile, chapterTitles,
+    audioScript, audioFile, chapterTitles, audioTiming,
     runTime: new Date().toUTCString(),
   });
   const stamp = writeEdition(html, PUBLIC_DIR);

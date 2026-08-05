@@ -107,20 +107,25 @@ export async function synthesizeBriefing(scriptText, { gapMs = 800 } = {}) {
   // (which can trip a refusal); only then skip that chunk. As long as most chunks
   // synthesise, we still serve the human MP3 (minus at most a segment or two).
   const pcms = [];
-  let ok = 0;
+  const chunkSecs = []; // real audio seconds per chunk, aligned to chunks[] (0 = skipped)
+  let ok = 0, skipped = 0;
   for (let i = 0; i < chunks.length; i++) {
+    let pcm = null;
     try {
-      pcms.push(await synthChunk(chunks[i]));
+      pcm = await synthChunk(chunks[i]);
       ok++;
     } catch (err1) {
       try {
-        pcms.push(await synthChunk(chunks[i], { tries: 2, style: false }));
+        pcm = await synthChunk(chunks[i], { tries: 2, style: false });
         ok++;
         console.log(`   ↻ chunk ${i + 1}/${chunks.length} recovered without the style directive.`);
       } catch (err2) {
         console.log(`   ⚠ chunk ${i + 1}/${chunks.length} skipped (${err2.message}).`);
+        skipped++;
       }
     }
+    if (pcm) { pcms.push(pcm); chunkSecs.push(pcm.byteLength / 2 / RATE); }
+    else { chunkSecs.push(0); }
     if (i < chunks.length - 1) await sleep(gapMs);
   }
   // Serve the human voice only if a solid majority came through; otherwise the
@@ -134,7 +139,21 @@ export async function synthesizeBriefing(scriptText, { gapMs = 800 } = {}) {
     const mp3 = pcmToMp3(pcm);
     const secs = pcm.byteLength / 2 / RATE;
     console.log(`   voice ready — ${(mp3.length / 1e6).toFixed(2)} MB MP3, ~${Math.round(secs)}s (${(secs / 60).toFixed(1)} min), ${ok}/${chunks.length} chunks\n`);
-    return mp3;
+    // Timing map for ACCURATE audio chapters: cumulative {words, sec} at each chunk
+    // boundary using the REAL measured chunk durations. Only when nothing was skipped
+    // (a skipped chunk breaks the word↔audio alignment); otherwise null and the build
+    // falls back to a plain word-fraction estimate.
+    let timing = null;
+    if (!skipped) {
+      timing = [{ words: 0, sec: 0 }];
+      let cw = 0, cs = 0;
+      for (let i = 0; i < chunks.length; i++) {
+        cw += chunks[i].trim().split(/\s+/).filter(Boolean).length;
+        cs += chunkSecs[i];
+        timing.push({ words: cw, sec: cs });
+      }
+    }
+    return { mp3, timing };
   } catch (err) {
     console.log(`  ⚠ MP3 encode failed (${err.message}); page falls back to the browser voice.\n`);
     return null;
