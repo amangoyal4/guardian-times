@@ -385,6 +385,15 @@ __PAGES__
   (function(){
     var bar = document.getElementById('audiobar');
 
+    // Keep the phone screen awake while the briefing plays (like a video). Screen
+    // Wake Lock API — Chrome/Android + iOS 16.4+; silently no-ops elsewhere. The OS
+    // drops the lock when the tab is hidden, so we re-acquire it on return if we're
+    // still meant to be awake.
+    var _wl = null, _wlWant = false;
+    function wakeAcquire(){ _wlWant = true; try{ if('wakeLock' in navigator && !_wl){ navigator.wakeLock.request('screen').then(function(s){ _wl = s; _wl.addEventListener('release', function(){ _wl = null; }); }).catch(function(){}); } }catch(e){} }
+    function wakeRelease(){ _wlWant = false; try{ if(_wl){ _wl.release(); _wl = null; } }catch(e){} }
+    document.addEventListener('visibilitychange', function(){ if(document.visibilityState === 'visible' && _wlWant) wakeAcquire(); });
+
     // PREFERRED PATH — a real MP3 voiced at build time (natural Indian anchor voice).
     // Gives a true timeline: real duration, real seek/scrub, real playback speed.
     var AUDIO_URL = (window.__BRIEFING_AUDIO__ || '').trim();
@@ -542,13 +551,15 @@ __PAGES__
       heartbeat = setInterval(function(){ if(playing && !paused) synth.resume(); }, 10000);
       startTicker();
       speakFrom(idx);
+      wakeAcquire();
     }
-    function pause(){ pausedInChunk = withinChunk(); paused = true; synth.pause(); toggle.classList.remove('playing'); statusEl.textContent = 'Paused'; }
-    function resume(){ paused = false; chunkStartedAt = performance.now() - pausedInChunk*1000; toggle.classList.add('playing'); synth.resume(); reading(queue[idx] ? queue[idx].label : ''); }
+    function pause(){ pausedInChunk = withinChunk(); paused = true; synth.pause(); toggle.classList.remove('playing'); statusEl.textContent = 'Paused'; wakeRelease(); }
+    function resume(){ paused = false; chunkStartedAt = performance.now() - pausedInChunk*1000; toggle.classList.add('playing'); synth.resume(); reading(queue[idx] ? queue[idx].label : ''); wakeAcquire(); }
     function finish(){
       playing = false; paused = false; idx = 0; pausedInChunk = 0; boundaryChars = 0;
       stopTicker(); clearInterval(heartbeat); synth.cancel();
       toggle.classList.remove('playing'); statusEl.innerHTML = idleStatus; paint(0);
+      wakeRelease();
     }
 
     // Move the playhead to time t (seconds). Snaps to the chunk that contains t.
@@ -654,9 +665,9 @@ __PAGES__
       }
       audio.addEventListener('loadedmetadata', function(){ paint(0); mountChapters(); });
       audio.addEventListener('timeupdate', function(){ if(!dragging){ paint(audio.currentTime); highlightChapter(audio.currentTime); } });
-      audio.addEventListener('play',  function(){ toggle.classList.add('playing'); statusEl.innerHTML = '<span class="live-dot"></span>Playing &middot; your briefing'; });
-      audio.addEventListener('pause', function(){ if(!audio.ended){ toggle.classList.remove('playing'); statusEl.textContent = 'Paused'; } });
-      audio.addEventListener('ended', function(){ toggle.classList.remove('playing'); statusEl.innerHTML = idleStatus; paint(0); });
+      audio.addEventListener('play',  function(){ toggle.classList.add('playing'); statusEl.innerHTML = '<span class="live-dot"></span>Playing &middot; your briefing'; wakeAcquire(); });
+      audio.addEventListener('pause', function(){ if(!audio.ended){ toggle.classList.remove('playing'); statusEl.textContent = 'Paused'; } wakeRelease(); });
+      audio.addEventListener('ended', function(){ toggle.classList.remove('playing'); statusEl.innerHTML = idleStatus; paint(0); wakeRelease(); });
       audio.addEventListener('error', function(){ bar.hidden = true; }); // file missing/blocked — hide rather than show a dead player
 
       toggle.addEventListener('click', function(){ if(audio.paused) audio.play(); else audio.pause(); });
