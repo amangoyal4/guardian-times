@@ -984,7 +984,7 @@
       base.innerHTML = html; wavePlayed.innerHTML = html;
     })();
 
-    var rates = [0.8, 1, 1.25, 1.5], ri = 0;
+    var rates = [0.85, 1, 1.25, 1.5], ri = 0;
     var CPS = 15, GAP = 0.32; // est. chars/sec at rate 1, + inter-chunk pause (s)
     var durations = [], starts = [], totalDur = 0;
     function computeTimeline(){
@@ -1166,7 +1166,7 @@
         base.innerHTML = html; wavePlayed.innerHTML = html;
       })();
 
-      var rates = [0.8, 1, 1.25, 1.5], ri = 0;   // default 0.8× — a touch slower
+      var rates = [0.85, 1, 1.25, 1.5], ri = 0;   // default 0.8× — a touch slower
       function fmt(t){ t = Math.max(0, Math.round(t || 0)); var m = Math.floor(t/60), s = t%60; return m + ':' + (s<10?'0':'') + s; }
       function dur(){ return (audio.duration && isFinite(audio.duration)) ? audio.duration : 0; }
       function paint(t){
