@@ -655,7 +655,7 @@ __PAGES__
           return '<button class="chap" data-t="'+t+'"><span class="cn">'+c.n+'</span><span class="ct">'+ce(c.title||('Highlight '+c.n))+'</span><span class="cx">'+fmt(t)+'</span></button>';
         }).join('');
         chapEls = [].slice.call(chapList.querySelectorAll('.chap'));
-        chapEls.forEach(function(el){ el.addEventListener('click', function(){ audio.currentTime = +el.getAttribute('data-t'); if(audio.paused) audio.play(); }); });
+        chapEls.forEach(function(el){ el.addEventListener('click', function(){ audio.currentTime = Math.min(dur(), (+el.getAttribute('data-t')) + 1); if(audio.paused) audio.play(); }); }); // +1s: land AT "Highlight N", never a line behind
         chapWrap.hidden = false;
       }
       function highlightChapter(t){
