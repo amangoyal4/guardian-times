@@ -1,5 +1,5 @@
 {
-  "ts": "2026-08-08T01:38:39.234Z",
+  "ts": "2026-08-09T01:42:07.876Z",
   "health": [
     {
       "id": "et-markets",
@@ -40,28 +40,28 @@
       "id": "fe-markets",
       "name": "Financial Express — Market",
       "ok": true,
-      "count": 42,
+      "count": 24,
       "error": null
     },
     {
       "id": "fe-business",
       "name": "Financial Express — Business",
       "ok": true,
-      "count": 52,
+      "count": 14,
       "error": null
     },
     {
       "id": "firstpost-biz",
       "name": "Firstpost — Business",
       "ok": true,
-      "count": 12,
+      "count": 1,
       "error": null
     },
     {
       "id": "et-economy",
       "name": "Economic Times — Economy",
       "ok": true,
-      "count": 49,
+      "count": 50,
       "error": null
     },
     {
@@ -152,15 +152,15 @@
       "id": "bs-economy",
       "name": "Business Standard — Economy",
       "ok": true,
-      "count": 9,
+      "count": 4,
       "error": null
     },
     {
       "id": "rbi-press",
       "name": "RBI — Press Releases",
-      "ok": true,
-      "count": 10,
-      "error": null
+      "ok": false,
+      "count": 0,
+      "error": "Status code 418"
     },
     {
       "id": "sebi-press",
@@ -180,7 +180,7 @@
       "id": "guardian-biz",
       "name": "The Guardian — Business",
       "ok": true,
-      "count": 41,
+      "count": 35,
       "error": null
     },
     {
