@@ -90,7 +90,23 @@ const INDIC = /[ऀ-෿]/;
 // interviews posted BY one of these count; a finance-y title on some random clip /
 // re-upload channel (e.g. "Finance Made Easy") is NOT enough. Covers major business
 // news, respected research houses, and official AMC / boutique-manager channels.
-const REPUTABLE = /\bet now\b|et markets|et money|et alpha|cnbc|moneycontrol|livemint|\bmint\b|zerodha|\bgroww\b|ndtv profit|bloomberg|\bbq\b|economic times|business standard|business today|fortune india|value research|morningstar|outlook|forbes|the core|the ken|finshots|capitalmind|\bnse\b|\bbse\b|mutual fund|asset management|motilal oswal|ppfas|marcellus|helios capital|abakkus|white ?oak|carnelian|nippon india|sageone|old bridge|buoyant/i;
+const REPUTABLE = new RegExp([
+  // business news
+  '\\bet now\\b', 'et markets', 'et money', 'et alpha', 'cnbc', 'moneycontrol', 'livemint', '\\bmint\\b',
+  'ndtv profit', 'bloomberg', '\\bbq\\b', 'economic times', 'business standard', 'business today', 'fortune india',
+  'the quint', 'zee business', 'reuters', 'wall street journal', '\\bwsj\\b', 'forbes', 'outlook',
+  // research / education / data houses
+  'value research', 'morningstar', 'moneylife', 'the core', 'the ken', 'finshots', 'capitalmind', 'freefincal',
+  'smallcase', 'wint wealth', 'dezerv', 'kuvera', 'tickertape', 'prime ?investor', 'b ?wealthy',
+  'zerodha', '\\bgroww\\b', 'thrive', '\\bnse\\b', '\\bbse\\b',
+  // interview shows / hosts / podcasts
+  'wtf is', 'nikhil kamath', 'morning context', 'sonia shenoy', 'nikunj dalmia', 'latha venkatesh',
+  'ramesh damani', 'paisa vaisa', 'ideas of india', 'figuring out', 'raj shamani', 'finology',
+  'pranjal kamra', 'akshat shrivastava', 'rachana ranade',
+  // official AMC / boutique-manager channels
+  'mutual fund', 'asset management', 'motilal oswal', 'ppfas', 'marcellus', 'helios capital', 'abakkus',
+  'white ?oak', 'carnelian', 'nippon india', 'sageone', 'old bridge', 'buoyant',
+].join('|'), 'i');
 // A video qualifies ONLY if it was posted by a credible channel (above). This also
 // blocks same-name people (a random "Rajeev Thakkar" on a non-finance channel).
 function isFinanceVideo(s) {
