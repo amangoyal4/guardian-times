@@ -56,7 +56,7 @@ function articleHTML(item, { lead = false } = {}) {
     ? `<div class="sowhat"><b>So what for you</b>${esc(item.soWhat)}</div>` : '';
   // Any story carries an explanatory chart when the AI judged the news had real
   // data worth interpreting (a trend/comparison) — not just leads, never decorative.
-  const chart = item.chart ? storyChart(item.chart) : '';
+  const chart = ''; // charts removed per user request 2026-08-12
   return `
       <article${lead ? ' class="lead"' : ''}>
         <div class="eyebrow"><span class="src">${esc(item.source)}</span></div>
@@ -317,7 +317,7 @@ export function buildHTML(data) {
   const ticker = data.market ? tickerHTML(data.market) : '';
 
   const pages = [
-    sectionPage('macro', '01', 'Macroeconomy &amp; Policy', 'Forces moving the whole market', 'Central banks, growth, inflation, oil, and the flow of foreign capital.', data.macro, { active: true, prepend: marketDashboard(data.market) }),
+    sectionPage('macro', '01', 'Macroeconomy &amp; Policy', 'Forces moving the whole market', 'Central banks, growth, inflation, oil, and the flow of foreign capital.', data.macro, { active: true }),
     sectionPage('sector', '02', 'Sectoral Currents', 'Where the money is rotating', 'Which sectors are catching the bid and which are bleeding.', data.sector),
     sectionPage('india', '03', 'Indian Markets &amp; Stocks', 'FII flows · the big moves', 'Index-moving flows, restructurings, enforcement and the stock-specific events that matter.', data.india),
     sectionPage('global', '04', 'Global Markets', 'Forces that move world sentiment', 'The US tape and global developments with real market read-through to Indian IT, the rupee and commodities.', data.global),

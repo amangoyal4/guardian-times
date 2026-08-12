@@ -129,7 +129,7 @@ Rewrite this raw news item into Guardian Capital Brief editorial — substantive
 {
   "headline": "a sharp, specific headline that makes a reader want to read — not clickbait, carries the actual news (who + what + the key number), ${lead ? '14-22' : '8-16'} words",
   "summary": "${lead ? '4-5' : '3-4'} sentences, your own words. Open with the single most important fact. Then the key numbers/specifics, WHY it happened, and the read-through. Be concrete and information-dense — name the figures, the players, the cause, the magnitude. Where the feed text is thin, add the context a reader needs (but NEVER invent specific numbers). Never copy the source wording, never waffle, never hedge.",
-  "soWhat": "${lead ? 'two or three sentences' : 'one or two sentences'} of genuine analysis — the 'so what' the source won't tell them: who is affected and which way, the second-order effect, and the specific thing to watch next. WRITE THE INSIGHT DIRECTLY, for a GENERAL audience. NEVER name or address any reader group ANYWHERE in the text (not just the opening) — BANNED: 'For wealth and PMS/AIF professionals…', 'For investment professionals…', 'For investors…', 'For advisors…', 'For traders…', and every 'For [audience], this…' construction. Just state what it means, plainly. Be concrete and news-specific — name the actual sectors, companies, instruments, or exposures affected and the real mechanism; ban vague filler like 'monitor developments', 'warrants close monitoring', 'in the coming quarters'. Not a restatement of the summary."${chartSpec}
+  "soWhat": "${lead ? 'two or three sentences' : 'one or two sentences'} of genuine analysis — the 'so what' the source won't tell them: who is affected and which way, the second-order effect, and the specific thing to watch next. WRITE THE INSIGHT DIRECTLY, for a GENERAL audience. NEVER name or address any reader group ANYWHERE in the text (not just the opening) — BANNED: 'For wealth and PMS/AIF professionals…', 'For investment professionals…', 'For investors…', 'For advisors…', 'For traders…', and every 'For [audience], this…' construction. Just state what it means, plainly. Be concrete and news-specific — name the actual sectors, companies, instruments, or exposures affected and the real mechanism; ban vague filler like 'monitor developments', 'warrants close monitoring', 'in the coming quarters'. Not a restatement of the summary."
 }
 
 ${sourceBlock}`;
@@ -146,7 +146,7 @@ ${sourceBlock}`;
       headline: out.headline || item.title,
       summary: out.summary || item.rawSummary,
       soWhat: out.soWhat || '',
-      chart: out.chart || null,
+      chart: null, // charts removed
       aiGenerated: true,
     };
   } catch (err) {
