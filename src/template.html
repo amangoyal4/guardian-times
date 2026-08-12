@@ -104,8 +104,11 @@
   .section-head .kicker{margin-left:auto;font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--muted);letter-spacing:.05em;text-transform:uppercase;align-self:flex-end}
 
   /* Mobile declutter — tighter masthead, smaller logo/headings, no crowding
-     "kicker" so section titles like "Indian Markets & Stocks" stay on one line. */
-  @media(max-width:600px){
+     "kicker" so section titles like "Indian Markets & Stocks" stay on one line.
+     Breakpoint is 1024px (not 600) because the Moxo in-app webview renders the
+     page at a ~950px layout width and scales it down to the phone; at that width
+     we still want the single-column mobile treatment, not the shrunk desktop one. */
+  @media(max-width:1024px){
     .masthead{padding:15px 16px 8px}
     .top-rule{font-size:10px;letter-spacing:.04em;padding-bottom:8px;margin-bottom:13px}
     .logo-plate{padding:6px 8px}
