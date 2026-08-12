@@ -284,7 +284,8 @@
      the high ceilings never bind inside this range. */
   @media(max-width:1024px){
     /* layout → single column */
-    .grid.cols-2,.grid.cols-3,.kd-intro,.onechart .ocgrid{grid-template-columns:1fr;column-gap:0;gap:20px}
+    .grid.cols-2,.grid.cols-3,.kd-intro,.onechart .ocgrid{grid-template-columns:1fr;column-gap:0;gap:max(22px,5.5vw)}
+    .grid article{padding:max(16px,3.8vw) 0}
     .two-col-layout{grid-template-columns:1fr}
     .kpoints{grid-template-columns:1fr}
     .compliance-item{grid-template-columns:1fr;gap:6px}
@@ -294,7 +295,8 @@
     .top-rule{font-size:max(10px,2.35vw)}
     .wordmark{font-size:max(28px,6.6vw)}
     .tagline{font-size:max(12px,2.9vw)}
-    .nav-btn{font-size:max(12px,2.87vw)}
+    nav{gap:max(4px,2vw);padding:max(6px,1.5vw) max(14px,3.4vw)}
+    .nav-btn{font-size:max(12px,2.87vw);padding:max(7px,1.9vw) max(11px,2.9vw)}
     .section-head h2{font-size:max(22px,4.7vw)}
     .section-head .pgnum{font-size:max(11px,2.78vw)}
     /* news article flow */
@@ -352,10 +354,10 @@
     .audio-skip{width:max(34px,8.6vw);height:max(34px,8.6vw)}
     .audio-skip svg{width:max(21px,5.4vw);height:max(21px,5.4vw)}
     .chaphd{font-size:max(11px,2.52vw)}
-    .chap{font-size:max(13px,3.05vw);padding:9px 6px;border-bottom:1px solid rgba(255,255,255,.07)}
-    .chap .cn{font-size:max(11px,2.52vw)}
+    .chap{font-size:max(11px,2.55vw);padding:9px 6px;border-bottom:1px solid rgba(255,255,255,.07)}
+    .chap .cn{font-size:max(9.5px,2.15vw)}
     .chap .ct{color:#eceae3}
-    .chap .cx{font-size:max(12.5px,2.87vw);color:var(--gold-bright);font-weight:600}
+    .chap .cx{font-size:max(10.5px,2.5vw);color:var(--gold-bright);font-weight:600}
     /* footer */
     footer{font-size:max(10.5px,2.44vw)}
   }
@@ -447,9 +449,10 @@ __PAGES__
   function goTo(id){ const el=document.getElementById('page-'+id); if(el) el.scrollIntoView({behavior:'smooth',block:'start'}); }
   navBtns.forEach(btn=>btn.addEventListener('click',()=>goTo(btn.dataset.page)));
   // Scroll-spy: highlight the nav button for whichever section is currently at the top.
+  function centerNav(btn){ try{ var nav=document.querySelector('nav'); var br=btn.getBoundingClientRect(), nr=nav.getBoundingClientRect(); nav.scrollBy({left:(br.left+br.width/2)-(nr.left+nr.width/2), behavior:'smooth'}); }catch(e){} }
   if('IntersectionObserver' in window){
     const spy=new IntersectionObserver((entries)=>{
-      entries.forEach(e=>{ if(e.isIntersecting){ const id=e.target.id.replace('page-',''); navBtns.forEach(b=>b.classList.toggle('active', b.dataset.page===id)); } });
+      entries.forEach(e=>{ if(e.isIntersecting){ const id=e.target.id.replace('page-',''); navBtns.forEach(b=>b.classList.toggle('active', b.dataset.page===id)); var act=[].slice.call(navBtns).filter(function(b){return b.dataset.page===id;})[0]; if(act) centerNav(act); } });
     },{rootMargin:'-58px 0px -72% 0px',threshold:0});
     pages.forEach(p=>spy.observe(p));
   }
