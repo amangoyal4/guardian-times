@@ -86,14 +86,15 @@ async function fetchVideoMeta(ids) {
 
 // Any Indian-script (Devanagari etc.) in the title ⇒ a Hindi/regional video.
 const INDIC = /[ऀ-෿]/;
-// Credible finance channels — quality comes from the SOURCE, not view count.
-const REPUTABLE = /\bet now\b|et markets|cnbc|moneycontrol|livemint|\bmint\b|zerodha|\bgroww\b|ndtv profit|bloomberg|economic times|business standard|\bbq\b|value research|outlook|forbes|the core|finshots|capitalmind|\bnse\b|\bbse\b|et alpha/i;
-// Finance/markets context — guards against same-name people (e.g. Dr Aditya Khemka vs
-// the InCred fund manager). A video qualifies only if it's on a credible finance
-// channel OR its title/description is clearly about markets/investing.
-const FINANCE = /\bmarket|\bstock|equit|\bshares?\b|portfolio|investing|investor|mutual fund|\bpms\b|\bnse\b|\bbse\b|sensex|nifty|valuation|small[- ]?cap|mid[- ]?cap|multibagger|\bipo\b|economy|\bamc\b|fund manager|asset manage|\bcapital\b|\bfii\b|\bdii\b|wealth|earnings|\bnbfc\b|smallcase|\bsip\b|sectors?\b/i;
+// Credible finance channels — quality comes from the SOURCE, not view count. Only
+// interviews posted BY one of these count; a finance-y title on some random clip /
+// re-upload channel (e.g. "Finance Made Easy") is NOT enough. Covers major business
+// news, respected research houses, and official AMC / boutique-manager channels.
+const REPUTABLE = /\bet now\b|et markets|et money|et alpha|cnbc|moneycontrol|livemint|\bmint\b|zerodha|\bgroww\b|ndtv profit|bloomberg|\bbq\b|economic times|business standard|business today|fortune india|value research|morningstar|outlook|forbes|the core|the ken|finshots|capitalmind|\bnse\b|\bbse\b|mutual fund|asset management|motilal oswal|ppfas|marcellus|helios capital|abakkus|white ?oak|carnelian|nippon india|sageone|old bridge|buoyant/i;
+// A video qualifies ONLY if it was posted by a credible channel (above). This also
+// blocks same-name people (a random "Rajeev Thakkar" on a non-finance channel).
 function isFinanceVideo(s) {
-  return REPUTABLE.test(s?.channelTitle || '') || FINANCE.test(`${s?.title || ''} ${s?.description || ''}`);
+  return REPUTABLE.test(s?.channelTitle || '');
 }
 
 async function searchLatest(m, publishedAfter) {
