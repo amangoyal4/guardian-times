@@ -341,8 +341,11 @@ async function main() {
     }
   }
 
-  // lead stories (first of each section) get the longer AI treatment + chart
+  // lead stories (first of each section) get the longer AI treatment
   const leadIds = new Set(Object.values(buckets).map((arr) => arr[0]?.link).filter(Boolean));
+  // Cost control: only the three marquee section leads get Pro's prose; the Global
+  // & Compliance leads take the same longer treatment on Flash (see summariseAll).
+  const proLeadIds = new Set(['macro', 'india', 'sector'].map((k) => buckets[k]?.[0]?.link).filter(Boolean));
 
   // 5) KNOWLEDGE DESK FIRST — mechanism + explainers + myth-busters.
   // These need only the selected headlines (available pre-summary), so we run
@@ -399,7 +402,7 @@ async function main() {
   // overlaps with the market fetch; summaries run once enrichment is done.
   const flat = [...new Set(Object.values(buckets).flat())];
   const [summarised, market] = await Promise.all([
-    attachFullText(flat, leadIds).then(() => summariseAll(flat, { leadIds })),
+    attachFullText(flat, leadIds).then(() => summariseAll(flat, { leadIds, proLeadIds })),
     fetchMarket(),
   ]);
   const byLink = new Map(summarised.map((s) => [s.link, s]));

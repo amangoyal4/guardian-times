@@ -98,7 +98,7 @@ Voice: precise, first-principles, analytical, confident, clean prose — the reg
 ACCURACY IS ABSOLUTE: reproduce every figure — exchange rates, index levels, prices, percentages, dates — EXACTLY as it appears in the source. NEVER "correct", round, or substitute a number from your own training/memory, even if it looks wrong or surprising to you. Market and currency levels move over time and YOUR MEMORY IS STALE — e.g. the rupee is far weaker than you recall; if the source says the rupee is at 95 to the dollar, write 95, never 83. The source article is the single source of truth; trust it over what you think you know.`;
 
 // Summarise ONE story into headline + summary + "so what" (+ optional chart for leads).
-async function summariseStory(item, { lead = false } = {}) {
+async function summariseStory(item, { lead = false, proLead = false } = {}) {
   // For leads we may have fetched the FULL article text (see article.js). That body
   // usually contains the historical/comparative figures a publisher prints in its
   // graphs/pictographs — the very numbers the short RSS snippet drops. Using it lets
@@ -138,8 +138,13 @@ ${sourceBlock}`;
     // Lead stories (the marquee items readers scrutinise, with the fuller
     // analysis) get Pro's sharper writing + "so what"; the long tail runs on
     // Flash. Selection and Mechanism are already Pro elsewhere.
+    // Marquee leads (Macro/India/Sector) get Pro's sharper prose; the other two
+    // section leads (Global/Compliance) take the SAME longer treatment but on Flash
+    // to save cost; the long tail runs on Flash too.
     const out = extractJson(await callGemini(prompt, lead
-      ? { maxTokens: 1500, thinking: 1100, temperature: 0.45, model: PRO }
+      ? (proLead
+          ? { maxTokens: 1500, thinking: 1100, temperature: 0.45, model: PRO }
+          : { maxTokens: 1500, thinking: 700, temperature: 0.45, model: FLASH })
       : { maxTokens: 900, thinking: 600, temperature: 0.45, model: FLASH }));
     return {
       ...item,
@@ -236,7 +241,7 @@ ${catalogue}`;
     // (restored from a cost-trimmed 1400 on 2026-08-02 after mis-filings like FCNR in
     // compliance + a thin sector) gives it room to route ~150 candidates carefully and
     // dedupe across sections. Heavy `tries` keeps it off the keyword-router fallback.
-    const out = extractJson(await callGemini(prompt, { maxTokens: 1800, thinking: 3072, temperature: 0.3, tries: 6 }));
+    const out = extractJson(await callGemini(prompt, { maxTokens: 1800, thinking: 2048, temperature: 0.3, tries: 6 }));
     const valid = {};
     for (const sec of sections) {
       const ids = Array.isArray(out[sec]) ? out[sec] : [];
@@ -281,7 +286,7 @@ ${context}`;
     // maxTokens stays 3400 so the written mechanism keeps its full depth/length;
     // only the internal reasoning cap is trimmed 2600→2000 (reasoning quality
     // saturates well before 2k here). Reader-facing quality is unchanged.
-    return extractJson(await callGemini(prompt, { maxTokens: 3400, thinking: 2600, temperature: 0.5 }));
+    return extractJson(await callGemini(prompt, { maxTokens: 3400, thinking: 1800, temperature: 0.5 }));
   } catch (err) {
     console.log(`  ⚠ mechanism generation failed (${err.message}); using fallback.`);
     return null;
@@ -470,13 +475,13 @@ ${pLines.join('\n')}`;
  * A small inter-call gap keeps us polite to the paid-tier RPM limit (no longer
  * the 6.5s the free tier needed). `leadIds` get the longer treatment.
  */
-export async function summariseAll(items, { leadIds = new Set(), gapMs = 1500 } = {}) {
+export async function summariseAll(items, { leadIds = new Set(), proLeadIds = new Set(), gapMs = 1500 } = {}) {
   const out = [];
-  console.log(`\n✍  Summarising ${items.length} stories — lead stories on ${PRO}, the rest on ${FLASH} (selection + mechanism also on ${PRO})…`);
+  console.log(`\n✍  Summarising ${items.length} stories — Macro/India/Sector leads on ${PRO}, other leads + tail on ${FLASH} (selection + mechanism on ${PRO})…`);
   for (let i = 0; i < items.length; i++) {
     const item = items[i];
     const lead = leadIds.has(item.link);
-    out.push(await summariseStory(item, { lead }));
+    out.push(await summariseStory(item, { lead, proLead: proLeadIds.has(item.link) }));
     if (i < items.length - 1) await sleep(gapMs); // stay polite to paid-tier RPM
   }
   console.log(`   done (${out.filter((x) => x.aiGenerated).length}/${out.length} AI-written)\n`);
