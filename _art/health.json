@@ -1,0 +1,194 @@
+{
+  "ts": "2026-07-06T01:38:33.105Z",
+  "health": [
+    {
+      "id": "et-markets",
+      "name": "Economic Times — Markets",
+      "ok": true,
+      "count": 50,
+      "error": null
+    },
+    {
+      "id": "bs-markets",
+      "name": "Business Standard — Markets",
+      "ok": true,
+      "count": 60,
+      "error": null
+    },
+    {
+      "id": "mint-markets",
+      "name": "Livemint — Markets",
+      "ok": true,
+      "count": 35,
+      "error": null
+    },
+    {
+      "id": "mc-business",
+      "name": "Moneycontrol — Business",
+      "ok": true,
+      "count": 15,
+      "error": null
+    },
+    {
+      "id": "bl-markets",
+      "name": "Hindu BusinessLine",
+      "ok": true,
+      "count": 60,
+      "error": null
+    },
+    {
+      "id": "fe-markets",
+      "name": "Financial Express — Market",
+      "ok": true,
+      "count": 3,
+      "error": null
+    },
+    {
+      "id": "et-economy",
+      "name": "Economic Times — Economy",
+      "ok": true,
+      "count": 50,
+      "error": null
+    },
+    {
+      "id": "et-industry",
+      "name": "Economic Times — Industry",
+      "ok": true,
+      "count": 50,
+      "error": null
+    },
+    {
+      "id": "et-wealth",
+      "name": "Economic Times — Wealth",
+      "ok": true,
+      "count": 50,
+      "error": null
+    },
+    {
+      "id": "mint-companies",
+      "name": "Livemint — Companies",
+      "ok": true,
+      "count": 35,
+      "error": null
+    },
+    {
+      "id": "mint-economy",
+      "name": "Livemint — Economy",
+      "ok": true,
+      "count": 35,
+      "error": null
+    },
+    {
+      "id": "mint-money",
+      "name": "Livemint — Money",
+      "ok": true,
+      "count": 35,
+      "error": null
+    },
+    {
+      "id": "mc-markets",
+      "name": "Moneycontrol — Markets",
+      "ok": true,
+      "count": 4,
+      "error": null
+    },
+    {
+      "id": "mc-economy",
+      "name": "Moneycontrol — Economy",
+      "ok": true,
+      "count": 4,
+      "error": null
+    },
+    {
+      "id": "bl-economy",
+      "name": "Hindu BusinessLine — Economy",
+      "ok": true,
+      "count": 60,
+      "error": null
+    },
+    {
+      "id": "bl-companies",
+      "name": "Hindu BusinessLine — Companies",
+      "ok": true,
+      "count": 60,
+      "error": null
+    },
+    {
+      "id": "bl-banking",
+      "name": "Hindu BusinessLine — Money & Banking",
+      "ok": true,
+      "count": 60,
+      "error": null
+    },
+    {
+      "id": "cnbctv18-mkt",
+      "name": "CNBC-TV18 — Market",
+      "ok": true,
+      "count": 100,
+      "error": null
+    },
+    {
+      "id": "ndtvprofit",
+      "name": "NDTV Profit — Markets",
+      "ok": true,
+      "count": 100,
+      "error": null
+    },
+    {
+      "id": "bs-economy",
+      "name": "Business Standard — Economy",
+      "ok": true,
+      "count": 6,
+      "error": null
+    },
+    {
+      "id": "rbi-press",
+      "name": "RBI — Press Releases",
+      "ok": true,
+      "count": 10,
+      "error": null
+    },
+    {
+      "id": "sebi-press",
+      "name": "SEBI — Press Releases",
+      "ok": true,
+      "count": 30,
+      "error": null
+    },
+    {
+      "id": "nse-circ",
+      "name": "NSE — Circulars",
+      "ok": true,
+      "count": 27,
+      "error": null
+    },
+    {
+      "id": "guardian-biz",
+      "name": "The Guardian — Business",
+      "ok": true,
+      "count": 36,
+      "error": null
+    },
+    {
+      "id": "cnbc-finance",
+      "name": "CNBC — Finance",
+      "ok": true,
+      "count": 30,
+      "error": null
+    },
+    {
+      "id": "mw-top",
+      "name": "MarketWatch — Top",
+      "ok": true,
+      "count": 10,
+      "error": null
+    },
+    {
+      "id": "investing-news",
+      "name": "Investing.com — News",
+      "ok": true,
+      "count": 10,
+      "error": null
+    }
+  ]
+}

@@ -340,16 +340,19 @@
     .compliance-item h3{font-size:max(17px,4.7vw)}
     .compliance-item .summary{font-size:max(13.5px,3.6vw)}
     .compliance-item .reg{font-size:max(10.5px,2.8vw)}
-    /* audio briefing player + chapter (timestamp) list — stack one below the other */
-    .chaps{grid-template-columns:1fr;gap:0}
+    /* audio briefing player + chapter (timestamp) list — ONE column, clearly legible.
+       Force single column, add a divider + breathing room per row, and make the
+       timestamp itself gold + bold so it reads at a glance on the dark player. */
+    .chaps{grid-template-columns:1fr !important;gap:0}
     .audio-title{font-size:max(14px,3.85vw)}
     .audio-status{font-size:max(10px,2.8vw)}
-    .audio-time{font-size:max(11px,3.05vw)}
+    .audio-time{font-size:max(12px,3.2vw);color:#f3efe6}
     .audio-speed{font-size:max(11px,2.95vw)}
-    .chaphd{font-size:max(10px,2.7vw)}
-    .chap{font-size:max(12.5px,3.3vw)}
-    .chap .cn{font-size:max(10.5px,2.8vw)}
-    .chap .cx{font-size:max(11px,2.95vw)}
+    .chaphd{font-size:max(11px,2.9vw)}
+    .chap{font-size:max(13px,3.5vw);padding:9px 6px;border-bottom:1px solid rgba(255,255,255,.07)}
+    .chap .cn{font-size:max(11px,2.9vw)}
+    .chap .ct{color:#eceae3}
+    .chap .cx{font-size:max(12.5px,3.3vw);color:var(--gold-bright);font-weight:600}
     /* footer */
     footer{font-size:max(10.5px,2.8vw)}
   }
