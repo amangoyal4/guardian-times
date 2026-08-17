@@ -852,18 +852,38 @@
 <script type="application/json" id="lib-config">{"csv":"https://docs.google.com/spreadsheets/d/e/2PACX-1vSjhAqxzAZlJg9OXA5HUik2WTs4iyNsGOdZKHABLqa7o5v6Fu0BSqvsoFZHCuLIM5VpYHJjYcPLIA-n/pub?gid=0&single=true&output=csv","videos":[{"link":"https://www.instagram.com/p/DbzaVcgEdQl/","videoId":"","title":"A high income doesn't automatically lead to financial freedom.","thumb":"thumbs/lib-1b474179ea07.jpg","channel":"Guardian Capital","platform":"Instagram","orientation":"portrait","blurb":"","published":"2026-10-08","duration":""},{"link":"https://www.instagram.com/p/Dbhc8Fqj2O_/","videoId":"","title":"Many successful women founders still feel financially insecure.","thumb":"thumbs/lib-81337a0947d0.jpg","channel":"Guardian Capital","platform":"Instagram","orientation":"portrait","blurb":"","published":"2026-08-02","duration":""},{"link":"https://www.instagram.com/p/DbYR2dflZQ-/","videoId":"","title":"Financial independence isn't about hiding money.","thumb":"thumbs/lib-d3dba595e67b.jpg","channel":"Guardian Capital Investment Advisors (GCIA)","platform":"Instagram","orientation":"portrait","blurb":"","published":"2026-07-29","duration":"1:08"},{"link":"https://www.youtube.com/watch?v=Fdn1ljFcHfs","videoId":"Fdn1ljFcHfs","title":"What Guardian Capital Does","thumb":"https://i.ytimg.com/vi/Fdn1ljFcHfs/maxresdefault.jpg","channel":"Guardian Capital Investment Advisors (GCIA)","platform":"YouTube","orientation":"landscape","blurb":"Your financial life is about much more than just investing.","published":"2026-07-23","duration":""}]}</script>
 <script>
   const navBtns=document.querySelectorAll('.nav-btn');
-  const pages=document.querySelectorAll('.page');
-  // Single continuous scroll: a nav click smooth-scrolls to that section.
-  function goTo(id){ const el=document.getElementById('page-'+id); if(el) el.scrollIntoView({behavior:'smooth',block:'start'}); }
-  navBtns.forEach(btn=>btn.addEventListener('click',()=>goTo(btn.dataset.page)));
-  // Scroll-spy: highlight the nav button for whichever section is currently at the top.
-  function centerNav(btn){ try{ var nav=document.querySelector('nav'); var br=btn.getBoundingClientRect(), nr=nav.getBoundingClientRect(); nav.scrollBy({left:(br.left+br.width/2)-(nr.left+nr.width/2), behavior:'smooth'}); }catch(e){} }
-  if('IntersectionObserver' in window){
-    const spy=new IntersectionObserver((entries)=>{
-      entries.forEach(e=>{ if(e.isIntersecting){ const id=e.target.id.replace('page-',''); navBtns.forEach(b=>b.classList.toggle('active', b.dataset.page===id)); var act=[].slice.call(navBtns).filter(function(b){return b.dataset.page===id;})[0]; if(act) centerNav(act); } });
-    },{rootMargin:'-58px 0px -72% 0px',threshold:0});
-    pages.forEach(p=>spy.observe(p));
+  const pages=[].slice.call(document.querySelectorAll('.page'));
+  const navWrap=document.querySelector('.nav-wrap');
+  // Sticky-header height, measured LIVE (it changes with the responsive/Moxo sizing),
+  // so both the jump target and the highlight line up with the real nav height.
+  function navH(){ return navWrap ? navWrap.getBoundingClientRect().height : 60; }
+  // Nav click: land the section just BELOW the sticky nav, never hidden under it.
+  function goTo(id){
+    var el=document.getElementById('page-'+id); if(!el) return;
+    var y=el.getBoundingClientRect().top + window.pageYOffset - navH() - 8;
+    window.scrollTo({ top: Math.max(0,y), behavior:'smooth' });
   }
+  navBtns.forEach(btn=>btn.addEventListener('click',()=>goTo(btn.dataset.page)));
+  // Keep the active tab scrolled into view (slides right going down, left going up).
+  function centerNav(btn){ try{ var nav=document.querySelector('nav'); var br=btn.getBoundingClientRect(), nr=nav.getBoundingClientRect(); nav.scrollBy({left:(br.left+br.width/2)-(nr.left+nr.width/2), behavior:'smooth'}); }catch(e){} }
+  // Scroll-spy: active = the LAST section whose top has passed just under the nav.
+  // Recomputed on every scroll, so the highlight tracks accurately in BOTH directions.
+  var curId=null;
+  function spy(){
+    var line=navH()+14, active=pages[0];
+    for(var i=0;i<pages.length;i++){ if(pages[i].getBoundingClientRect().top<=line) active=pages[i]; else break; }
+    if(!active) return;
+    var id=active.id.replace('page-','');
+    if(id===curId) return;
+    curId=id;
+    navBtns.forEach(b=>b.classList.toggle('active', b.dataset.page===id));
+    var a=[].slice.call(navBtns).filter(function(b){return b.dataset.page===id;})[0];
+    if(a) centerNav(a);
+  }
+  window.addEventListener('scroll', spy, {passive:true});
+  window.addEventListener('resize', spy);
+  window.addEventListener('load', spy);
+  spy();
   const d=new Date();
   document.getElementById('dateline').textContent=d.toLocaleDateString('en-GB',{weekday:'long',day:'numeric',month:'long',year:'numeric'});
 
