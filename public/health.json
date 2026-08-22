@@ -1,5 +1,5 @@
 {
-  "ts": "2026-08-21T01:37:35.531Z",
+  "ts": "2026-08-22T02:02:20.885Z",
   "health": [
     {
       "id": "et-markets",
@@ -25,9 +25,9 @@
     {
       "id": "mc-business",
       "name": "Moneycontrol — Business",
-      "ok": false,
-      "count": 0,
-      "error": "Feed not recognized as RSS 1 or 2."
+      "ok": true,
+      "count": 15,
+      "error": null
     },
     {
       "id": "bl-markets",
@@ -40,21 +40,21 @@
       "id": "fe-markets",
       "name": "Financial Express — Market",
       "ok": true,
-      "count": 28,
+      "count": 37,
       "error": null
     },
     {
       "id": "fe-business",
       "name": "Financial Express — Business",
       "ok": true,
-      "count": 36,
+      "count": 41,
       "error": null
     },
     {
       "id": "firstpost-biz",
       "name": "Firstpost — Business",
       "ok": true,
-      "count": 18,
+      "count": 13,
       "error": null
     },
     {
@@ -102,16 +102,16 @@
     {
       "id": "mc-markets",
       "name": "Moneycontrol — Markets",
-      "ok": false,
-      "count": 0,
-      "error": "Unexpected close tag\nLine: 17\nColumn: 10\nChar: >"
+      "ok": true,
+      "count": 4,
+      "error": null
     },
     {
       "id": "mc-economy",
       "name": "Moneycontrol — Economy",
-      "ok": false,
-      "count": 0,
-      "error": "Unexpected close tag\nLine: 17\nColumn: 10\nChar: >"
+      "ok": true,
+      "count": 4,
+      "error": null
     },
     {
       "id": "bl-economy",
@@ -152,7 +152,7 @@
       "id": "bs-economy",
       "name": "Business Standard — Economy",
       "ok": true,
-      "count": 13,
+      "count": 18,
       "error": null
     },
     {
@@ -173,14 +173,14 @@
       "id": "nse-circ",
       "name": "NSE — Circulars",
       "ok": true,
-      "count": 21,
+      "count": 42,
       "error": null
     },
     {
       "id": "guardian-biz",
       "name": "The Guardian — Business",
       "ok": true,
-      "count": 38,
+      "count": 40,
       "error": null
     },
     {
