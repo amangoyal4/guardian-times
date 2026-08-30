@@ -1,5 +1,5 @@
 {
-  "ts": "2026-08-29T01:40:57.005Z",
+  "ts": "2026-08-30T01:38:03.408Z",
   "health": [
     {
       "id": "et-markets",
@@ -40,21 +40,21 @@
       "id": "fe-markets",
       "name": "Financial Express — Market",
       "ok": true,
-      "count": 31,
+      "count": 19,
       "error": null
     },
     {
       "id": "fe-business",
       "name": "Financial Express — Business",
       "ok": true,
-      "count": 37,
+      "count": 22,
       "error": null
     },
     {
       "id": "firstpost-biz",
       "name": "Firstpost — Business",
       "ok": true,
-      "count": 11,
+      "count": 2,
       "error": null
     },
     {
@@ -138,7 +138,7 @@
       "id": "cnbctv18-mkt",
       "name": "CNBC-TV18 — Market",
       "ok": true,
-      "count": 100,
+      "count": 60,
       "error": null
     },
     {
@@ -152,7 +152,7 @@
       "id": "bs-economy",
       "name": "Business Standard — Economy",
       "ok": true,
-      "count": 8,
+      "count": 6,
       "error": null
     },
     {
@@ -180,7 +180,7 @@
       "id": "guardian-biz",
       "name": "The Guardian — Business",
       "ok": true,
-      "count": 35,
+      "count": 34,
       "error": null
     },
     {
