@@ -1,19 +1,19 @@
 {
-  "ts": "2026-08-30T01:38:03.408Z",
+  "ts": "2026-08-31T01:41:55.862Z",
   "health": [
     {
       "id": "et-markets",
       "name": "Economic Times — Markets",
       "ok": true,
-      "count": 50,
+      "count": 49,
       "error": null
     },
     {
       "id": "bs-markets",
       "name": "Business Standard — Markets",
-      "ok": true,
-      "count": 100,
-      "error": null
+      "ok": false,
+      "count": 0,
+      "error": "Status code 503"
     },
     {
       "id": "mint-markets",
@@ -39,23 +39,23 @@
     {
       "id": "fe-markets",
       "name": "Financial Express — Market",
-      "ok": true,
-      "count": 19,
-      "error": null
+      "ok": false,
+      "count": 0,
+      "error": "Status code 503"
     },
     {
       "id": "fe-business",
       "name": "Financial Express — Business",
-      "ok": true,
-      "count": 22,
-      "error": null
+      "ok": false,
+      "count": 0,
+      "error": "Status code 503"
     },
     {
       "id": "firstpost-biz",
       "name": "Firstpost — Business",
-      "ok": true,
-      "count": 2,
-      "error": null
+      "ok": false,
+      "count": 0,
+      "error": "Status code 503"
     },
     {
       "id": "et-economy",
@@ -137,23 +137,23 @@
     {
       "id": "cnbctv18-mkt",
       "name": "CNBC-TV18 — Market",
-      "ok": true,
-      "count": 60,
-      "error": null
+      "ok": false,
+      "count": 0,
+      "error": "Status code 503"
     },
     {
       "id": "ndtvprofit",
       "name": "NDTV Profit — Markets",
-      "ok": true,
-      "count": 100,
-      "error": null
+      "ok": false,
+      "count": 0,
+      "error": "Status code 503"
     },
     {
       "id": "bs-economy",
       "name": "Business Standard — Economy",
-      "ok": true,
-      "count": 6,
-      "error": null
+      "ok": false,
+      "count": 0,
+      "error": "Status code 503"
     },
     {
       "id": "rbi-press",
@@ -180,7 +180,7 @@
       "id": "guardian-biz",
       "name": "The Guardian — Business",
       "ok": true,
-      "count": 34,
+      "count": 38,
       "error": null
     },
     {
