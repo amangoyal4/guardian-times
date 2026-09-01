@@ -1,19 +1,19 @@
 {
-  "ts": "2026-08-31T01:41:55.862Z",
+  "ts": "2026-09-01T01:47:01.105Z",
   "health": [
     {
       "id": "et-markets",
       "name": "Economic Times — Markets",
       "ok": true,
-      "count": 49,
+      "count": 50,
       "error": null
     },
     {
       "id": "bs-markets",
       "name": "Business Standard — Markets",
-      "ok": false,
-      "count": 0,
-      "error": "Status code 503"
+      "ok": true,
+      "count": 100,
+      "error": null
     },
     {
       "id": "mint-markets",
@@ -39,23 +39,23 @@
     {
       "id": "fe-markets",
       "name": "Financial Express — Market",
-      "ok": false,
-      "count": 0,
-      "error": "Status code 503"
+      "ok": true,
+      "count": 58,
+      "error": null
     },
     {
       "id": "fe-business",
       "name": "Financial Express — Business",
-      "ok": false,
-      "count": 0,
-      "error": "Status code 503"
+      "ok": true,
+      "count": 46,
+      "error": null
     },
     {
       "id": "firstpost-biz",
       "name": "Firstpost — Business",
-      "ok": false,
-      "count": 0,
-      "error": "Status code 503"
+      "ok": true,
+      "count": 11,
+      "error": null
     },
     {
       "id": "et-economy",
@@ -137,23 +137,23 @@
     {
       "id": "cnbctv18-mkt",
       "name": "CNBC-TV18 — Market",
-      "ok": false,
-      "count": 0,
-      "error": "Status code 503"
+      "ok": true,
+      "count": 100,
+      "error": null
     },
     {
       "id": "ndtvprofit",
       "name": "NDTV Profit — Markets",
-      "ok": false,
-      "count": 0,
-      "error": "Status code 503"
+      "ok": true,
+      "count": 100,
+      "error": null
     },
     {
       "id": "bs-economy",
       "name": "Business Standard — Economy",
-      "ok": false,
-      "count": 0,
-      "error": "Status code 503"
+      "ok": true,
+      "count": 20,
+      "error": null
     },
     {
       "id": "rbi-press",
@@ -173,14 +173,14 @@
       "id": "nse-circ",
       "name": "NSE — Circulars",
       "ok": true,
-      "count": 31,
+      "count": 34,
       "error": null
     },
     {
       "id": "guardian-biz",
       "name": "The Guardian — Business",
       "ok": true,
-      "count": 38,
+      "count": 40,
       "error": null
     },
     {
