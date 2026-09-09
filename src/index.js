@@ -193,9 +193,11 @@ const CRIME = new RegExp([
   '\\bpaedophil', '\\bpedophil', '\\bstabb', '\\bassaulted\\b',
 ].join('|'), 'i');
 
-// TEMPORARY topic mute (user request 2026-08-04): no FCNR / NRI-deposit news for a
-// month. REMOVE THIS BLOCK after ~2026-09-04 to let the topic back in.
-const TEMP_MUTE = /\bfcnr\b|fcnr\s*\(b\)|foreign\s+currency\s+non-?resident|\bnri\b\s+deposit/i;
+// TEMPORARY topic mute (user request 2026-08-04; RE-ARMED + EXPANDED 2026-09-09 for
+// 6 months): no FCNR / NRI-deposit news, and no RBI overseas- / forex-deposit stories
+// (the recurring "banks' FX-exposed overseas deposits create a rupee overhang" theme,
+// e.g. the $127bn overseas-deposits piece). REMOVE THIS BLOCK after ~2026-03-09.
+const TEMP_MUTE = /\bfcnr\b|fcnr\s*\(b\)|foreign\s+currency\s+non-?resident|\bnri\b\s+deposit|overseas\s+deposits?|(?:foreign\s+currency|forex|fx)[- ]?(?:exposed\s+)?deposits?|unhedged\s+foreign\s+currency/i;
 
 // STANDING topic mute (user preference 2026-08-05): no IPO / new-listing coverage.
 // (Excludes bare "public issue" — that also matches bond/NCD issues.)
