@@ -1,5 +1,5 @@
 {
-  "ts": "2026-09-10T01:39:07.560Z",
+  "ts": "2026-09-11T01:40:42.770Z",
   "health": [
     {
       "id": "et-markets",
@@ -32,22 +32,22 @@
     {
       "id": "bl-markets",
       "name": "Hindu BusinessLine",
-      "ok": false,
-      "count": 0,
-      "error": "Request timed out after 20000ms"
+      "ok": true,
+      "count": 60,
+      "error": null
     },
     {
       "id": "fe-markets",
       "name": "Financial Express — Market",
       "ok": true,
-      "count": 64,
+      "count": 8,
       "error": null
     },
     {
       "id": "fe-business",
       "name": "Financial Express — Business",
       "ok": true,
-      "count": 48,
+      "count": 42,
       "error": null
     },
     {
@@ -152,7 +152,7 @@
       "id": "bs-economy",
       "name": "Business Standard — Economy",
       "ok": true,
-      "count": 6,
+      "count": 4,
       "error": null
     },
     {
@@ -173,7 +173,7 @@
       "id": "nse-circ",
       "name": "NSE — Circulars",
       "ok": true,
-      "count": 19,
+      "count": 28,
       "error": null
     },
     {
