@@ -1,11 +1,11 @@
 {
-  "ts": "2026-10-06T01:39:08.731Z",
+  "ts": "2026-10-07T01:37:58.233Z",
   "health": [
     {
       "id": "et-markets",
       "name": "Economic Times — Markets",
       "ok": true,
-      "count": 50,
+      "count": 48,
       "error": null
     },
     {
@@ -40,42 +40,42 @@
       "id": "fe-markets",
       "name": "Financial Express — Market",
       "ok": true,
-      "count": 26,
+      "count": 30,
       "error": null
     },
     {
       "id": "fe-business",
       "name": "Financial Express — Business",
       "ok": true,
-      "count": 45,
+      "count": 43,
       "error": null
     },
     {
       "id": "firstpost-biz",
       "name": "Firstpost — Business",
       "ok": true,
-      "count": 11,
+      "count": 14,
       "error": null
     },
     {
       "id": "et-economy",
       "name": "Economic Times — Economy",
       "ok": true,
-      "count": 50,
+      "count": 32,
       "error": null
     },
     {
       "id": "et-industry",
       "name": "Economic Times — Industry",
       "ok": true,
-      "count": 50,
+      "count": 49,
       "error": null
     },
     {
       "id": "et-wealth",
       "name": "Economic Times — Wealth",
       "ok": true,
-      "count": 50,
+      "count": 43,
       "error": null
     },
     {
@@ -152,7 +152,7 @@
       "id": "bs-economy",
       "name": "Business Standard — Economy",
       "ok": true,
-      "count": 21,
+      "count": 14,
       "error": null
     },
     {
@@ -173,7 +173,7 @@
       "id": "nse-circ",
       "name": "NSE — Circulars",
       "ok": true,
-      "count": 24,
+      "count": 31,
       "error": null
     },
     {
