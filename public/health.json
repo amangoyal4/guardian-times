@@ -1,5 +1,5 @@
 {
-  "ts": "2026-10-11T01:38:13.892Z",
+  "ts": "2026-10-12T01:40:06.863Z",
   "health": [
     {
       "id": "et-markets",
@@ -11,9 +11,9 @@
     {
       "id": "bs-markets",
       "name": "Business Standard — Markets",
-      "ok": false,
-      "count": 0,
-      "error": "Status code 503"
+      "ok": true,
+      "count": 47,
+      "error": null
     },
     {
       "id": "mint-markets",
@@ -39,23 +39,23 @@
     {
       "id": "fe-markets",
       "name": "Financial Express — Market",
-      "ok": false,
-      "count": 0,
-      "error": "Status code 503"
+      "ok": true,
+      "count": 4,
+      "error": null
     },
     {
       "id": "fe-business",
       "name": "Financial Express — Business",
-      "ok": false,
-      "count": 0,
-      "error": "Status code 503"
+      "ok": true,
+      "count": 21,
+      "error": null
     },
     {
       "id": "firstpost-biz",
       "name": "Firstpost — Business",
-      "ok": false,
-      "count": 0,
-      "error": "Status code 503"
+      "ok": true,
+      "count": 5,
+      "error": null
     },
     {
       "id": "et-economy",
@@ -137,23 +137,23 @@
     {
       "id": "cnbctv18-mkt",
       "name": "CNBC-TV18 — Market",
-      "ok": false,
-      "count": 0,
-      "error": "Status code 503"
+      "ok": true,
+      "count": 54,
+      "error": null
     },
     {
       "id": "ndtvprofit",
       "name": "NDTV Profit — Markets",
-      "ok": false,
-      "count": 0,
-      "error": "Status code 503"
+      "ok": true,
+      "count": 100,
+      "error": null
     },
     {
       "id": "bs-economy",
       "name": "Business Standard — Economy",
-      "ok": false,
-      "count": 0,
-      "error": "Status code 503"
+      "ok": true,
+      "count": 7,
+      "error": null
     },
     {
       "id": "rbi-press",
@@ -180,7 +180,7 @@
       "id": "guardian-biz",
       "name": "The Guardian — Business",
       "ok": true,
-      "count": 37,
+      "count": 40,
       "error": null
     },
     {
