@@ -1,5 +1,5 @@
 {
-  "ts": "2026-11-05T01:37:06.225Z",
+  "ts": "2026-11-06T01:36:54.692Z",
   "health": [
     {
       "id": "et-markets",
@@ -12,7 +12,7 @@
       "id": "bs-markets",
       "name": "Business Standard — Markets",
       "ok": true,
-      "count": 95,
+      "count": 99,
       "error": null
     },
     {
@@ -25,9 +25,9 @@
     {
       "id": "mc-business",
       "name": "Moneycontrol — Business",
-      "ok": false,
-      "count": 0,
-      "error": "Feed not recognized as RSS 1 or 2."
+      "ok": true,
+      "count": 15,
+      "error": null
     },
     {
       "id": "bl-markets",
@@ -40,21 +40,21 @@
       "id": "fe-markets",
       "name": "Financial Express — Market",
       "ok": true,
-      "count": 49,
+      "count": 27,
       "error": null
     },
     {
       "id": "fe-business",
       "name": "Financial Express — Business",
       "ok": true,
-      "count": 40,
+      "count": 38,
       "error": null
     },
     {
       "id": "firstpost-biz",
       "name": "Firstpost — Business",
       "ok": true,
-      "count": 9,
+      "count": 13,
       "error": null
     },
     {
@@ -102,16 +102,16 @@
     {
       "id": "mc-markets",
       "name": "Moneycontrol — Markets",
-      "ok": false,
-      "count": 0,
-      "error": "Unexpected close tag\nLine: 17\nColumn: 10\nChar: >"
+      "ok": true,
+      "count": 4,
+      "error": null
     },
     {
       "id": "mc-economy",
       "name": "Moneycontrol — Economy",
-      "ok": false,
-      "count": 0,
-      "error": "Unexpected close tag\nLine: 17\nColumn: 10\nChar: >"
+      "ok": true,
+      "count": 4,
+      "error": null
     },
     {
       "id": "bl-economy",
@@ -152,7 +152,7 @@
       "id": "bs-economy",
       "name": "Business Standard — Economy",
       "ok": true,
-      "count": 13,
+      "count": 9,
       "error": null
     },
     {
@@ -173,7 +173,7 @@
       "id": "nse-circ",
       "name": "NSE — Circulars",
       "ok": true,
-      "count": 34,
+      "count": 20,
       "error": null
     },
     {
