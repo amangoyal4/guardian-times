@@ -1,5 +1,5 @@
 {
-  "ts": "2026-11-18T01:38:00.735Z",
+  "ts": "2026-11-19T01:37:07.678Z",
   "health": [
     {
       "id": "et-markets",
@@ -12,7 +12,7 @@
       "id": "bs-markets",
       "name": "Business Standard — Markets",
       "ok": true,
-      "count": 87,
+      "count": 77,
       "error": null
     },
     {
@@ -25,9 +25,9 @@
     {
       "id": "mc-business",
       "name": "Moneycontrol — Business",
-      "ok": true,
-      "count": 15,
-      "error": null
+      "ok": false,
+      "count": 0,
+      "error": "Unexpected close tag\nLine: 17\nColumn: 10\nChar: >"
     },
     {
       "id": "bl-markets",
@@ -40,21 +40,21 @@
       "id": "fe-markets",
       "name": "Financial Express — Market",
       "ok": true,
-      "count": 38,
+      "count": 40,
       "error": null
     },
     {
       "id": "fe-business",
       "name": "Financial Express — Business",
       "ok": true,
-      "count": 32,
+      "count": 26,
       "error": null
     },
     {
       "id": "firstpost-biz",
       "name": "Firstpost — Business",
       "ok": true,
-      "count": 10,
+      "count": 12,
       "error": null
     },
     {
@@ -102,16 +102,16 @@
     {
       "id": "mc-markets",
       "name": "Moneycontrol — Markets",
-      "ok": true,
-      "count": 4,
-      "error": null
+      "ok": false,
+      "count": 0,
+      "error": "Unexpected close tag\nLine: 17\nColumn: 10\nChar: >"
     },
     {
       "id": "mc-economy",
       "name": "Moneycontrol — Economy",
-      "ok": true,
-      "count": 4,
-      "error": null
+      "ok": false,
+      "count": 0,
+      "error": "Feed not recognized as RSS 1 or 2."
     },
     {
       "id": "bl-economy",
@@ -138,7 +138,7 @@
       "id": "cnbctv18-mkt",
       "name": "CNBC-TV18 — Market",
       "ok": true,
-      "count": 93,
+      "count": 86,
       "error": null
     },
     {
@@ -152,7 +152,7 @@
       "id": "bs-economy",
       "name": "Business Standard — Economy",
       "ok": true,
-      "count": 13,
+      "count": 10,
       "error": null
     },
     {
@@ -172,9 +172,9 @@
     {
       "id": "nse-circ",
       "name": "NSE — Circulars",
-      "ok": false,
-      "count": 0,
-      "error": "Status code 403"
+      "ok": true,
+      "count": 24,
+      "error": null
     },
     {
       "id": "guardian-biz",
