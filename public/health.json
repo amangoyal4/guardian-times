@@ -1,5 +1,5 @@
 {
-  "ts": "2026-11-23T01:36:49.404Z",
+  "ts": "2026-11-24T01:36:17.235Z",
   "health": [
     {
       "id": "et-markets",
@@ -12,7 +12,7 @@
       "id": "bs-markets",
       "name": "Business Standard — Markets",
       "ok": true,
-      "count": 11,
+      "count": 92,
       "error": null
     },
     {
@@ -40,21 +40,21 @@
       "id": "fe-markets",
       "name": "Financial Express — Market",
       "ok": true,
-      "count": 11,
+      "count": 32,
       "error": null
     },
     {
       "id": "fe-business",
       "name": "Financial Express — Business",
       "ok": true,
-      "count": 21,
+      "count": 37,
       "error": null
     },
     {
       "id": "firstpost-biz",
       "name": "Firstpost — Business",
       "ok": true,
-      "count": 2,
+      "count": 10,
       "error": null
     },
     {
@@ -138,7 +138,7 @@
       "id": "cnbctv18-mkt",
       "name": "CNBC-TV18 — Market",
       "ok": true,
-      "count": 51,
+      "count": 96,
       "error": null
     },
     {
@@ -152,7 +152,7 @@
       "id": "bs-economy",
       "name": "Business Standard — Economy",
       "ok": true,
-      "count": 6,
+      "count": 14,
       "error": null
     },
     {
@@ -173,15 +173,15 @@
       "id": "nse-circ",
       "name": "NSE — Circulars",
       "ok": true,
-      "count": 35,
+      "count": 20,
       "error": null
     },
     {
       "id": "guardian-biz",
       "name": "The Guardian — Business",
-      "ok": true,
-      "count": 39,
-      "error": null
+      "ok": false,
+      "count": 0,
+      "error": "Status code 403"
     },
     {
       "id": "cnbc-finance",
