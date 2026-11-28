@@ -1,5 +1,5 @@
 {
-  "ts": "2026-11-27T01:38:08.978Z",
+  "ts": "2026-11-28T01:39:27.855Z",
   "health": [
     {
       "id": "et-markets",
@@ -12,7 +12,7 @@
       "id": "bs-markets",
       "name": "Business Standard — Markets",
       "ok": true,
-      "count": 68,
+      "count": 100,
       "error": null
     },
     {
@@ -32,29 +32,29 @@
     {
       "id": "bl-markets",
       "name": "Hindu BusinessLine",
-      "ok": false,
-      "count": 0,
-      "error": "Request timed out after 20000ms"
+      "ok": true,
+      "count": 60,
+      "error": null
     },
     {
       "id": "fe-markets",
       "name": "Financial Express — Market",
       "ok": true,
-      "count": 44,
+      "count": 33,
       "error": null
     },
     {
       "id": "fe-business",
       "name": "Financial Express — Business",
       "ok": true,
-      "count": 33,
+      "count": 27,
       "error": null
     },
     {
       "id": "firstpost-biz",
       "name": "Firstpost — Business",
       "ok": true,
-      "count": 12,
+      "count": 8,
       "error": null
     },
     {
@@ -152,7 +152,7 @@
       "id": "bs-economy",
       "name": "Business Standard — Economy",
       "ok": true,
-      "count": 20,
+      "count": 12,
       "error": null
     },
     {
@@ -165,15 +165,15 @@
     {
       "id": "sebi-press",
       "name": "SEBI — Press Releases",
-      "ok": true,
-      "count": 30,
-      "error": null
+      "ok": false,
+      "count": 0,
+      "error": "getaddrinfo EAI_AGAIN www.sebi.gov.in"
     },
     {
       "id": "nse-circ",
       "name": "NSE — Circulars",
       "ok": true,
-      "count": 18,
+      "count": 26,
       "error": null
     },
     {
